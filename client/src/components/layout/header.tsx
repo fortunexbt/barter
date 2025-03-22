@@ -96,23 +96,23 @@ export default function Header({ toggleMobileSidebar }: HeaderProps) {
                 <span className="ml-2 text-sm font-medium text-neutral-600 hidden md:block">
                   {user?.fullName || "User"}
                 </span>
-                <span className="material-icons ml-1 text-neutral-400">arrow_drop_down</span>
+                <ChevronDown className="h-4 w-4 ml-1 text-neutral-400" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => navigate("/profile")}>
-                <span className="material-icons mr-2 text-sm">person</span>
+                <User className="h-4 w-4 mr-2" />
                 Profile
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate("/settings")}>
-                <span className="material-icons mr-2 text-sm">settings</span>
+                <Settings className="h-4 w-4 mr-2" />
                 Settings
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout}>
-                <span className="material-icons mr-2 text-sm">logout</span>
+                <LogOut className="h-4 w-4 mr-2" />
                 Logout
               </DropdownMenuItem>
             </DropdownMenuContent>

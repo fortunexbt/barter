@@ -1,11 +1,21 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Loader2, MoreVertical } from "lucide-react";
+import { 
+  Loader2, 
+  MoreVertical, 
+  Bell, 
+  AlertCircle, 
+  Check, 
+  Mail, 
+  DollarSign, 
+  FileText 
+} from "lucide-react";
 import { Notification } from "@shared/schema";
 import { Link } from "wouter";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
+import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,14 +49,77 @@ const NotificationItem = ({ notification }: NotificationItemProps) => {
     },
   });
 
-  const createdAtDate = new Date(notification.createdAt);
+  const createdAtDate = notification.createdAt ? new Date(notification.createdAt) : new Date();
   const timeAgo = formatDistanceToNow(createdAtDate, { addSuffix: true });
 
+  // Helper function to get the icon based on the notification type
+  const getNotificationIcon = () => {
+    const iconType = notification.icon || notification.type;
+    switch (iconType) {
+      case 'notification':
+      case 'Bell':
+        return <Bell className="h-4 w-4" />;
+      case 'alert':
+      case 'AlertCircle':
+        return <AlertCircle className="h-4 w-4" />;
+      case 'success':
+      case 'Check':
+        return <Check className="h-4 w-4" />;
+      case 'message':
+      case 'Mail':
+        return <Mail className="h-4 w-4" />;
+      case 'payment':
+      case 'DollarSign':
+        return <DollarSign className="h-4 w-4" />;
+      case 'contract':
+      case 'FileText':
+        return <FileText className="h-4 w-4" />;
+      default:
+        return <Bell className="h-4 w-4" />;
+    }
+  };
+
+  // Helper function to get the background color
+  const getBgColor = () => {
+    const iconBg = notification.iconBg || 'primary';
+    switch (iconBg) {
+      case 'primary': return 'bg-primary/10';
+      case 'secondary': return 'bg-blue-100';
+      case 'success': return 'bg-green-100';
+      case 'warning': return 'bg-amber-100';
+      case 'error': return 'bg-red-100';
+      case 'info': return 'bg-sky-100';
+      default: return 'bg-primary/10';
+    }
+  };
+
+  // Helper function to get the text color
+  const getTextColor = () => {
+    const iconBg = notification.iconBg || 'primary';
+    switch (iconBg) {
+      case 'primary': return 'text-primary';
+      case 'secondary': return 'text-blue-600';
+      case 'success': return 'text-green-600';
+      case 'warning': return 'text-amber-600';
+      case 'error': return 'text-red-600';
+      case 'info': return 'text-sky-600';
+      default: return 'text-primary';
+    }
+  };
+
   return (
-    <div className={`flex items-start py-2 border-b border-neutral-200 last:border-0 ${notification.read ? 'opacity-60' : ''}`}>
+    <div className={cn(
+      "flex items-start py-2 border-b border-neutral-200 last:border-0",
+      notification.read ? 'opacity-60' : ''
+    )}>
       <div className="flex-shrink-0 mr-3">
-        <div className={`w-8 h-8 bg-${notification.iconBg} bg-opacity-10 rounded-full flex items-center justify-center`}>
-          <span className={`material-icons text-${notification.iconBg} text-sm`}>{notification.icon}</span>
+        <div className={cn(
+          "w-8 h-8 rounded-full flex items-center justify-center",
+          getBgColor()
+        )}>
+          <div className={getTextColor()}>
+            {getNotificationIcon()}
+          </div>
         </div>
       </div>
       <div className="flex-1 min-w-0">
