@@ -1,21 +1,24 @@
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Loader2, ArrowRight, Box, Barcode, Package, Truck, Wheat, Droplet, Gem } from "lucide-react";
 import { Commodity } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
+import { cn } from "@/lib/utils";
 
 interface CommodityRowProps {
   commodity: Commodity;
 }
 
 const CommodityRow = ({ commodity }: CommodityRowProps) => {
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string | null) => {
+    if (!status) return "bg-neutral-200 text-neutral-500";
+    
     switch (status) {
       case "available":
-        return "bg-success bg-opacity-10 text-success";
+        return "bg-green-100 text-green-600";
       case "bidding":
-        return "bg-info bg-opacity-10 text-info";
+        return "bg-sky-100 text-sky-600";
       case "sold":
         return "bg-neutral-200 text-neutral-500";
       default:
@@ -23,12 +26,75 @@ const CommodityRow = ({ commodity }: CommodityRowProps) => {
     }
   };
 
+  // Helper function to get the icon based on the commodity type
+  const getCommodityIcon = () => {
+    const iconType = commodity.icon || '';
+    switch (iconType) {
+      case 'Box':
+      case 'box':
+        return <Box className="h-4 w-4" />;
+      case 'Barcode':
+      case 'barcode':
+        return <Barcode className="h-4 w-4" />;
+      case 'Package':
+      case 'package':
+        return <Package className="h-4 w-4" />;
+      case 'Truck':
+      case 'truck':
+        return <Truck className="h-4 w-4" />;
+      case 'Wheat':
+      case 'wheat':
+        return <Wheat className="h-4 w-4" />;
+      case 'Droplet':
+      case 'droplet':
+        return <Droplet className="h-4 w-4" />;
+      case 'Gem':
+      case 'gem':
+        return <Gem className="h-4 w-4" />;
+      default:
+        return <Box className="h-4 w-4" />;
+    }
+  };
+
+  // Helper function to get the background color class
+  const getBgColorClass = () => {
+    const iconBg = commodity.iconBg || 'primary';
+    switch (iconBg) {
+      case 'primary': return 'bg-primary/10';
+      case 'secondary': return 'bg-blue-100';
+      case 'success': return 'bg-green-100';
+      case 'warning': return 'bg-amber-100';
+      case 'error': return 'bg-red-100';
+      case 'info': return 'bg-sky-100';
+      default: return 'bg-primary/10';
+    }
+  };
+
+  // Helper function to get the text color class
+  const getTextColorClass = () => {
+    const iconBg = commodity.iconBg || 'primary';
+    switch (iconBg) {
+      case 'primary': return 'text-primary';
+      case 'secondary': return 'text-blue-600';
+      case 'success': return 'text-green-600';
+      case 'warning': return 'text-amber-600';
+      case 'error': return 'text-red-600';
+      case 'info': return 'text-sky-600';
+      default: return 'text-primary';
+    }
+  };
+
   return (
     <tr className="hover:bg-neutral-50">
       <td className="px-6 py-4 whitespace-nowrap">
         <div className="flex items-center">
-          <div className={`flex-shrink-0 w-8 h-8 bg-${commodity.iconBg} bg-opacity-10 rounded-full flex items-center justify-center`}>
-            <span className={`material-icons text-${commodity.iconBg} text-sm`}>{commodity.icon}</span>
+          <div className={cn(
+            "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center",
+            getBgColorClass()
+          )}>
+            <div className={getTextColorClass()}>
+              {getCommodityIcon()}
+            </div>
           </div>
           <div className="ml-4">
             <div className="text-sm font-medium text-neutral-600">{commodity.name}</div>
@@ -44,7 +110,9 @@ const CommodityRow = ({ commodity }: CommodityRowProps) => {
       </td>
       <td className="px-6 py-4 whitespace-nowrap">
         <Badge variant="outline" className={getStatusColor(commodity.status)}>
-          {commodity.status.charAt(0).toUpperCase() + commodity.status.slice(1)}
+          {commodity.status 
+            ? commodity.status.charAt(0).toUpperCase() + commodity.status.slice(1)
+            : "Unknown"}
         </Badge>
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600">
@@ -74,9 +142,9 @@ export default function MarketplaceWidget() {
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-neutral-600">Recent Marketplace</h3>
           <Link href="/marketplace">
-            <a className="text-primary text-sm font-medium flex items-center">
-              View All <span className="material-icons ml-1 text-sm">arrow_forward</span>
-            </a>
+            <Button variant="link" className="text-primary text-sm p-0 h-auto font-medium flex items-center">
+              View All <ArrowRight className="ml-1 h-4 w-4" />
+            </Button>
           </Link>
         </div>
       </div>
