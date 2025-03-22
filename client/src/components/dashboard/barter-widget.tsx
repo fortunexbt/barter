@@ -1,8 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { 
+  Loader2, 
+  ArrowRight, 
+  RefreshCw, 
+  Plus,
+  XCircle
+} from "lucide-react";
 import { BarterOffer } from "@shared/schema";
 import { Link } from "wouter";
+import { cn } from "@/lib/utils";
 
 interface BarterOpportunityProps {
   offer: BarterOffer;
@@ -20,8 +27,8 @@ const BarterOpportunity = ({ offer }: BarterOpportunityProps) => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between">
         <div className="flex-1">
           <div className="flex items-center">
-            <div className="bg-secondary bg-opacity-10 p-2 rounded-full">
-              <span className="material-icons text-secondary">swap_horiz</span>
+            <div className="bg-blue-100 p-2 rounded-full">
+              <RefreshCw className="h-4 w-4 text-blue-600" />
             </div>
             <h4 className="ml-3 text-sm font-medium text-neutral-600">{offer.title}</h4>
           </div>
@@ -45,8 +52,9 @@ const BarterOpportunity = ({ offer }: BarterOpportunityProps) => {
           <Button 
             size="sm" 
             variant="outline" 
-            className="border-neutral-300 text-neutral-600 text-xs font-medium rounded hover:bg-neutral-100"
+            className="border-neutral-300 text-neutral-600 text-xs font-medium rounded hover:bg-neutral-100 flex items-center"
           >
+            <XCircle className="h-3.5 w-3.5 mr-1" />
             Dismiss
           </Button>
         </div>
@@ -73,9 +81,9 @@ export default function BarterWidget() {
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-neutral-600">Barter Opportunities</h3>
           <Link href="/barter">
-            <a className="text-primary text-sm font-medium flex items-center">
-              View All <span className="material-icons ml-1 text-sm">arrow_forward</span>
-            </a>
+            <Button variant="link" className="text-primary text-sm p-0 h-auto font-medium flex items-center">
+              View All <ArrowRight className="ml-1 h-4 w-4" />
+            </Button>
           </Link>
         </div>
       </div>
@@ -105,9 +113,9 @@ export default function BarterWidget() {
       <div className="px-6 py-4 bg-neutral-50 border-t border-neutral-200 rounded-b-lg">
         <Link href="/barter/new">
           <Button 
-            className="w-full px-4 py-2 bg-secondary text-white text-sm font-medium rounded flex items-center justify-center hover:bg-secondary-dark"
+            className="w-full px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded flex items-center justify-center hover:bg-blue-700"
           >
-            <span className="material-icons mr-2">add</span>
+            <Plus className="h-4 w-4 mr-2" />
             Create New Barter Offer
           </Button>
         </Link>
