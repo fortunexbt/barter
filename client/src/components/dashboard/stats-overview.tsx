@@ -1,19 +1,32 @@
 import { useQuery } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { 
+  Loader2, 
+  DollarSign, 
+  RefreshCw, 
+  FileText, 
+  CheckCheck,
+  AreaChart,
+  BarChart2,
+  Wallet
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface StatCardProps {
-  icon: string;
-  iconColor: string;
+  icon: React.ReactNode;
+  bgColor: string;
+  textColor: string;
   label: string;
   value: number | string;
 }
 
-const StatCard = ({ icon, iconColor, label, value }: StatCardProps) => {
+const StatCard = ({ icon, bgColor, textColor, label, value }: StatCardProps) => {
   return (
     <div className="bg-white rounded-lg shadow p-5 transition-all hover:shadow-md hover:-translate-y-1 duration-200">
       <div className="flex items-center">
-        <div className={`bg-${iconColor} bg-opacity-10 p-3 rounded-full`}>
-          <span className={`material-icons text-${iconColor}`}>{icon}</span>
+        <div className={cn("p-3 rounded-full", bgColor)}>
+          <div className={cn("w-5 h-5", textColor)}>
+            {icon}
+          </div>
         </div>
         <div className="ml-3">
           <p className="text-sm font-medium text-neutral-500">{label}</p>
@@ -67,10 +80,34 @@ export default function StatsOverview() {
   }
 
   const stats = [
-    { icon: "attach_money", iconColor: "primary", label: "Active Trades", value: data.activeTrades },
-    { icon: "swap_horiz", iconColor: "secondary", label: "Barter Offers", value: data.barterOffers },
-    { icon: "description", iconColor: "accent", label: "Pending Contracts", value: data.pendingContracts },
-    { icon: "done_all", iconColor: "success", label: "Completed", value: data.completed }
+    { 
+      icon: <DollarSign className="w-full h-full" />, 
+      bgColor: "bg-primary/10", 
+      textColor: "text-primary", 
+      label: "Active Trades", 
+      value: data.activeTrades 
+    },
+    { 
+      icon: <RefreshCw className="w-full h-full" />, 
+      bgColor: "bg-blue-100", 
+      textColor: "text-blue-600", 
+      label: "Barter Offers", 
+      value: data.barterOffers 
+    },
+    { 
+      icon: <FileText className="w-full h-full" />, 
+      bgColor: "bg-amber-100", 
+      textColor: "text-amber-600", 
+      label: "Pending Contracts", 
+      value: data.pendingContracts 
+    },
+    { 
+      icon: <CheckCheck className="w-full h-full" />, 
+      bgColor: "bg-green-100", 
+      textColor: "text-green-600", 
+      label: "Completed", 
+      value: data.completed 
+    }
   ];
 
   return (
@@ -79,7 +116,8 @@ export default function StatsOverview() {
         <StatCard
           key={index}
           icon={stat.icon}
-          iconColor={stat.iconColor}
+          bgColor={stat.bgColor}
+          textColor={stat.textColor}
           label={stat.label}
           value={stat.value}
         />
