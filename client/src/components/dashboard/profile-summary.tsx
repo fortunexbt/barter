@@ -2,6 +2,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { format } from "date-fns";
+import { CheckCircle, Clock, User, BadgeCheck } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function ProfileSummary() {
   const { user } = useAuth();
@@ -39,14 +41,16 @@ export default function ProfileSummary() {
             <h4 className="text-sm font-medium text-neutral-600">{user.fullName}</h4>
             <p className="text-xs text-neutral-500">{user.role}</p>
             <div className="flex items-center mt-1">
-              <span className={`px-2 py-0.5 text-xs font-medium rounded-full flex items-center ${
+              <span className={cn(
+                "px-2 py-0.5 text-xs font-medium rounded-full flex items-center",
                 user.kycStatus === "verified" 
-                  ? "bg-success bg-opacity-10 text-success" 
-                  : "bg-warning bg-opacity-10 text-warning"
-              }`}>
-                <span className="material-icons text-xs mr-1">
-                  {user.kycStatus === "verified" ? "verified" : "pending"}
-                </span>
+                  ? "bg-green-100 text-green-600" 
+                  : "bg-amber-100 text-amber-600"
+              )}>
+                {user.kycStatus === "verified" 
+                  ? <BadgeCheck className="h-3 w-3 mr-1" /> 
+                  : <Clock className="h-3 w-3 mr-1" />
+                }
                 {user.kycStatus === "verified" ? "Verified" : "Pending"}
               </span>
             </div>
@@ -56,10 +60,13 @@ export default function ProfileSummary() {
         <div className="space-y-3 mb-4">
           <div className="flex justify-between items-center">
             <span className="text-xs text-neutral-500">KYC Status</span>
-            <span className={`text-xs font-medium ${
-              user.kycStatus === "verified" ? "text-success" : "text-warning"
-            }`}>
-              {user.kycStatus === "verified" ? "Complete" : "Pending"}
+            <span className={cn("text-xs font-medium flex items-center", 
+              user.kycStatus === "verified" ? "text-green-600" : "text-amber-600"
+            )}>
+              {user.kycStatus === "verified" 
+                ? <><CheckCircle className="h-3 w-3 mr-1" />Complete</>
+                : <><Clock className="h-3 w-3 mr-1" />Pending</>
+              }
             </span>
           </div>
           <div className="flex justify-between items-center">
