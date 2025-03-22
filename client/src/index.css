@@ -11,3 +11,60 @@
     @apply font-sans antialiased bg-background text-foreground;
   }
 }
+
+/* Fix for tabs */
+[data-state="active"] {
+  @apply font-medium text-primary !important;
+  position: relative;
+}
+
+/* Fix tab issues with background color */
+.css-tab[data-state="active"] {
+  @apply bg-secondary/10 text-secondary !important;
+}
+
+/* Fix for Material icons */
+.material-icons {
+  font-family: 'Material Icons';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Improved card and button styles */
+.card {
+  @apply shadow-sm hover:shadow-md transition-shadow duration-200;
+}
+
+.btn-primary {
+  @apply bg-primary text-white hover:bg-primary/90 transition-colors;
+}
+
+.btn-secondary {
+  @apply bg-secondary text-white hover:bg-secondary/90 transition-colors;
+}
+
+/* Status badge colors */
+.status-badge-success {
+  @apply bg-green-100 text-green-800;
+}
+
+.status-badge-warning {
+  @apply bg-amber-100 text-amber-800;
+}
+
+.status-badge-error {
+  @apply bg-red-100 text-red-800;
+}
+
+.status-badge-info {
+  @apply bg-blue-100 text-blue-800;
+}
