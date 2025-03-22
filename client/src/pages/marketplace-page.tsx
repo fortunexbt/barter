@@ -4,7 +4,18 @@ import AppShell from "@/components/layout/app-shell";
 import { Commodity } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Filter, Plus } from "lucide-react";
+import { 
+  Loader2, 
+  Filter, 
+  Plus, 
+  Search, 
+  Package, 
+  Leaf, 
+  Droplets, 
+  Wheat, 
+  Banana,
+  GrainIcon 
+} from "lucide-react";
 import { 
   Card,
   CardContent
@@ -46,7 +57,7 @@ export default function MarketplacePage() {
       
       const matchesStatus = 
         statusFilter === "all" || 
-        commodity.status === statusFilter;
+        (commodity.status && commodity.status === statusFilter);
       
       return matchesSearch && matchesStatus;
     });
@@ -94,7 +105,7 @@ export default function MarketplacePage() {
               className="pl-10"
             />
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <span className="material-icons text-neutral-400 text-sm">search</span>
+              <Search className="h-4 w-4 text-neutral-400" />
             </div>
           </div>
           
@@ -143,8 +154,11 @@ export default function MarketplacePage() {
                       <div className="ml-4 flex-1">
                         <div className="flex items-center justify-between">
                           <h3 className="text-lg font-medium text-neutral-800">{commodity.name}</h3>
-                          <Badge variant="outline" className={getStatusColor(commodity.status)}>
-                            {commodity.status.charAt(0).toUpperCase() + commodity.status.slice(1)}
+                          <Badge variant="outline" className={getStatusColor(commodity.status || "unknown")}>
+                            {commodity.status 
+                              ? commodity.status.charAt(0).toUpperCase() + commodity.status.slice(1) 
+                              : "Unknown"
+                            }
                           </Badge>
                         </div>
                         <p className="text-sm text-neutral-500">{commodity.grade}</p>
