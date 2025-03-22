@@ -1,21 +1,31 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
+import { 
+  PlusSquare,
+  RefreshCw,
+  Wallet,
+  Clock,
+  ListPlus
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface QuickActionProps {
-  icon: string;
+  icon: React.ReactNode;
   label: string;
   to: string;
-  iconColor?: string;
+  textColor?: string;
 }
 
-const QuickAction = ({ icon, label, to, iconColor = "primary" }: QuickActionProps) => {
+const QuickAction = ({ icon, label, to, textColor = "text-primary" }: QuickActionProps) => {
   return (
     <Link href={to}>
       <Button 
         variant="outline" 
         className="flex flex-col items-center justify-center p-3 h-auto w-full border-neutral-200 hover:bg-neutral-50"
       >
-        <span className={`material-icons text-${iconColor}`}>{icon}</span>
+        <div className={cn("w-5 h-5", textColor)}>
+          {icon}
+        </div>
         <span className="mt-1 text-xs font-medium text-neutral-600">{label}</span>
       </Button>
     </Link>
@@ -24,10 +34,30 @@ const QuickAction = ({ icon, label, to, iconColor = "primary" }: QuickActionProp
 
 export default function QuickActions() {
   const actions = [
-    { icon: "playlist_add", label: "New Listing", to: "/marketplace/new", iconColor: "primary" },
-    { icon: "swap_horiz", label: "New Barter", to: "/barter/new", iconColor: "secondary" },
-    { icon: "paid", label: "Add Funds", to: "/profile/funds", iconColor: "accent" },
-    { icon: "history", label: "History", to: "/transactions", iconColor: "info" },
+    { 
+      icon: <ListPlus className="w-full h-full" />, 
+      label: "New Listing", 
+      to: "/marketplace/new", 
+      textColor: "text-primary" 
+    },
+    { 
+      icon: <RefreshCw className="w-full h-full" />, 
+      label: "New Barter", 
+      to: "/barter/new", 
+      textColor: "text-blue-600" 
+    },
+    { 
+      icon: <Wallet className="w-full h-full" />, 
+      label: "Add Funds", 
+      to: "/profile/funds", 
+      textColor: "text-amber-600" 
+    },
+    { 
+      icon: <Clock className="w-full h-full" />, 
+      label: "History", 
+      to: "/transactions", 
+      textColor: "text-sky-600" 
+    },
   ];
 
   return (
@@ -44,7 +74,7 @@ export default function QuickActions() {
               icon={action.icon}
               label={action.label}
               to={action.to}
-              iconColor={action.iconColor}
+              textColor={action.textColor}
             />
           ))}
         </div>
