@@ -40,11 +40,6 @@ export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
   const [activeTab, setActiveTab] = useState<string>("login");
 
-  // Redirect if user is already logged in
-  if (user) {
-    return <Redirect to="/" />;
-  }
-
   const loginForm = useForm<LoginData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -66,11 +61,17 @@ export default function AuthPage() {
       profileImage: "",
     },
   });
+  
+  // Redirect if user is already logged in
+  if (user) {
+    return <Redirect to="/" />;
+  }
 
   const onLoginSubmit = (data: LoginData) => {
     loginMutation.mutate(data, {
       onSuccess: () => {
-        navigate("/");
+        // This will delay navigation slightly to allow React Query to update properly
+        setTimeout(() => navigate("/"), 50);
       }
     });
   };
@@ -79,7 +80,8 @@ export default function AuthPage() {
     const { confirmPassword, ...registerData } = data;
     registerMutation.mutate(registerData, {
       onSuccess: () => {
-        navigate("/");
+        // This will delay navigation slightly to allow React Query to update properly
+        setTimeout(() => navigate("/"), 50);
       }
     });
   };
@@ -252,7 +254,20 @@ export default function AuthPage() {
                           <FormItem>
                             <FormLabel>Role</FormLabel>
                             <FormControl>
-                              <Input placeholder="Commodity Trader" {...field} />
+                              <Select 
+                                onValueChange={field.onChange} 
+                                defaultValue={field.value as string}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select your role" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="trader">Commodity Trader</SelectItem>
+                                  <SelectItem value="broker">Broker</SelectItem>
+                                  <SelectItem value="producer">Producer</SelectItem>
+                                  <SelectItem value="buyer">Buyer</SelectItem>
+                                </SelectContent>
+                              </Select>
                             </FormControl>
                             <FormDescription>
                               Your role in the trading ecosystem
