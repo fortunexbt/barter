@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { ReactNode } from "react";
 import AppShell from "@/components/layout/app-shell";
 import { Commodity } from "@shared/schema";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,9 @@ import {
   Droplets, 
   Wheat, 
   Banana,
-  GrainIcon 
+  Gem,
+  Fuel,
+  Tractor
 } from "lucide-react";
 import { 
   Card,
@@ -31,6 +34,35 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Link } from "wouter";
+
+const getCommodityIcon = (iconName: string | null): ReactNode => {
+  if (!iconName) return <Package size={20} />;
+  
+  switch (iconName.toLowerCase()) {
+    case "agriculture":
+    case "wheat":
+      return <Wheat size={20} />;
+    case "water":
+    case "droplet":
+      return <Droplets size={20} />;
+    case "energy":
+    case "fuel":
+      return <Fuel size={20} />;
+    case "fruits":
+    case "food":
+      return <Banana size={20} />;
+    case "minerals":
+    case "gems":
+      return <Gem size={20} />;
+    case "equipment":
+      return <Tractor size={20} />;
+    case "eco":
+    case "organic":
+      return <Leaf size={20} />;
+    default:
+      return <Package size={20} />;
+  }
+};
 
 export default function MarketplacePage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -148,8 +180,8 @@ export default function MarketplacePage() {
                 <Card className="cursor-pointer hover:shadow-md transition-shadow">
                   <CardContent className="p-6">
                     <div className="flex items-start">
-                      <div className={`flex-shrink-0 w-10 h-10 bg-${commodity.iconBg} bg-opacity-10 rounded-full flex items-center justify-center`}>
-                        <span className={`material-icons text-${commodity.iconBg}`}>{commodity.icon}</span>
+                      <div className={`flex-shrink-0 w-10 h-10 bg-${commodity.iconBg || "neutral"}-100 rounded-full flex items-center justify-center text-${commodity.iconBg || "neutral"}-600`}>
+                        {getCommodityIcon(commodity.icon)}
                       </div>
                       <div className="ml-4 flex-1">
                         <div className="flex items-center justify-between">
