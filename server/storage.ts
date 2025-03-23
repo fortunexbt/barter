@@ -562,7 +562,7 @@ export class MemStorage implements IStorage {
   
   async getBarterOffersByUser(userId: number): Promise<BarterOffer[]> {
     return Array.from(this.barterOffersMap.values()).filter(
-      (offer) => offer.offeringUserId === userId || offer.requestingUserId === userId,
+      (offer) => offer.offererId === userId || offer.receiverId === userId,
     );
   }
   
