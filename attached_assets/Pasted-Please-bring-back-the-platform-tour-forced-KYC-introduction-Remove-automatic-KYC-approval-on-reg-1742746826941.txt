@@ -1,0 +1,26 @@
+Please bring back the platform tour + forced KYC introduction.
+
+Remove automatic KYC approval on registration.
+ Users should not be auto-verified anymore.
+ After user registration, show a popup/modal: “👋 Welcome to BarterTrade! To start trading, please complete your KYC verification.” Include a single button: “Begin KYC Process”, which redirects to the Profile > KYC tab.
+ On the KYC page: • Let users upload a document (any file — doesn’t need to be validated). • Add placeholder text: “Upload any document to simulate KYC (passport, ID, etc.)” • Walk the user through a step-by-step ZKP verification flow, simulating the identity proof process.
+ Once KYC is submitted and ZKP proof is generated, show a gamified completion modal: “🎉 KYC Approved! You’re ready to explore BarterTrade.”
+ Include button: “Go to Marketplace”
+ Include all of the above within an extended onboarding tour system: • Use animated arrows, popups, and tooltips. • Guide the user through the full platform: Dashboard → Profile/KYC → Marketplace → My Deals • Highlight core actions like “Start a Barter”, “Review a Contract”, “Track Transactions” • Only show this on first login, but allow the user to re-trigger it later (via a “Help” or “Replay Tour” button in the UI).
+ Ensure the tour runs smoothly out of the box with no user confusion or blockers. Make the experience polished and tight — simulate functionality where needed, but focus on showcasing the full product vision clearly.
+
+
+Create an advanced admin dashboard with login/password: admin/admin.
+
+Add a “Powered by” section to the app (in the footer of login page as well as in the logged-on platform as well). Show small logos/icons horizontally with spacing. Include these technologies:
+• Semaphore (ZK identity)
+• Ethers.js (smart contracts)
+• WalletConnect (wallet integration)
+• PostgreSQL (database)
+• Vite (frontend build)
+• Lucide (icons)
+
+Also, add a (simulated) login with Yubikey and Ledger on the login page. Get rid of Rabby. Add icons/logos for all please. Work on the UI the login page, the background of the right half of the screen is too bright blue, needs to be a bit darker for contrast.
+
+
+implement an animated simulation of the marketplace, with new commodities coming in popping up
