@@ -1,16 +1,12 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/use-auth";
-import {
-  Database,
-  Server,
-  CircleCheck,
-  Shield,
-  Lock,
-  Layers,
-  ArrowLeftRight,
+import { 
+  FileCheck, 
+  Link, 
+  Loader2, 
+  Shield, 
   CheckCircle,
-  Wallet
+  Boxes,
+  ArrowLeftRight 
 } from "lucide-react";
 import { 
   Dialog,
@@ -33,136 +29,125 @@ interface SmartContractModalProps {
 
 export default function SmartContractModal({ 
   isOpen, 
-  onOpenChange, 
-  contractAddress = "0x7a16ff8270133f063aab6c9977183d9e5e6e0037", 
+  onOpenChange,
+  contractAddress = "0x" + Math.random().toString(16).slice(2, 10) + Math.random().toString(16).slice(2, 10),
   type = "created",
-  commodityName = "Gold"
+  commodityName = "Commodity"
 }: SmartContractModalProps) {
-  const { user } = useAuth();
   const [step, setStep] = useState(0);
-  const [animationProgress, setAnimationProgress] = useState(0);
+  const [progress, setProgress] = useState(0);
+  const [isComplete, setIsComplete] = useState(false);
   
-  // Reset the animation whenever the modal opens
+  // Start the animation sequence when modal opens
   useEffect(() => {
     if (isOpen) {
       setStep(0);
-      setAnimationProgress(0);
+      setProgress(0);
+      setIsComplete(false);
       
-      // Start the animation sequence
       const timer = setTimeout(() => {
-        animateSteps();
+        animateProcess();
       }, 500);
       
       return () => clearTimeout(timer);
     }
   }, [isOpen]);
-  
-  // Animate through the blockchain verification steps
-  const animateSteps = () => {
-    const stepDuration = 1300; // ms per step
-    const steps = type === "created" ? 4 : 5;
-    
-    for (let i = 0; i < steps; i++) {
-      setTimeout(() => {
-        setStep(i + 1);
-      }, i * stepDuration);
-      
-      // Animate progress bar
-      const progressAnimationInterval = 50; // ms per progress update
-      const progressSteps = stepDuration / progressAnimationInterval;
-      
-      for (let j = 0; j < progressSteps; j++) {
-        setTimeout(() => {
-          setAnimationProgress(prev => {
-            const newProgress = (i * 100 / steps) + (j * (100 / steps) / progressSteps);
-            return Math.min(newProgress, 100);
-          });
-        }, i * stepDuration + j * progressAnimationInterval);
-      }
-    }
-  };
-  
-  // Format contract address for display
-  const formatContractAddress = (address: string) => {
-    if (!address) return '';
-    return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
-  };
-  
+
   // Generate a transaction hash
-  const getTransactionHash = () => {
+  const getTxHash = () => {
     const chars = '0123456789abcdef';
     let hash = '0x';
-    for (let i = 0; i < 64; i++) {
+    for (let i = 0; i < 16; i++) {
       hash += chars[Math.floor(Math.random() * chars.length)];
     }
     return hash;
   };
   
+  // Simulate smart contract deployment or completion
+  const animateProcess = () => {
+    const steps = type === "created" ? 3 : 4;
+    const stepDuration = 1500; // ms per step
+    
+    for (let i = 0; i < steps; i++) {
+      setTimeout(() => {
+        setStep(i + 1);
+        if (i === steps - 1) {
+          setIsComplete(true);
+        }
+      }, i * stepDuration);
+      
+      // Animate progress bar
+      const progressUpdateInterval = 50; // ms per progress update
+      const updates = stepDuration / progressUpdateInterval;
+      
+      for (let j = 0; j < updates; j++) {
+        setTimeout(() => {
+          setProgress(prev => {
+            const increment = (i * (100 / steps)) + (j * ((100 / steps) / updates));
+            return Math.min(increment, 100);
+          });
+        }, i * stepDuration + j * progressUpdateInterval);
+      }
+    }
+  };
+  
+  // Steps for contract creation and completion
   const creationSteps = [
     {
-      icon: <Database className="h-10 w-10 text-blue-500" />,
-      title: "Contract Initialization",
-      description: "Creating secure escrow contract terms"
+      icon: <Boxes className="h-8 w-8 text-blue-500" />,
+      title: "Smart Contract Initialization",
+      description: "Preparing escrow contract for your commodity exchange"
     },
     {
-      icon: <Shield className="h-10 w-10 text-indigo-500" />,
-      title: "Security Verification",
-      description: "Implementing contract security parameters"
+      icon: <Shield className="h-8 w-8 text-indigo-500" />,
+      title: "Contract Deployment",
+      description: "Deploying secure escrow smart contract to the blockchain"
     },
     {
-      icon: <Server className="h-10 w-10 text-purple-500" />,
-      title: "Blockchain Deployment",
-      description: "Deploying contract to the blockchain network"
-    },
-    {
-      icon: <CircleCheck className="h-10 w-10 text-green-500" />,
-      title: "Contract Ready",
-      description: "Smart contract successfully deployed"
+      icon: <CheckCircle className="h-8 w-8 text-green-500" />,
+      title: "Contract Created",
+      description: "Smart contract successfully deployed and ready for transactions"
     }
   ];
   
   const completionSteps = [
     {
-      icon: <Lock className="h-10 w-10 text-blue-500" />,
-      title: "Verification Initiated",
-      description: "Verifying ownership and trade parameters"
+      icon: <FileCheck className="h-8 w-8 text-blue-500" />,
+      title: "Verification Process",
+      description: "Confirming transaction details and party identities"
     },
     {
-      icon: <Wallet className="h-10 w-10 text-amber-500" />,
-      title: "Fund Release",
-      description: "Releasing funds from escrow for transaction"
+      icon: <ArrowLeftRight className="h-8 w-8 text-indigo-500" />,
+      title: "Fund Transfer",
+      description: "Processing secure transaction between parties"
     },
     {
-      icon: <Layers className="h-10 w-10 text-indigo-500" />,
-      title: "Block Confirmation",
-      description: "Awaiting blockchain confirmations"
+      icon: <Link className="h-8 w-8 text-purple-500" />,
+      title: "Blockchain Confirmation",
+      description: "Recording transaction on the distributed ledger"
     },
     {
-      icon: <ArrowLeftRight className="h-10 w-10 text-purple-500" />,
-      title: "Ownership Transfer",
-      description: "Transferring digital ownership records"
-    },
-    {
-      icon: <CheckCircle className="h-10 w-10 text-green-500" />,
+      icon: <CheckCircle className="h-8 w-8 text-green-500" />,
       title: "Transaction Complete",
-      description: "Trade successfully recorded on the blockchain"
+      description: "Contract successfully executed and assets transferred"
     }
   ];
   
-  const steps = type === "created" ? creationSteps : completionSteps;
-  const transactionHash = getTransactionHash();
+  const currentSteps = type === "created" ? creationSteps : completionSteps;
   
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {type === "created" ? "Smart Contract Created" : "Trade Completion"}
+            {type === "created" 
+              ? "Smart Contract Created" 
+              : "Smart Contract Executed"}
           </DialogTitle>
           <DialogDescription>
-            {type === "created" 
-              ? "Escrow smart contract for secure commodity trading" 
-              : "Blockchain verification of ownership transfer"}
+            {type === "created"
+              ? `Creating secure escrow smart contract for ${commodityName}`
+              : `Finalizing transaction for ${commodityName} with blockchain security`}
           </DialogDescription>
         </DialogHeader>
         
@@ -170,39 +155,50 @@ export default function SmartContractModal({
           <div className="flex items-center justify-center mb-6">
             <div className="w-full">
               <div className="flex justify-between mb-2 text-sm">
-                <span>Transaction Progress</span>
-                <span>{Math.round(animationProgress)}%</span>
+                <span>{type === "created" ? "Deployment Progress" : "Transaction Progress"}</span>
+                <span>{Math.round(progress)}%</span>
               </div>
-              <Progress value={animationProgress} className="h-2" />
+              <Progress value={progress} className="h-2" />
+            </div>
+          </div>
+          
+          {/* Transaction visualization */}
+          <div className="mb-6 flex justify-center">
+            <div className="h-24 w-24 rounded-lg bg-gradient-to-tr from-primary/10 to-primary/30 flex items-center justify-center relative overflow-hidden">
+              {isComplete ? (
+                <CheckCircle className="h-12 w-12 text-green-500 animate-pulse" />
+              ) : (
+                <Loader2 className="h-12 w-12 text-primary/70 animate-spin" />
+              )}
+              
+              {/* Animated background effect */}
+              <div className="absolute inset-0">
+                <div className={`absolute top-0 left-0 w-full h-1 bg-primary/20 transition-all duration-500 ${step >= 1 ? 'opacity-100' : 'opacity-0'}`}></div>
+                <div className={`absolute bottom-0 right-0 w-full h-1 bg-primary/20 transition-all duration-500 ${step >= 2 ? 'opacity-100' : 'opacity-0'}`}></div>
+                <div className={`absolute top-0 right-0 w-1 h-full bg-primary/20 transition-all duration-500 ${step >= 3 ? 'opacity-100' : 'opacity-0'}`}></div>
+                <div className={`absolute bottom-0 left-0 w-1 h-full bg-primary/20 transition-all duration-500 ${step >= 4 ? 'opacity-100' : 'opacity-0'}`}></div>
+              </div>
             </div>
           </div>
           
           {/* Contract details */}
-          <div className="mb-6 p-4 bg-muted rounded-lg">
-            <div className="grid grid-cols-3 gap-2 text-sm">
-              <div className="col-span-1 text-muted-foreground">Contract:</div>
-              <div className="col-span-2 font-medium text-primary">
-                {formatContractAddress(contractAddress)}
-              </div>
-              
-              <div className="col-span-1 text-muted-foreground">Commodity:</div>
-              <div className="col-span-2">{commodityName}</div>
-              
-              <div className="col-span-1 text-muted-foreground">Owner:</div>
-              <div className="col-span-2">{user?.fullName || "Unknown"}</div>
-              
-              {type === "completed" && (
-                <>
-                  <div className="col-span-1 text-muted-foreground">Transaction:</div>
-                  <div className="col-span-2 text-xs">{formatContractAddress(transactionHash)}</div>
-                </>
-              )}
+          <div className="mb-6 space-y-3 text-xs">
+            <div className="p-3 bg-muted rounded-lg font-mono">
+              <div className="mb-1 text-muted-foreground">Contract Address:</div>
+              <div className="text-primary">{contractAddress}</div>
             </div>
+            
+            {step >= 2 && (
+              <div className="p-3 bg-muted rounded-lg font-mono">
+                <div className="mb-1 text-muted-foreground">Transaction Hash:</div>
+                <div className="text-primary">{getTxHash()}</div>
+              </div>
+            )}
           </div>
           
-          {/* Steps visualization */}
-          <div className="space-y-4">
-            {steps.map((s, i) => (
+          {/* Process steps */}
+          <div className="space-y-3">
+            {currentSteps.map((s, i) => (
               <div 
                 key={i} 
                 className={`flex items-start transition-all duration-300 ${
@@ -213,8 +209,8 @@ export default function SmartContractModal({
                       : 'opacity-30'
                 }`}
               >
-                <div className="mr-4 mt-0.5">
-                  <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
+                <div className="mr-3 mt-0.5">
+                  <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
                     i < step ? 'bg-primary/20' : 'bg-muted'
                   }`}>
                     {s.icon}
@@ -222,25 +218,39 @@ export default function SmartContractModal({
                 </div>
                 <div>
                   <h4 className="text-sm font-semibold">{s.title}</h4>
-                  <p className="text-sm text-muted-foreground">{s.description}</p>
-                  
-                  {i === step - 1 && i === steps.length - 1 && (
-                    <p className="text-xs text-green-600 mt-1 font-medium">
-                      ✓ Complete
-                    </p>
-                  )}
+                  <p className="text-xs text-muted-foreground">{s.description}</p>
                 </div>
               </div>
             ))}
           </div>
+          
+          {isComplete && (
+            <div className="mt-6 rounded-lg bg-green-50 p-3 border border-green-200">
+              <div className="flex items-start">
+                <CheckCircle className="h-5 w-5 text-green-600 mr-2 mt-0.5" />
+                <div>
+                  <h4 className="text-sm font-semibold text-green-800">
+                    {type === "created" 
+                      ? "Contract Ready" 
+                      : "Transaction Successful"}
+                  </h4>
+                  <p className="text-xs text-green-700">
+                    {type === "created" 
+                      ? `Your escrow smart contract for ${commodityName} has been deployed to the blockchain. The contract is now ready to secure your transaction.`
+                      : `The transaction for ${commodityName} has been successfully verified and recorded on the blockchain. All parties have been notified.`}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
         
         <DialogFooter>
           <Button 
             onClick={() => onOpenChange(false)}
-            disabled={step < steps.length}
+            disabled={!isComplete}
           >
-            {step < steps.length ? "Processing..." : "Close"}
+            {isComplete ? "Continue" : "Processing..."}
           </Button>
         </DialogFooter>
       </DialogContent>

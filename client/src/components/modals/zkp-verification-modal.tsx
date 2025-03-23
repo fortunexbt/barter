@@ -1,14 +1,15 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "@/hooks/use-auth";
 import { 
+  Shield, 
+  User, 
   Fingerprint,
-  ShieldCheck,
-  Key,
-  BadgeCheck,
-  Eye,
-  EyeOff,
-  Users
+  CheckCircle, 
+  Loader2, 
+  Lock,
+  KeyRound
 } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { useMutation } from "@tanstack/react-query";
 import { 
   Dialog,
   DialogContent,
@@ -19,6 +20,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface ZkpVerificationModalProps {
   isOpen: boolean;
@@ -28,228 +31,295 @@ interface ZkpVerificationModalProps {
 
 export default function ZkpVerificationModal({ 
   isOpen, 
-  onOpenChange, 
-  counterpartyName = "Trading Partner"
+  onOpenChange,
+  counterpartyName = "Counterparty" 
 }: ZkpVerificationModalProps) {
   const { user } = useAuth();
-  const [step, setStep] = useState(0);
-  const [animationProgress, setAnimationProgress] = useState(0);
-  const [isVerified, setIsVerified] = useState(false);
+  const { toast } = useToast();
+  const [proof, setProof] = useState<string | null>(null);
+  const [progress, setProgress] = useState(0);
+  const [stage, setStage] = useState<"generating" | "verifying" | "complete">("generating");
   
-  // Reset the animation whenever the modal opens
   useEffect(() => {
     if (isOpen) {
-      setStep(0);
-      setAnimationProgress(0);
-      setIsVerified(false);
+      // Reset the state when the modal opens
+      setProof(null);
+      setProgress(0);
+      setStage("generating");
       
       // Start the animation sequence
       const timer = setTimeout(() => {
-        animateVerification();
+        simulateZkpGeneration();
       }, 500);
       
       return () => clearTimeout(timer);
     }
   }, [isOpen]);
   
-  // Animate through the ZKP verification steps
-  const animateVerification = () => {
-    const stepDuration = 1500; // ms per step
-    const steps = 4;
-    
-    for (let i = 0; i < steps; i++) {
-      setTimeout(() => {
-        setStep(i + 1);
-        if (i === steps - 1) {
-          setIsVerified(true);
-        }
-      }, i * stepDuration);
-      
-      // Animate progress bar
-      const progressAnimationInterval = 50; // ms per progress update
-      const progressSteps = stepDuration / progressAnimationInterval;
-      
-      for (let j = 0; j < progressSteps; j++) {
-        setTimeout(() => {
-          setAnimationProgress(prev => {
-            const newProgress = (i * 100 / steps) + (j * (100 / steps) / progressSteps);
-            return Math.min(newProgress, 100);
-          });
-        }, i * stepDuration + j * progressAnimationInterval);
-      }
-    }
-  };
-  
-  // Generate a ZKP proof hash for display
-  const getProofHash = () => {
+  // Generate a random proof string resembling a hash
+  const generateProofString = () => {
     const chars = '0123456789abcdef';
-    let hash = '0x';
-    for (let i = 0; i < 16; i++) {
-      hash += chars[Math.floor(Math.random() * chars.length)];
+    let proofStr = '';
+    for (let i = 0; i < 40; i++) {
+      proofStr += chars[Math.floor(Math.random() * chars.length)];
     }
-    return hash;
+    return proofStr;
   };
   
-  const verificationSteps = [
-    {
-      icon: <Fingerprint className="h-10 w-10 text-blue-500" />,
-      title: "Identity Challenge",
-      description: "Creating zero-knowledge identity challenge"
-    },
-    {
-      icon: <Key className="h-10 w-10 text-indigo-500" />,
-      title: "Generating Proof",
-      description: "Computing cryptographic proof"
-    },
-    {
-      icon: <ShieldCheck className="h-10 w-10 text-purple-500" />,
-      title: "Verification",
-      description: "Verifying counterparty identity without revealing data"
-    },
-    {
-      icon: <BadgeCheck className="h-10 w-10 text-green-500" />,
-      title: "Verification Complete",
-      description: "Identity verified with ZKP cryptography"
+  // Simulate ZKP generation and verification
+  const simulateZkpGeneration = () => {
+    // Stage 1: Generate proof
+    const generationTime = 3000;
+    const verificationTime = 2000;
+    
+    // Animate progress for generation stage
+    for (let i = 0; i < 50; i++) {
+      setTimeout(() => {
+        setProgress(i);
+      }, (i / 50) * generationTime);
     }
-  ];
+    
+    // Generate the proof
+    setTimeout(() => {
+      const proofString = generateProofString();
+      setProof(proofString);
+      setStage("verifying");
+      
+      // Stage 2: Verify proof
+      for (let i = 50; i <= 100; i++) {
+        setTimeout(() => {
+          setProgress(i);
+          if (i === 100) {
+            setStage("complete");
+          }
+        }, ((i - 50) / 50) * verificationTime);
+      }
+    }, generationTime);
+  };
+  
+  // Submit the verification to the backend
+  const submitVerificationMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/zkp/verify", { 
+        userId: user?.id,
+        proofData: proof
+      });
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      toast({
+        title: "Identity Verified",
+        description: "Your identity has been verified using zero-knowledge proof.",
+        variant: "default",
+      });
+      onOpenChange(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Verification Error",
+        description: error.message || "There was an error verifying your identity.",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  const handleComplete = () => {
+    if (stage === "complete") {
+      submitVerificationMutation.mutate();
+    } else {
+      onOpenChange(false);
+    }
+  };
+  
+  // Generate points for the animated connection lines
+  const generatePoints = (count: number, seed: number): { x: number, y: number }[] => {
+    const points: { x: number, y: number }[] = [];
+    for (let i = 0; i < count; i++) {
+      points.push({
+        x: 10 + (i * seed) % 80,
+        y: 10 + ((i * seed * 1.5) % 80)
+      });
+    }
+    return points;
+  };
+  
+  const points1 = generatePoints(5, 7);
+  const points2 = generatePoints(6, 11);
   
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Zero-Knowledge Verification</DialogTitle>
+          <DialogTitle>Zero-Knowledge Identity Verification</DialogTitle>
           <DialogDescription>
-            Verify counterparty identity without revealing sensitive information
+            Verifying your identity without sharing sensitive information
           </DialogDescription>
         </DialogHeader>
         
         <div className="py-4">
-          <div className="flex items-center justify-center mb-6">
+          <div className="flex items-center mb-6">
             <div className="w-full">
               <div className="flex justify-between mb-2 text-sm">
-                <span>Verification Progress</span>
-                <span>{Math.round(animationProgress)}%</span>
+                <span>{stage === "generating" ? "Generating Proof" : stage === "verifying" ? "Verifying Identity" : "Verification Complete"}</span>
+                <span>{Math.round(progress)}%</span>
               </div>
-              <Progress value={animationProgress} className="h-2" />
+              <Progress value={progress} className="h-2" />
             </div>
           </div>
           
-          {/* Verification visualization */}
-          <div className="mb-6 flex items-center justify-center">
-            <div className="relative">
-              <div className="h-32 w-32 rounded-full bg-primary/10 flex items-center justify-center">
-                <div className="h-24 w-24 rounded-full bg-primary/20 flex items-center justify-center">
-                  <div className={`h-20 w-20 rounded-full ${isVerified ? 'bg-green-100' : 'bg-blue-100'} flex items-center justify-center transition-all duration-500`}>
-                    {isVerified ? (
-                      <BadgeCheck className="h-10 w-10 text-green-600" />
-                    ) : (
-                      <Users className="h-10 w-10 text-blue-600" />
-                    )}
-                  </div>
-                </div>
+          {/* ZKP Visualization */}
+          <div className="mb-8 flex justify-center">
+            <div className="relative h-52 w-full max-w-52 bg-muted/10 rounded-lg p-4 overflow-hidden">
+              {/* User's identity representation */}
+              <div className="absolute left-4 top-4 h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center z-10">
+                <User className="h-6 w-6 text-blue-500" />
               </div>
               
-              {/* User avatar */}
-              <div className="absolute -bottom-4 -left-4 h-14 w-14 rounded-full bg-gray-100 border-2 border-white shadow-md flex items-center justify-center">
-                {user?.profileImage ? (
-                  <img 
-                    src={user.profileImage} 
-                    alt={user.fullName || "User"} 
-                    className="w-full h-full object-cover rounded-full"
-                  />
+              {/* Counterparty representation */}
+              <div className="absolute right-4 bottom-4 h-12 w-12 rounded-full bg-violet-100 flex items-center justify-center z-10">
+                <Shield className="h-6 w-6 text-violet-500" />
+              </div>
+              
+              {/* ZKP representation */}
+              <div className="absolute left-1/2 top-1/2 h-16 w-16 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/10 flex items-center justify-center z-20 shadow-lg">
+                {stage === "generating" ? (
+                  <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                ) : stage === "verifying" ? (
+                  <Lock className="h-8 w-8 text-primary animate-pulse" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-500 text-lg font-medium rounded-full bg-gray-200">
-                    {user?.fullName?.charAt(0) || 'U'}
-                  </div>
+                  <CheckCircle className="h-8 w-8 text-green-500" />
                 )}
               </div>
               
-              {/* Counterparty avatar */}
-              <div className="absolute -top-4 -right-4 h-14 w-14 rounded-full bg-gray-100 border-2 border-white shadow-md flex items-center justify-center">
-                <div className="w-full h-full flex items-center justify-center text-gray-500 text-lg font-medium rounded-full bg-gray-200">
-                  {counterpartyName.charAt(0)}
-                </div>
+              {/* Connection lines (animated based on the stage) */}
+              <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100">
+                {/* User to ZKP lines */}
+                {points1.map((point, i) => (
+                  <g key={`line1-${i}`} className={`transition-opacity duration-300 ${stage === "generating" ? 'opacity-100' : 'opacity-30'}`}>
+                    <line 
+                      x1="10" y1="10" 
+                      x2={stage === "generating" ? 50 - ((progress / 100) * 20) : 30}
+                      y2={point.y + (stage === "generating" ? (progress / 100) * 10 : 10)}
+                      stroke="rgba(59, 130, 246, 0.5)" 
+                      strokeWidth="0.5"
+                      strokeDasharray="1,1"
+                      className={`${stage === "generating" && progress > 20 ? 'animate-pulse' : ''}`}
+                    />
+                    <circle 
+                      cx={stage === "generating" ? (10 + (progress / 100) * 40) : 50}
+                      cy={point.y} 
+                      r="0.8" 
+                      fill="rgba(59, 130, 246, 0.8)" 
+                      className={`${stage === "generating" && progress > i * 10 ? 'animate-ping' : 'opacity-0'}`}
+                    />
+                  </g>
+                ))}
+                
+                {/* ZKP to Counterparty lines */}
+                {points2.map((point, i) => (
+                  <g key={`line2-${i}`} className={`transition-opacity duration-300 ${stage === "verifying" ? 'opacity-100' : 'opacity-30'}`}>
+                    <line 
+                      x1="50" y1="50" 
+                      x2={stage === "verifying" ? 90 - ((1 - ((progress - 50) / 50)) * 20) : 70}
+                      y2={point.y + (stage === "verifying" ? ((progress - 50) / 50) * 10 : 10)}
+                      stroke="rgba(124, 58, 237, 0.5)" 
+                      strokeWidth="0.5"
+                      strokeDasharray="1,1"
+                      className={`${stage === "verifying" && progress > 70 ? 'animate-pulse' : ''}`}
+                    />
+                    <circle 
+                      cx={stage === "verifying" ? (50 + ((progress - 50) / 50) * 40) : 50}
+                      cy={point.y} 
+                      r="0.8" 
+                      fill="rgba(124, 58, 237, 0.8)" 
+                      className={`${stage === "verifying" && progress > 50 + i * 8 ? 'animate-ping' : 'opacity-0'}`}
+                    />
+                  </g>
+                ))}
+                
+                {/* Base connection line */}
+                <path 
+                  d="M 10,10 C 30,30 70,30 90,90" 
+                  fill="none" 
+                  stroke="rgba(99, 102, 241, 0.2)" 
+                  strokeWidth="1" 
+                />
+              </svg>
+              
+              {/* Message bubbles */}
+              <div className={`absolute left-0 top-20 p-2 bg-white rounded shadow-sm text-xs max-w-28 transform transition-all duration-500 ${
+                stage === "generating" && progress > 20 
+                  ? 'translate-x-2 opacity-100' 
+                  : '-translate-x-10 opacity-0'
+              }`}>
+                <p className="font-semibold">Generating Proof</p>
+                <p className="text-muted-foreground">Creating identity signature...</p>
               </div>
               
-              {/* ZKP visual effect */}
-              <div className="absolute inset-0 rounded-full">
-                <div className={`absolute inset-0 rounded-full transition-opacity duration-500 ${step >= 2 ? 'opacity-100' : 'opacity-0'}`}>
-                  <div className="animate-ping absolute inset-0 rounded-full bg-primary/20 animate-[ping_4s_ease-out_infinite]"></div>
-                </div>
-                <div className={`absolute inset-0 rounded-full transition-opacity duration-500 ${step >= 3 ? 'opacity-100' : 'opacity-0'}`}>
-                  <div className="animate-ping absolute inset-0 rounded-full bg-primary/10 animate-[ping_3s_ease-out_infinite]"></div>
-                </div>
-              </div>
-              
-              {/* Privacy indicator */}
-              <div className={`absolute bottom-0 right-0 h-8 w-8 rounded-full bg-white shadow flex items-center justify-center transition-all duration-500 ${step >= 2 ? 'opacity-100' : 'opacity-0'}`}>
-                {step >= 3 ? (
-                  <EyeOff className="h-5 w-5 text-green-600" />
-                ) : (
-                  <Eye className="h-5 w-5 text-blue-500" />
-                )}
+              <div className={`absolute right-0 bottom-20 p-2 bg-white rounded shadow-sm text-xs max-w-28 transform transition-all duration-500 ${
+                stage === "verifying" && progress > 75 
+                  ? '-translate-x-2 opacity-100' 
+                  : 'translate-x-10 opacity-0'
+              }`}>
+                <p className="font-semibold">Verifying Identity</p>
+                <p className="text-muted-foreground">Confirming without exposing data...</p>
               </div>
             </div>
           </div>
           
-          {/* Proof details */}
-          {step >= 2 && (
-            <div className="mb-6 p-3 bg-muted rounded-lg text-xs font-mono transition-all duration-300">
-              <div className="mb-1 text-muted-foreground">Proof hash:</div>
-              <div className="text-primary">{getProofHash()}</div>
+          {/* Generated proof display */}
+          {proof && (
+            <div className="mb-4">
+              <div className="text-xs text-muted-foreground mb-1">Generated Zero-Knowledge Proof:</div>
+              <div className="p-2 bg-muted font-mono text-xs rounded-md break-all">
+                {proof}
+              </div>
             </div>
           )}
           
-          {/* Steps visualization */}
-          <div className="space-y-3">
-            {verificationSteps.map((s, i) => (
-              <div 
-                key={i} 
-                className={`flex items-start transition-all duration-300 ${
-                  i < step 
-                    ? 'opacity-100' 
-                    : i === step 
-                      ? 'opacity-100 animate-pulse' 
-                      : 'opacity-30'
-                }`}
-              >
-                <div className="mr-3 mt-0.5">
-                  <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
-                    i < step ? 'bg-primary/20' : 'bg-muted'
-                  }`}>
-                    {s.icon}
+          {/* Explanation of ZKP */}
+          <div className="space-y-3 text-sm">
+            <h4 className="font-medium flex items-center gap-2">
+              <KeyRound className="h-4 w-4 text-primary/70" /> How Zero-Knowledge Proofs Work
+            </h4>
+            <p className="text-muted-foreground text-xs">
+              Zero-knowledge proofs allow you to prove your identity to {counterpartyName} without 
+              sharing personal information. This cryptographic technique verifies you've been KYC-approved 
+              without exposing your identity documents.
+            </p>
+            
+            {stage === "complete" && (
+              <div className="mt-4 rounded-lg bg-green-50 p-3 border border-green-200">
+                <div className="flex items-start">
+                  <CheckCircle className="h-5 w-5 text-green-600 mr-2 mt-0.5" />
+                  <div>
+                    <h4 className="text-sm font-semibold text-green-800">Verification Successful</h4>
+                    <p className="text-xs text-green-700">
+                      Your identity has been cryptographically verified with {counterpartyName}. You can now proceed with the transaction securely.
+                    </p>
                   </div>
                 </div>
-                <div>
-                  <h4 className="text-sm font-semibold">{s.title}</h4>
-                  <p className="text-xs text-muted-foreground">{s.description}</p>
-                </div>
               </div>
-            ))}
+            )}
           </div>
-          
-          {isVerified && (
-            <div className="mt-6 rounded-lg bg-green-50 p-3 border border-green-200">
-              <div className="flex items-start">
-                <BadgeCheck className="h-5 w-5 text-green-600 mr-2 mt-0.5" />
-                <div>
-                  <h4 className="text-sm font-semibold text-green-800">Verified Trading Partner</h4>
-                  <p className="text-xs text-green-700">
-                    The identity of {counterpartyName} has been verified using zero-knowledge proofs.
-                    You can now safely proceed with the transaction.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
         
         <DialogFooter>
           <Button 
-            onClick={() => onOpenChange(false)}
-            disabled={!isVerified}
+            onClick={handleComplete}
+            disabled={stage !== "complete" || submitVerificationMutation.isPending}
           >
-            {isVerified ? "Continue" : "Verifying..."}
+            {submitVerificationMutation.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Processing...
+              </>
+            ) : stage === "complete" ? (
+              "Complete Verification"
+            ) : (
+              "Cancel"
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

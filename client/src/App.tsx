@@ -13,6 +13,7 @@ import ContractsPage from "@/pages/contracts-page";
 import ProfilePage from "@/pages/profile-page";
 import SettingsPage from "@/pages/settings-page";
 import DealsPage from "@/pages/deals-page";
+import PlatformTour from "@/components/onboarding/platform-tour";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./hooks/use-auth";
 
@@ -39,6 +40,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <Router />
+        <PlatformTour />
         <Toaster />
       </AuthProvider>
     </QueryClientProvider>
