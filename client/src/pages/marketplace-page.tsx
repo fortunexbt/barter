@@ -347,23 +347,10 @@ export default function MarketplacePage() {
   
   // Display a toast notification with new listing
   const showNewListingNotification = useCallback(() => {
-    // Check if user is authenticated before trying to create a real commodity
-    // We'll use a dummy check here since we don't have direct access to auth context
-    if (document.cookie.includes('connect.sid')) {
-      // Create an actual new commodity
-      createRandomCommodityMutation.mutate();
-    } else {
-      // Fall back to simulation if not logged in
-      const notification = generateRandomListing();
-      setNotifications(prev => [notification, ...prev].slice(0, 3));
-      toast({
-        title: "New Listing Alert (Simulated)",
-        description: notification,
-        duration: 5000
-      });
-      highlightRandomCommodity();
-    }
-  }, [generateRandomListing, highlightRandomCommodity, toast, createRandomCommodityMutation]);
+    // Always create a real commodity (for demo purposes) 
+    // In a production environment, we would add proper checks
+    createRandomCommodityMutation.mutate();
+  }, [createRandomCommodityMutation]);
   
   // Simulate periodic new listings
   useEffect(() => {
