@@ -27,10 +27,10 @@ export function WelcomeModal({ forceOpen = false, onClose }: WelcomeModalProps) 
   useEffect(() => {
     // Only set the modal to open if:
     // 1. It's explicitly forced open through props, OR
-    // 2. There's a logged-in user who hasn't seen the welcome message
+    // 2. There's a logged-in user who hasn't seen the welcome message AND needs KYC verification
     if (forceOpen) {
       setIsOpen(true);
-    } else if (user && !hasSeenWelcome) {
+    } else if (user && !hasSeenWelcome && user.kycStatus === "pending") {
       // Slight delay to show the modal after user has logged in
       const timer = setTimeout(() => {
         setIsOpen(true);
