@@ -85,7 +85,7 @@ export default function SmartContractCreationModal({
   const createContractMutation = useMutation({
     mutationFn: async (data: SmartContractFormValues) => {
       setStep("processing");
-      return apiRequest(
+      const response = await apiRequest(
         "POST",
         "/api/smart-contracts/escrow",
         {
@@ -94,9 +94,15 @@ export default function SmartContractCreationModal({
           amount: parseFloat(data.amount),
         }
       );
+      
+      // Parse the response to get the data
+      const responseData = await response.json();
+      console.log("Contract created API response data:", responseData);
+      return responseData;
     },
     onSuccess: (data) => {
-      console.log("Contract created response:", JSON.stringify(data, null, 2));
+      console.log("Contract created success callback data:", JSON.stringify(data, null, 2));
+      
       // Set contract data directly from response
       const contractAddress = data.contractAddress || "";
       const transactionHash = data.transactionHash || "";
@@ -170,21 +176,28 @@ export default function SmartContractCreationModal({
     setIsDepositModalOpen(true);
   };
 
-  // Auto-fill default values when commodity data is available
+  // Auto-fill and auto-submit when commodity data is available
   useEffect(() => {
     if (isOpen && buyerId && commodityId && commodityData && step === "create") {
       // Auto fill the amount based on commodity price if available
       const suggestedPrice = commodityData?.price || 0;
       if (suggestedPrice > 0) {
         form.setValue("amount", suggestedPrice.toString());
-        // Trigger form validation after setting the value
+        form.setValue("buyerId", buyerId);
+        form.setValue("commodityId", commodityId);
+        // Trigger form validation
         form.trigger("amount");
+        
+        // Auto-submit the form after a short delay
+        const timer = setTimeout(() => {
+          console.log("Auto-submitting contract creation with amount:", suggestedPrice);
+          onSubmit(form.getValues() as SmartContractFormValues);
+        }, 800);
+        
+        return () => clearTimeout(timer);
       }
     }
   }, [isOpen, buyerId, commodityId, commodityData, step, form]);
-  
-  // Remove any unused state variables
-  // const [showManualForm, setShowManualForm] = useState(false);
 
   return (
     <>
