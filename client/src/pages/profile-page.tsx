@@ -375,7 +375,7 @@ export default function ProfilePage() {
           
           <TabsContent value="kyc">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2">
+              <div className="lg:col-span-2" data-tour="profile-kyc">
                 <Card>
                   <CardHeader>
                     <CardTitle>KYC Verification</CardTitle>
