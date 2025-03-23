@@ -58,6 +58,22 @@ export default function ProfilePage() {
   const [isKycModalOpen, setIsKycModalOpen] = useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   
+  // Listen for ZKP verification completion event
+  useEffect(() => {
+    const handleZkpVerificationComplete = () => {
+      // When ZKP verification completes, show the success modal
+      setIsSuccessModalOpen(true);
+    };
+    
+    // Add event listener
+    window.addEventListener('zkpVerificationComplete', handleZkpVerificationComplete);
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener('zkpVerificationComplete', handleZkpVerificationComplete);
+    };
+  }, []);
+  
   // Profile form setup
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
