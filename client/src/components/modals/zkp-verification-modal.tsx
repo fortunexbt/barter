@@ -149,7 +149,13 @@ export default function ZkpVerificationModal({
       // We don't need to call anything here as the verification should already be complete
       // from the simulation flow -> generateIdentityMutation -> verifyProofMutation sequence
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      
+      // On successful ZKP verification, we first close this modal 
+      // and let the parent component know verification is complete
       onOpenChange(false);
+      
+      // The profile page should listen for this event and show KYC Success Modal
+      window.dispatchEvent(new CustomEvent('zkpVerificationComplete'));
     } else {
       onOpenChange(false);
     }
