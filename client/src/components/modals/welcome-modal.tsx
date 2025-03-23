@@ -30,11 +30,12 @@ export function WelcomeModal({ forceOpen = false, onClose }: WelcomeModalProps) 
   
   useEffect(() => {
     // Show the welcome modal only for new users who haven't seen it
-    // and only if they're not already KYC verified
-    if (user && !hasSeenWelcome && user.kycStatus !== "verified" && !forceOpen) {
+    // Force it to show for all new users, regardless of KYC status
+    // (we'll use this as our mandatory KYC prompt after registration)
+    if (user && !hasSeenWelcome && !forceOpen) {
       const timer = setTimeout(() => {
         setIsOpen(true);
-      }, 1000);
+      }, 500);
       
       return () => clearTimeout(timer);
     }
