@@ -144,6 +144,17 @@ export class MemStorage implements IStorage {
         kycStatus: "verified",
         profileImage: "https://randomuser.me/api/portraits/women/3.jpg",
         walletAddress: "0x6C2fE7E90D13B48B22B39A394e5AaFCD2b6fA12A"
+      },
+      {
+        username: "admin",
+        password: "$2b$10$UfRxM/1czfWvxz4ChimK3uRvkQFfRxRLJdSgZRzKIzXb5JnxLALEW", // "admin123" (using same hash as demo accounts for simplicity)
+        fullName: "Admin User",
+        email: "admin@bartertrade.com",
+        role: "admin",
+        accountLevel: "admin",
+        kycStatus: "verified",
+        profileImage: "https://randomuser.me/api/portraits/lego/1.jpg",
+        walletAddress: "0x0000000000000000000000000000000000000000"
       }
     ];
     

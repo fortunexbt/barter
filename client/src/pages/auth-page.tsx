@@ -25,7 +25,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Wallet } from "lucide-react";
+import { Loader2, Wallet, ShieldCheck, Database, GitMerge, Code } from "lucide-react";
+import { Logo } from "@/components/ui/logo";
+import { SiEthereum, SiPostgresql, SiVite } from "react-icons/si";
 
 const loginSchema = z.object({
   username: z.string().min(3).max(20),
@@ -98,6 +100,9 @@ export default function AuthPage() {
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-md">
           <div className="mb-10 text-center">
+            <div className="flex justify-center mb-3">
+              <Logo variant="large" showText={false} />
+            </div>
             <h2 className="text-3xl font-bold mb-1">BarterTrade</h2>
             <p className="text-neutral-500">Commodities Trading & Barter Platform</p>
           </div>
