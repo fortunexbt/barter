@@ -170,7 +170,7 @@ export default function EscrowDepositModal({
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               {/* Contract details section with QR code for automated deposits */}
               <div className="flex flex-col md:flex-row gap-4 items-center">
-                {isContractCreationResponse && contractAddress && (
+                {contractAddress && (
                   <div className="flex-shrink-0 flex flex-col items-center">
                     <div className="p-2 border border-muted-foreground/20 rounded-lg bg-white">
                       <QRCodeSVG 

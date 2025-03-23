@@ -66,12 +66,19 @@ export default function SmartContractCreationModal({
   const [contractData, setContractData] = useState<any>(null);
   const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
 
+  // Fetch commodity data to auto-populate the price
+  const { data: commodityData } = useQuery({
+    queryKey: ['/api/commodities', commodityId],
+    queryFn: getQueryFn<any>({ on401: "throw" }),
+    enabled: !!commodityId && commodityId !== "",
+  });
+
   const form = useForm<SmartContractFormValues>({
     resolver: zodResolver(smartContractSchema),
     defaultValues: {
       buyerId,
       commodityId,
-      amount: "",
+      amount: commodityData?.price ? commodityData.price.toString() : "",
     },
   });
 
@@ -89,21 +96,32 @@ export default function SmartContractCreationModal({
       );
     },
     onSuccess: (data) => {
-      console.log("Contract created response:", data);
-      // Set contract data with all necessary fields
+      console.log("Contract created response:", JSON.stringify(data, null, 2));
+      // Set contract data directly from response
+      const contractAddress = data.contractAddress || "";
+      const transactionHash = data.transactionHash || "";
+      const transactionId = data.transactionId || "";
+      
       setContractData({
-        contractAddress: data.contractAddress || "",
-        transactionHash: data.transactionHash || "",
-        transactionId: data.transactionId || "",
+        contractAddress,
+        transactionHash,
+        transactionId
       });
+      
+      console.log("Setting contract data to:", {
+        contractAddress,
+        transactionHash,
+        transactionId
+      });
+      
       setStep("complete");
       queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
       queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
       
       toast({
         title: "Smart Contract Created",
-        description: data.contractAddress 
-          ? `Escrow contract created with address ${data.contractAddress.substring(0, 8)}...`
+        description: contractAddress 
+          ? `Escrow contract created with address ${contractAddress.substring(0, 8)}...`
           : "Escrow contract created successfully",
       });
       
@@ -152,13 +170,6 @@ export default function SmartContractCreationModal({
     setIsDepositModalOpen(true);
   };
 
-  // Fetch commodity details if commodityId is available
-  const { data: commodityData } = useQuery({
-    queryKey: ['/api/commodities', commodityId],
-    queryFn: getQueryFn<any>({ on401: "throw" }),
-    enabled: !!commodityId && buyerId !== "",
-  });
-
   // Auto-fill default values when commodity data is available
   useEffect(() => {
     if (isOpen && buyerId && commodityId && commodityData && step === "create") {
@@ -170,10 +181,10 @@ export default function SmartContractCreationModal({
         form.trigger("amount");
       }
     }
-  }, [isOpen, buyerId, commodityId, commodityData, step]);
+  }, [isOpen, buyerId, commodityId, commodityData, step, form]);
   
-  // Add a manual start button instead of auto-submitting
-  const [showManualForm, setShowManualForm] = useState(false);
+  // Remove any unused state variables
+  // const [showManualForm, setShowManualForm] = useState(false);
 
   return (
     <>
@@ -192,39 +203,51 @@ export default function SmartContractCreationModal({
             </DialogDescription>
           </DialogHeader>
 
-          {/* Create contract form */}
+          {/* Create contract form - Auto-submit if commodity data is available */}
           {step === "create" && (
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
-                <FormField
-                  control={form.control}
-                  name="amount"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Transaction Amount ($)</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter amount" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Enter the amount for this transaction.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <Button 
-                  type="submit" 
-                  className="w-full flex items-center justify-center gap-2"
-                  disabled={form.formState.isSubmitting}>
-                  {form.formState.isSubmitting ? (
-                    <><Loader2 className="h-4 w-4 animate-spin" /> Creating Contract...</>
-                  ) : (
-                    <><KeyRound className="h-4 w-4" /> Generate Smart Contract</>
-                  )}
-                </Button>
-              </form>
-            </Form>
+            <div className="space-y-6 py-4">
+              {commodityData ? (
+                <>
+                  <div className="rounded-md p-4 bg-muted">
+                    <h3 className="text-sm font-medium mb-2">Transaction Details</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Commodity</p>
+                        <p className="font-medium">{commodityData.name}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Price</p>
+                        <p className="font-medium">${commodityData.price}</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <Button 
+                    onClick={() => {
+                      // Auto-set the amount from commodity price and submit
+                      form.setValue("amount", commodityData.price.toString());
+                      onSubmit(form.getValues() as SmartContractFormValues);
+                    }}
+                    className="w-full flex items-center justify-center gap-2"
+                    disabled={form.formState.isSubmitting}>
+                    {form.formState.isSubmitting ? (
+                      <><Loader2 className="h-4 w-4 animate-spin" /> Creating Contract...</>
+                    ) : (
+                      <><KeyRound className="h-4 w-4" /> Generate Smart Contract</>
+                    )}
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  </div>
+                  <p className="text-center text-sm text-muted-foreground">
+                    Loading commodity details...
+                  </p>
+                </>
+              )}
+            </div>
           )}
           
           {/* Processing animation */}
