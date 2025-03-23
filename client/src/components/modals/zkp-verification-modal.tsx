@@ -76,6 +76,11 @@ export default function ZkpVerificationModal({
     for (let i = 0; i < 50; i++) {
       setTimeout(() => {
         setProgress(i);
+        
+        // Start the actual identity generation when reaching 25%
+        if (i === 25) {
+          generateIdentityMutation.mutate();
+        }
       }, (i / 50) * generationTime);
     }
     
@@ -98,12 +103,27 @@ export default function ZkpVerificationModal({
   };
   
   // Submit the verification to the backend
-  const submitVerificationMutation = useMutation({
+  // Generate ZKP identity
+  const generateIdentityMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/zkp/verify", { 
-        userId: user?.id,
-        proofData: proof
-      });
+      const res = await apiRequest("POST", "/api/kyc/generate-identity");
+      return await res.json();
+    },
+    onSuccess: (data) => {
+      // We don't immediately invalidate the queries here
+      // since the full verification process isn't complete yet
+      if (stage === "generating") {
+        setTimeout(() => {
+          verifyProofMutation.mutate();
+        }, 2000); // Wait for the animation to catch up
+      }
+    },
+  });
+
+  // Verify ZKP proof
+  const verifyProofMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/kyc/verify-proof");
       return await res.json();
     },
     onSuccess: () => {
@@ -126,7 +146,10 @@ export default function ZkpVerificationModal({
   
   const handleComplete = () => {
     if (stage === "complete") {
-      submitVerificationMutation.mutate();
+      // We don't need to call anything here as the verification should already be complete
+      // from the simulation flow -> generateIdentityMutation -> verifyProofMutation sequence
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      onOpenChange(false);
     } else {
       onOpenChange(false);
     }
@@ -308,9 +331,9 @@ export default function ZkpVerificationModal({
         <DialogFooter>
           <Button 
             onClick={handleComplete}
-            disabled={stage !== "complete" || submitVerificationMutation.isPending}
+            disabled={stage !== "complete" || verifyProofMutation.isPending}
           >
-            {submitVerificationMutation.isPending ? (
+            {verifyProofMutation.isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Processing...
