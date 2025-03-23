@@ -203,17 +203,10 @@ export default function BarterDetailPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          // Specify the appropriate buyer and seller IDs based on the barter offer
+          // Only send the necessary fields that the API expects
           buyerId: barterOffer.requestingUser?.id,
-          sellerId: barterOffer.offeringUser?.id,
           commodityId: barterOffer.offeringCommodity.id,
-          title: `Smart Contract for ${barterOffer.offeringCommodity.name}`,
-          price: commodityTotalValue,
-          contractNumber: `ESC-${Math.floor(Math.random() * 1000000).toString().padStart(6, '0')}`,
-          quantity: 1,
-          terms: `Escrow smart contract for ${barterOffer.offeringCommodity.name} with price ${commodityTotalValue} ${barterOffer.offeringCommodity.priceUnit}. 
-              Contract Address: ${contractAddress || '0x' + Math.random().toString(16).substring(2, 14)}`,
-          status: 'pending'
+          amount: commodityTotalValue,
         }),
       });
       
