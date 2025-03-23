@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, useLocation } from "wouter";
 import AppShell from "@/components/layout/app-shell";
-import { BarterOffer, Commodity, User } from "@shared/schema";
-import { formatDate, formatCurrency, formatNumber } from "@/lib/utils";
+import { BarterOffer, Commodity, User, Contract, Transaction } from "@shared/schema";
+import { formatDate, formatCurrency, formatNumber, formatRelativeTime } from "@/lib/utils";
+import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Loader2, Check, X, ArrowRight, User as UserIcon, Package, DollarSign, Shield } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -81,6 +82,28 @@ export default function BarterDetailPage() {
       }
       return response.json();
     }
+  });
+  
+  // Fetch related contracts
+  const { data: relatedContracts, isLoading: isLoadingContracts } = useQuery<Contract[]>({
+    queryKey: ['/api/contracts'],
+    queryFn: async () => {
+      const response = await fetch('/api/contracts');
+      if (!response.ok) throw new Error("Failed to load contracts");
+      return response.json();
+    },
+    enabled: !!barterOffer // Only run this query if we have the barter offer
+  });
+
+  // Fetch related transactions
+  const { data: relatedTransactions, isLoading: isLoadingTransactions } = useQuery<Transaction[]>({
+    queryKey: ['/api/transactions'],
+    queryFn: async () => {
+      const response = await fetch('/api/transactions');
+      if (!response.ok) throw new Error("Failed to load transactions");
+      return response.json();
+    },
+    enabled: !!barterOffer // Only run this query if we have the barter offer
   });
   
   // Accept barter offer mutation
