@@ -13,47 +13,62 @@ import {
 import { Button } from "@/components/ui/button";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 
-export function WelcomeModal() {
+interface WelcomeModalProps {
+  forceOpen?: boolean;
+  onClose?: () => void;
+}
+
+export function WelcomeModal({ forceOpen = false, onClose }: WelcomeModalProps) {
   const { user } = useAuth();
   const [_, navigate] = useLocation();
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(forceOpen);
   const [hasSeenWelcome, setHasSeenWelcome] = useLocalStorage("hasSeenWelcome", false);
+  
+  useEffect(() => {
+    setIsOpen(forceOpen);
+  }, [forceOpen]);
   
   useEffect(() => {
     // Show the welcome modal only for new users who haven't seen it
     // and only if they're not already KYC verified
-    if (user && !hasSeenWelcome && user.kycStatus !== "verified") {
+    if (user && !hasSeenWelcome && user.kycStatus !== "verified" && !forceOpen) {
       const timer = setTimeout(() => {
         setIsOpen(true);
       }, 1000);
       
       return () => clearTimeout(timer);
     }
-  }, [user, hasSeenWelcome]);
+  }, [user, hasSeenWelcome, forceOpen]);
+
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open);
+    if (!open && onClose) {
+      onClose();
+    }
+  };
 
   const handleBeginKYC = () => {
     setHasSeenWelcome(true);
     setIsOpen(false);
     // Navigate to the profile page, KYC section
-    navigate("/profile");
-    // The "#kyc" hash will be used by the profile page to open the KYC tab
-    window.location.hash = "kyc";
+    navigate("/profile?tab=kyc");
+    if (onClose) onClose();
   };
 
   if (!user) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-xl flex items-center gap-2">
             <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
               <PartyPopper className="h-5 w-5 text-primary" />
             </div>
-            <span>Welcome to BarterTrade!</span>
+            <span>👋 Welcome to BarterTrade!</span>
           </DialogTitle>
           <DialogDescription className="text-base pt-2">
-            You're almost ready to start trading. Complete your KYC verification to unlock all platform features.
+            To start trading, please complete your KYC verification.
           </DialogDescription>
         </DialogHeader>
         
