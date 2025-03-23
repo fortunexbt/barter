@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Commodity, User } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -20,7 +21,8 @@ import {
   Tractor,
   AlertCircle,
   CheckCircle,
-  BarChart
+  BarChart,
+  Pencil
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import {
@@ -463,9 +465,22 @@ export default function CommodityDetail({ commodityId }: CommodityDetailProps) {
               <div className="text-center py-4">
                 <CheckCircle className="h-8 w-8 text-success mx-auto mb-2" />
                 <p className="text-neutral-600">You are the owner of this commodity</p>
-                <Button variant="outline" className="mt-4">
-                  Manage Listing
-                </Button>
+                <div className="flex flex-col gap-3 mt-4">
+                  <Button 
+                    variant="outline" 
+                    className="flex items-center"
+                    onClick={() => window.location.href = `/marketplace/edit/${commodity.id}`}
+                  >
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Edit Listing
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => window.location.href = "/marketplace/manage"}
+                  >
+                    Manage All Listings
+                  </Button>
+                </div>
               </div>
             )}
           </CardContent>
