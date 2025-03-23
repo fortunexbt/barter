@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, ReactNode, memo } from "react";
+import React, { useState, useEffect, useCallback, ReactNode, memo, useRef } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import AppShell from "@/components/layout/app-shell";
 import { Commodity } from "@shared/schema";
@@ -17,11 +17,24 @@ import {
   Gem,
   Fuel,
   Tractor,
-  Bell
+  Bell,
+  ArrowUp,
+  ArrowDown,
+  BarChart3,
+  Clock,
+  Tag,
+  Eye,
+  RefreshCw,
+  PieChart,
+  Truck
 } from "lucide-react";
 import { 
   Card,
-  CardContent
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -36,6 +49,15 @@ import {
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { formatCurrency, formatNumber, formatDate } from "@/lib/utils";
 
 // Memoized Commodity Card component to prevent unnecessary re-renders
 interface CommodityCardProps {
@@ -57,11 +79,27 @@ const CommodityCard = memo(({
   const bgColorClass = `bg-${commodity.iconBg || "neutral"}-100`;
   const textColorClass = `text-${commodity.iconBg || "neutral"}-600`;
   
+  // Generate price trend data (mock)
+  const mockTrend = () => {
+    const baseValue = commodity.price;
+    const trendType = Math.random() > 0.5 ? 'up' : 'down';
+    const priceTrend = trendType === 'up' ? 1 + (Math.random() * 0.03) : 1 - (Math.random() * 0.02);
+    const formattedPrice = (baseValue * priceTrend).toFixed(2);
+    return {
+      price: parseFloat(formattedPrice),
+      trend: trendType,
+      percent: (Math.abs(priceTrend - 1) * 100).toFixed(1)
+    };
+  };
+  
+  // Calculate a simulated price trend
+  const trend = mockTrend();
+  
   return (
     <Link href={`/marketplace/${commodity.id}`}>
       <motion.div
         layout
-        initial={isNew ? { scale: 0.8, opacity: 0 } : false}
+        initial={isNew ? { scale: 0.9, opacity: 0 } : false}
         animate={{ 
           scale: 1, 
           opacity: 1,
@@ -73,49 +111,91 @@ const CommodityCard = memo(({
           damping: 30,
           duration: 0.5
         }}
+        whileHover={{ 
+          y: -5,
+          transition: { duration: 0.2 }
+        }}
       >
         <Card 
-          className={`cursor-pointer hover:shadow-md transition-all ${isNew ? 'border-primary' : ''}`}
+          className={`cursor-pointer hover:shadow-md transition-all overflow-hidden ${isNew ? 'border-primary' : ''}`}
           data-tour={index === 0 ? "marketplace-commodity" : undefined}
         >
-          <CardContent className="p-6">
-            <div className="flex items-start">
-              <div className={`flex-shrink-0 w-10 h-10 ${bgColorClass} rounded-full flex items-center justify-center ${textColorClass}`}>
-                {getCommodityIcon(commodity.icon)}
-              </div>
-              <div className="ml-4 flex-1">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-medium text-neutral-800">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-2">
+                <div className={`flex-shrink-0 w-9 h-9 ${bgColorClass} rounded-full flex items-center justify-center ${textColorClass}`}>
+                  {getCommodityIcon(commodity.icon)}
+                </div>
+                <div>
+                  <h3 className="text-md font-medium text-neutral-800 flex items-center">
                     {commodity.name}
                     {isNew && (
-                      <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary text-white animate-pulse">
+                      <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary text-white animate-pulse">
                         New
                       </span>
                     )}
                   </h3>
-                  <Badge variant="outline" className={getStatusColor(commodity.status || "unknown")}>
-                    {commodity.status 
-                      ? commodity.status.charAt(0).toUpperCase() + commodity.status.slice(1) 
-                      : "Unknown"
-                    }
-                  </Badge>
-                </div>
-                <p className="text-sm text-neutral-500">{commodity.grade}</p>
-                <div className="mt-4 flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-neutral-500">Price</p>
-                    <p className="text-lg font-semibold text-neutral-700">
-                      ${commodity.price.toLocaleString()}/{commodity.priceUnit}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-neutral-500">Volume</p>
-                    <p className="text-base font-medium text-neutral-700">
-                      {commodity.volume} {commodity.volumeUnit}
-                    </p>
-                  </div>
+                  <p className="text-xs text-neutral-500">{commodity.grade}</p>
                 </div>
               </div>
+              <Badge variant="outline" className={getStatusColor(commodity.status || "unknown")}>
+                {commodity.status 
+                  ? commodity.status.charAt(0).toUpperCase() + commodity.status.slice(1) 
+                  : "Unknown"
+                }
+              </Badge>
+            </div>
+          </CardHeader>
+          
+          <CardContent className="p-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-gray-500 flex items-center gap-1">
+                    <Tag size={12} />Price
+                  </span>
+                  <span className={`text-xs flex items-center gap-0.5 ${trend.trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
+                    {trend.trend === 'up' ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
+                    {trend.percent}%
+                  </span>
+                </div>
+                <p className="text-lg font-semibold">
+                  ${trend.price.toLocaleString()}
+                  <span className="text-xs font-normal ml-1 text-gray-500">/{commodity.priceUnit}</span>
+                </p>
+              </div>
+              
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-gray-500 flex items-center gap-1">
+                    <Package size={12} />Volume
+                  </span>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="text-xs text-primary underline cursor-help">Details</span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="text-xs">{commodity.volume} {commodity.volumeUnit} available</p>
+                        <p className="text-xs">Grade: {commodity.grade}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                <p className="text-lg font-semibold">
+                  {formatNumber(commodity.volume)}
+                  <span className="text-xs font-normal ml-1 text-gray-500">{commodity.volumeUnit}</span>
+                </p>
+              </div>
+            </div>
+            
+            <div className="mt-3 pt-3 border-t border-gray-100 flex justify-between items-center">
+              <div className="flex items-center gap-1 text-xs text-gray-500">
+                <Clock size={14} /> {formatDate(commodity.createdAt)} 
+              </div>
+              <Button size="sm" variant="ghost" className="h-7 text-xs gap-1">
+                <Eye size={14} /> View details
+              </Button>
             </div>
           </CardContent>
         </Card>

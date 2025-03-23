@@ -914,5 +914,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin middleware - checks if user is authenticated and has admin role
+  const isAdmin = (req, res, next) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+    
+    if (req.user!.role !== 'admin') {
+      return res.status(403).json({ message: 'Forbidden - Admin access required' });
+    }
+    
+    return next();
+  };
+
+  // Admin routes
+  app.get('/api/admin/users', isAdmin, async (req, res, next) => {
+    try {
+      // In a real app, we might want to get this from a specialized admin data source
+      // But for this demo, we'll simply get all users
+      const users = await Promise.all(
+        (await storage.getCommodities()).map(async c => {
+          const owner = await storage.getUser(c.ownerId);
+          return owner;
+        })
+      );
+      
+      // Filter to unique users
+      const uniqueUsers = users.filter((user, index, self) => 
+        user && index === self.findIndex(u => u && u.id === user.id)
+      );
+      
+      res.json(uniqueUsers);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get('/api/admin/commodities', isAdmin, async (req, res, next) => {
+    try {
+      const commodities = await storage.getCommodities();
+      
+      // Enhance with owner name
+      const enhancedCommodities = await Promise.all(
+        commodities.map(async (commodity) => {
+          const owner = await storage.getUser(commodity.ownerId);
+          return {
+            ...commodity,
+            ownerName: owner ? owner.fullName : 'Unknown'
+          };
+        })
+      );
+      
+      res.json(enhancedCommodities);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get('/api/admin/contracts', isAdmin, async (req, res, next) => {
+    try {
+      // Get all contracts
+      const contracts = await Promise.all(
+        (await storage.getCommodities())
+          .filter(c => c.status === 'sold')
+          .map(async commodity => {
+            // Create a simulated contract for this commodity
+            const seller = await storage.getUser(commodity.ownerId);
+            // Pick a buyer randomly
+            const potentialBuyerIds = [1, 2, 3, 4, 5].filter(id => id !== commodity.ownerId);
+            const buyerId = potentialBuyerIds[Math.floor(Math.random() * potentialBuyerIds.length)];
+            const buyer = await storage.getUser(buyerId);
+            
+            return {
+              id: commodity.id,
+              contractNumber: `CNT-${commodity.id}`,
+              title: `Contract for ${commodity.name}`,
+              sellerId: commodity.ownerId,
+              sellerName: seller ? seller.fullName : 'Unknown Seller',
+              buyerId: buyerId,
+              buyerName: buyer ? buyer.fullName : 'Unknown Buyer',
+              commodityId: commodity.id,
+              commodityName: commodity.name,
+              quantity: commodity.volume,
+              price: commodity.price * commodity.volume,
+              terms: 'Standard terms of sale',
+              status: 'completed',
+              createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000), // Random date in the last 30 days
+              updatedAt: new Date()
+            };
+          })
+      );
+      
+      res.json(contracts);
+    } catch (error) {
+      next(error);
+    }
+  });
+
   return httpServer;
 }
