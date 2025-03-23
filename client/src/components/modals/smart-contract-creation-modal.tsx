@@ -1,8 +1,9 @@
-import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { QRCodeSVG } from "qrcode.react";
 
 import {
   Dialog,
@@ -24,8 +25,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
-import { Loader2 } from "lucide-react";
+import { apiRequest, getQueryFn } from "@/lib/queryClient";
+import { Loader2, ArrowRight, Banknote, KeyRound, CreditCard, CheckCircle2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 
 // Import the EscrowDepositModal
 import EscrowDepositModal from "./escrow-deposit-modal";
@@ -143,131 +146,136 @@ export default function SmartContractCreationModal({
     setIsDepositModalOpen(true);
   };
 
+  // Fetch commodity details if commodityId is available
+  const { data: commodityData } = useQuery({
+    queryKey: ['/api/commodities', commodityId],
+    queryFn: getQueryFn<any>({ on401: "throw" }),
+    enabled: !!commodityId && buyerId !== "",
+  });
+
+  // Auto-submit contract creation when data is available
+  useEffect(() => {
+    if (isOpen && buyerId && commodityId && commodityData && step === "create") {
+      // Auto fill the amount based on commodity price if available
+      const suggestedPrice = commodityData?.price || 0;
+      if (suggestedPrice > 0) {
+        form.setValue("amount", suggestedPrice.toString());
+      }
+      
+      // Automatically submit the form when all data is ready
+      if (form.getValues().amount && form.formState.isValid) {
+        onSubmit(form.getValues() as SmartContractFormValues);
+      }
+    }
+  }, [isOpen, buyerId, commodityId, commodityData, step]);
+
   return (
     <>
       <Dialog open={isOpen} onOpenChange={handleClose}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-md md:max-w-lg">
           <DialogHeader>
-            <DialogTitle>
-              {step === "create" && "Create Escrow Smart Contract"}
-              {step === "processing" && "Creating Smart Contract..."}
-              {step === "complete" && "Smart Contract Created"}
+            <DialogTitle className="flex items-center gap-2">
+              {step === "create" && <><KeyRound className="h-5 w-5 text-primary" /> Generate Smart Contract</>}
+              {step === "processing" && <><Loader2 className="h-5 w-5 animate-spin text-primary" /> Creating Smart Contract...</>}
+              {step === "complete" && <><CheckCircle2 className="h-5 w-5 text-green-500" /> Smart Contract Created</>}
             </DialogTitle>
             <DialogDescription>
-              {step === "create" && "Set up an escrow contract to securely handle the commodity transaction."}
+              {step === "create" && "Creating a secure blockchain contract for this commodity transaction."}
               {step === "processing" && "Please wait while the contract is being deployed to the blockchain."}
               {step === "complete" && "Your escrow contract has been successfully deployed to the blockchain."}
             </DialogDescription>
           </DialogHeader>
 
-          {step === "create" && (
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="buyerId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Buyer ID</FormLabel>
-                      <FormControl>
-                        <Input {...field} disabled={!!buyerId} />
-                      </FormControl>
-                      <FormDescription>
-                        The ID of the buyer in this transaction.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="commodityId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Commodity ID</FormLabel>
-                      <FormControl>
-                        <Input {...field} disabled={!!commodityId} />
-                      </FormControl>
-                      <FormDescription>
-                        The ID of the commodity being traded.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="amount"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Transaction Amount</FormLabel>
-                      <FormControl>
-                        <Input {...field} type="number" min="0" step="0.01" />
-                      </FormControl>
-                      <FormDescription>
-                        The amount to be held in escrow for this transaction.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <DialogFooter>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => onOpenChange(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button type="submit">Create Contract</Button>
-                </DialogFooter>
-              </form>
-            </Form>
-          )}
-
+          {/* Processing animation */}
           {step === "processing" && (
-            <div className="flex flex-col items-center justify-center py-8">
-              <Loader2 className="h-12 w-12 animate-spin text-primary" />
-              <p className="mt-4 text-center text-sm text-muted-foreground">
-                Creating your escrow contract on the blockchain...
+            <div className="flex flex-col items-center justify-center py-12">
+              <Loader2 className="h-16 w-16 animate-spin text-primary" />
+              <p className="mt-6 text-center text-muted-foreground">
+                Creating your secure escrow contract on the blockchain...
                 <br />
-                This may take a few moments.
+                <span className="text-xs">This may take a few moments.</span>
               </p>
             </div>
           )}
 
+          {/* Contract complete view with QR code */}
           {step === "complete" && contractData && (
-            <div className="space-y-4">
-              <div className="rounded-md bg-muted p-4">
-                <dl className="space-y-2 text-sm">
-                  {contractData.contractAddress && (
-                    <div className="flex justify-between">
-                      <dt className="font-medium">Contract Address:</dt>
-                      <dd className="text-right font-mono">{`${contractData.contractAddress.substring(0, 6)}...${contractData.contractAddress.substring(contractData.contractAddress.length - 4)}`}</dd>
+            <div className="space-y-6">
+              <div className="flex flex-col md:flex-row gap-4 items-center">
+                {/* QR Code section */}
+                <div className="flex-shrink-0 flex flex-col items-center">
+                  <div className="p-2 border border-muted-foreground/20 rounded-lg bg-white">
+                    {contractData.contractAddress && (
+                      <QRCodeSVG 
+                        value={contractData.contractAddress}
+                        size={160}
+                        includeMargin={true}
+                        bgColor={"#ffffff"}
+                        fgColor={"#000000"}
+                        level={"L"}
+                        className="rounded-md"
+                      />
+                    )}
+                  </div>
+                  <p className="mt-2 text-xs text-center text-muted-foreground">Scan to view on blockchain</p>
+                </div>
+
+                {/* Contract details */}
+                <div className="flex-1 rounded-md bg-muted p-4 space-y-3">
+                  <h3 className="text-sm font-medium mb-2 flex items-center gap-1">
+                    <KeyRound className="h-4 w-4" /> Contract Details
+                  </h3>
+                  <div className="space-y-2">
+                    {contractData.contractAddress && (
+                      <div className="space-y-1">
+                        <div className="text-xs text-muted-foreground">Contract Address</div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="font-mono text-xs bg-primary/5 px-2 py-1 overflow-hidden text-ellipsis whitespace-nowrap max-w-full">
+                            {contractData.contractAddress}
+                          </Badge>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {contractData.transactionHash && (
+                      <div className="space-y-1">
+                        <div className="text-xs text-muted-foreground">Transaction Hash</div>
+                        <div className="font-mono text-xs bg-muted-foreground/10 px-2 py-1 rounded-sm overflow-hidden text-ellipsis whitespace-nowrap">
+                          {contractData.transactionHash}
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div className="grid grid-cols-2 gap-2 mt-3">
+                      <div>
+                        <div className="text-xs text-muted-foreground">Amount</div>
+                        <div className="font-medium">${form.getValues().amount}</div>
+                      </div>
+                      {contractData.transactionId && (
+                        <div>
+                          <div className="text-xs text-muted-foreground">Transaction ID</div>
+                          <div className="font-medium">{contractData.transactionId}</div>
+                        </div>
+                      )}
                     </div>
-                  )}
-                  {contractData.transactionHash && (
-                    <div className="flex justify-between">
-                      <dt className="font-medium">Transaction Hash:</dt>
-                      <dd className="text-right font-mono">{`${contractData.transactionHash.substring(0, 6)}...${contractData.transactionHash.substring(contractData.transactionHash.length - 4)}`}</dd>
-                    </div>
-                  )}
-                  {contractData.transactionId && (
-                    <div className="flex justify-between">
-                      <dt className="font-medium">Transaction ID:</dt>
-                      <dd className="text-right">{contractData.transactionId}</dd>
-                    </div>
-                  )}
-                </dl>
+                  </div>
+                </div>
               </div>
 
-              <p className="text-sm text-muted-foreground">
-                Your escrow contract has been created successfully. Now you need to deposit funds
-                to the escrow address before the transaction can proceed.
-              </p>
+              <Separator />
+
+              <div className="space-y-4">
+                <div className="flex items-start gap-2">
+                  <Banknote className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-medium text-sm">Next Step: Deposit Funds</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Your escrow smart contract has been created successfully. To proceed with the transaction, 
+                      you need to deposit ${form.getValues().amount} to the escrow address.
+                    </p>
+                  </div>
+                </div>
+              </div>
 
               <DialogFooter className="gap-2 sm:gap-0">
                 <Button
@@ -279,8 +287,9 @@ export default function SmartContractCreationModal({
                 </Button>
                 <Button 
                   onClick={openDepositModal}
-                  className="bg-green-600 hover:bg-green-700"
+                  className="bg-green-600 hover:bg-green-700 flex items-center gap-1"
                 >
+                  <CreditCard className="h-4 w-4" />
                   Proceed to Deposit
                 </Button>
               </DialogFooter>
