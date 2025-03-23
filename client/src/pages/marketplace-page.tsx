@@ -265,23 +265,105 @@ export default function MarketplacePage() {
     }
   }, [commodities]);
   
+  // Function to create a random commodity in the database
+  const createRandomCommodityMutation = useMutation({
+    mutationFn: async () => {
+      // Generate random commodity data
+      const commodityName = commodityNames[Math.floor(Math.random() * commodityNames.length)];
+      const grade = ["Grade A", "Premium", "Standard", "Industrial"][Math.floor(Math.random() * 4)];
+      const priceUnits = ["kg", "ton", "barrel", "oz"];
+      const volumeUnits = ["kg", "ton", "barrel", "oz", "unit"];
+      const categories = ["energy", "agriculture", "metals", "minerals", "industrial"];
+      const icons = ["fuel", "wheat", "gems", "droplet", "package", "equipment"];
+      const iconBgs = ["blue", "green", "amber", "red", "slate", "neutral"];
+      
+      const randomCommodity = {
+        name: `${grade} ${commodityName}`,
+        description: `High-quality ${commodityName.toLowerCase()} commodity available for trade or purchase.`,
+        price: Math.floor(Math.random() * 1000) + 10,
+        priceUnit: priceUnits[Math.floor(Math.random() * priceUnits.length)],
+        volume: Math.floor(Math.random() * 100) + 1,
+        volumeUnit: volumeUnits[Math.floor(Math.random() * volumeUnits.length)],
+        category: categories[Math.floor(Math.random() * categories.length)],
+        subcategory: "general",
+        grade: grade,
+        origin: "Various",
+        status: "available",
+        icon: icons[Math.floor(Math.random() * icons.length)],
+        iconBg: iconBgs[Math.floor(Math.random() * iconBgs.length)],
+      };
+      
+      const response = await fetch("/api/commodities", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(randomCommodity),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to create new commodity");
+      }
+      
+      return await response.json();
+    },
+    onSuccess: (newCommodity) => {
+      // Invalidate and refetch commodities query to update UI
+      queryClient.invalidateQueries({ queryKey: ["/api/commodities"] });
+      
+      // Also add to new commodities list to show the highlighting
+      setNewCommodities(prev => [...prev, newCommodity.id]);
+      
+      // Remove highlighting after 5 seconds
+      setTimeout(() => {
+        setNewCommodities(prev => prev.filter(id => id !== newCommodity.id));
+      }, 5000);
+      
+      const notification = `New ${newCommodity.grade} ${newCommodity.name.replace(newCommodity.grade, '')} from ${sellerNames[Math.floor(Math.random() * sellerNames.length)]}`;
+      
+      // Add to notifications
+      setNotifications(prev => [notification, ...prev].slice(0, 3));
+      
+      // Show toast
+      toast({
+        title: "New Listing Added",
+        description: notification,
+        duration: 5000
+      });
+    },
+    onError: (error) => {
+      console.error("Failed to create commodity:", error);
+      // Fall back to just showing a notification without creating a real commodity
+      const notification = generateRandomListing();
+      setNotifications(prev => [notification, ...prev].slice(0, 3));
+      toast({
+        title: "New Listing Alert (Simulated)",
+        description: notification,
+        duration: 5000
+      });
+      
+      // Still highlight a random commodity
+      highlightRandomCommodity();
+    }
+  });
+  
   // Display a toast notification with new listing
   const showNewListingNotification = useCallback(() => {
-    const notification = generateRandomListing();
-    
-    // Limit to 3 notifications to prevent memory buildup
-    setNotifications(prev => [notification, ...prev].slice(0, 3));
-    
-    // Also show a toast
-    toast({
-      title: "New Listing Alert",
-      description: notification,
-      duration: 5000
-    });
-    
-    // Highlight a random commodity
-    highlightRandomCommodity();
-  }, [generateRandomListing, highlightRandomCommodity, toast]);
+    // Check if user is authenticated before trying to create a real commodity
+    // We'll use a dummy check here since we don't have direct access to auth context
+    if (document.cookie.includes('connect.sid')) {
+      // Create an actual new commodity
+      createRandomCommodityMutation.mutate();
+    } else {
+      // Fall back to simulation if not logged in
+      const notification = generateRandomListing();
+      setNotifications(prev => [notification, ...prev].slice(0, 3));
+      toast({
+        title: "New Listing Alert (Simulated)",
+        description: notification,
+        duration: 5000
+      });
+      highlightRandomCommodity();
+    }
+  }, [generateRandomListing, highlightRandomCommodity, toast, createRandomCommodityMutation]);
   
   // Simulate periodic new listings
   useEffect(() => {
