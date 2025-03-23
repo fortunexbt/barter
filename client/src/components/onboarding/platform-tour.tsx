@@ -43,8 +43,7 @@ export default function PlatformTour({ forceTour = false }: PlatformTourProps) {
   
   useEffect(() => {
     // Only show the tour if the user hasn't seen it before, or if forced
-    // Also check for KYC status - only show tour after completing KYC
-    if ((showTour || forceTour) && user && user.kycStatus === "verified") {
+    if ((showTour || forceTour) && user) {
       const timer = setTimeout(() => {
         setIsVisible(true);
       }, 1000);

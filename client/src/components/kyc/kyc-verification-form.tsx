@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -113,26 +113,6 @@ export function KycVerificationForm({ onComplete, onShowZkpModal, onShowKycModal
     }, 500);
   };
   
-  // Listen for KYC verification completion event from ZKP modal
-  useEffect(() => {
-    const handleKycVerificationComplete = () => {
-      setStep(3);
-      
-      // Update user data
-      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
-      
-      if (onComplete) {
-        onComplete("verified");
-      }
-    };
-    
-    window.addEventListener('kycVerificationComplete', handleKycVerificationComplete);
-    
-    return () => {
-      window.removeEventListener('kycVerificationComplete', handleKycVerificationComplete);
-    };
-  }, [onComplete]);
-  
   // Handle KYC approval completion
   const handleKycApproved = () => {
     if (onComplete) {
@@ -161,24 +141,10 @@ export function KycVerificationForm({ onComplete, onShowZkpModal, onShowKycModal
   
   // For demo purposes, advance to the next step directly
   const simulateKycSubmission = () => {
-    if (!uploadedFile) {
-      toast({
-        title: "Document Required",
-        description: "Please upload an identification document to continue.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    toast({
-      title: "KYC Document Submitted",
-      description: "Your document has been received. Proceeding to verification.",
-    });
-    
     setStep(2);
     setTimeout(() => {
       onShowZkpModal();
-    }, 1500);
+    }, 500);
   };
   
   return (
