@@ -203,34 +203,57 @@ export default function BarterDetailPage() {
   // Effect to find related contract and transactions for this barter
   useEffect(() => {
     if (barterOffer && relatedContracts && relatedTransactions) {
-      // Find contract related to this barter
-      const contractForBarter = relatedContracts.find(
+      console.log("Finding contracts for barter:", { 
+        barterId: barterOffer.id,
+        offeringUserId: barterOffer.offeringUserId, 
+        requestingUserId: barterOffer.requestingUserId,
+        offeringCommodityId: barterOffer.offeringCommodityId
+      });
+      console.log("Available contracts:", relatedContracts);
+      
+      // Find contract related to this barter - using a more flexible matching approach
+      // First try exact match on barter criteria
+      let contractForBarter = relatedContracts.find(
         contract => contract.buyerId === barterOffer.requestingUserId && 
                     contract.sellerId === barterOffer.offeringUserId && 
                     contract.commodityId === barterOffer.offeringCommodityId
       );
       
+      // If no match, try a more flexible match on just the commodity
+      if (!contractForBarter) {
+        contractForBarter = relatedContracts.find(
+          contract => contract.commodityId === barterOffer.offeringCommodityId
+        );
+      }
+      
       if (contractForBarter) {
+        console.log("Found contract for barter:", contractForBarter);
         setCurrentContract(contractForBarter);
         setContractCreated(true);
         
-        // If we have a contract address from metadata, use it
+        // If contract found, find all related transactions
         const contractTransactions = relatedTransactions.filter(t => t.contractId === contractForBarter.id);
+        console.log("Contract transactions:", contractTransactions);
+        
         if (contractTransactions.length > 0) {
           setCurrentTransactions(contractTransactions);
           
           // Check for deposit transaction
           const depositTx = contractTransactions.find(t => t.type === 'escrow_deposit');
           if (depositTx) {
+            console.log("Found deposit transaction:", depositTx);
             setDepositCompleted(true);
             setDepositStep(true);
           }
           
-          // Update progress based on transaction status
-          if (contractForBarter.status === 'completed') {
+          // Check for release transaction
+          const releaseTx = contractTransactions.find(t => t.type === 'escrow_release');
+          
+          // Update progress based on transaction status and transaction history
+          if (contractForBarter.status === 'completed' || releaseTx) {
             setTransactionStatus('completed');
             setTradeProgress(100);
-          } else if (contractForBarter.status === 'funded') {
+          } else if (contractForBarter.status === 'funded' || depositTx) {
             setTransactionStatus('funded');
             setTradeProgress(66);
           } else if (contractForBarter.status === 'pending' && depositTx) {
@@ -245,6 +268,7 @@ export default function BarterDetailPage() {
             try {
               const metadata = JSON.parse(creationTx.metadata);
               if (metadata.contractAddress) {
+                console.log("Found contract address in metadata:", metadata.contractAddress);
                 setContractAddress(metadata.contractAddress);
               }
             } catch (e) {
@@ -252,6 +276,8 @@ export default function BarterDetailPage() {
             }
           }
         }
+      } else {
+        console.log("No contract found for this barter");
       }
     }
   }, [barterOffer, relatedContracts, relatedTransactions]);

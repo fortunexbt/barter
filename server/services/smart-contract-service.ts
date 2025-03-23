@@ -32,7 +32,8 @@ export class SmartContractService {
     buyerId: number,
     sellerId: number, 
     commodityId: number, 
-    amount: number
+    amount: number,
+    barterId?: number | null
   ): Promise<{ 
     contractAddress: string, 
     transactionId: number,
@@ -78,12 +79,14 @@ export class SmartContractService {
       amount: amount,
       status: 'pending',
       contractId: contract.id, // Link transaction to contract
+      barterId: barterId || null, // Link to barter if provided
       metadata: JSON.stringify({
         contractAddress,
         transactionHash,
         blockNumber: Math.floor(Math.random() * 10000000) + 1,
         timestamp: new Date().toISOString(),
-        contractId: contract.id
+        contractId: contract.id,
+        barterId: barterId // Include barter ID in metadata for reference
       })
     };
 
@@ -144,7 +147,7 @@ export class SmartContractService {
             status: 'funded'
           });
           
-          // Create a deposit transaction record
+          // Create a deposit transaction record with barter reference
           const transactionData: InsertTransaction = {
             type: 'escrow_deposit',
             senderId: buyerId,
@@ -153,11 +156,14 @@ export class SmartContractService {
             amount: amount,
             status: 'completed',
             contractId: contract.id,
+            // Find if there's a related barter using the previous creation transaction
+            barterId: relatedTransaction.barterId,
             metadata: JSON.stringify({
               contractAddress,
               transactionHash,
               blockNumber: Math.floor(Math.random() * 10000000) + 1,
-              timestamp: new Date().toISOString()
+              timestamp: new Date().toISOString(),
+              barterId: relatedTransaction.barterId // Include barter ID in metadata
             })
           };
           
