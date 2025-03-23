@@ -3,11 +3,6 @@
 
 BarterTrade is a modern web-based platform for commodity trading and bartering with secure identity verification through zero-knowledge proofs.
 
-![BarterTrade](https://img.shields.io/badge/BarterTrade-Platform-blue)
-![React](https://img.shields.io/badge/React-Frontend-blue)
-![Express](https://img.shields.io/badge/Express-Backend-green)
-![TypeScript](https://img.shields.io/badge/TypeScript-Language-blue)
-
 ## 🌟 Features
 
 - **User Authentication**: Secure login and registration
