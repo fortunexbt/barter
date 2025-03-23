@@ -18,6 +18,7 @@ import AdminPage from "@/pages/admin-page";
 import { WelcomeModal } from "@/components/modals/welcome-modal";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./hooks/use-auth";
+import ErrorBoundary from "@/components/ui/error-boundary";
 
 function Router() {
   return (
@@ -45,7 +46,9 @@ function Router() {
 function AppContent() {
   return (
     <>
-      <Router />
+      <ErrorBoundary>
+        <Router />
+      </ErrorBoundary>
       <WelcomeModal />
       <Toaster />
     </>
@@ -54,11 +57,13 @@ function AppContent() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 
