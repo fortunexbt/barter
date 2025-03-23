@@ -58,23 +58,24 @@ export default function ProfilePage() {
   const [isKycModalOpen, setIsKycModalOpen] = useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   
-  // Listen for ZKP verification completion event
-  useEffect(() => {
-    const handleZkpVerificationComplete = () => {
-      // When ZKP verification completes, show the success modal
-      setIsSuccessModalOpen(true);
-    };
-    
-    // Add event listener
-    window.addEventListener('zkpVerificationComplete', handleZkpVerificationComplete);
-    
-    // Cleanup
-    return () => {
-      window.removeEventListener('zkpVerificationComplete', handleZkpVerificationComplete);
-    };
-  }, []);
+  // Handle changes to the URL when changing tabs
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    const newSearchParams = new URLSearchParams(window.location.search);
+    if (value === "profile") {
+      newSearchParams.delete('tab');
+    } else {
+      newSearchParams.set('tab', value);
+    }
+    const newSearch = newSearchParams.toString();
+    window.history.pushState(
+      null, 
+      '', 
+      newSearch ? `?${newSearch}` : window.location.pathname
+    );
+  };
   
-  // Profile form setup
+  // Form for profile editing
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
@@ -85,29 +86,7 @@ export default function ProfilePage() {
     },
   });
   
-  // Update profile mutation
-  const updateProfileMutation = useMutation({
-    mutationFn: async (profileData: ProfileFormValues) => {
-      const res = await apiRequest("PUT", `/api/users/${user?.id}`, profileData);
-      return await res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
-      toast({
-        title: "Profile updated",
-        description: "Your profile has been updated successfully",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Failed to update profile",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-  
-  // KYC form setup
+  // Form for KYC verification
   const kycForm = useForm<KycFormValues>({
     resolver: zodResolver(kycFormSchema),
     defaultValues: {
@@ -116,87 +95,170 @@ export default function ProfilePage() {
     },
   });
   
+  // Update profile form when user data changes
+  useEffect(() => {
+    if (user) {
+      profileForm.reset({
+        fullName: user.fullName,
+        email: user.email,
+        role: user.role || "",
+        profileImage: user.profileImage || "",
+      });
+    }
+  }, [user, profileForm]);
+  
   // Fetch KYC documents
-  const { data: kycDocuments, isLoading: loadingKycDocuments } = useQuery<KycDocument[]>({
+  const { data: kycDocuments, isLoading: loadingKycDocuments } = useQuery({
     queryKey: ["/api/kyc/documents"],
     queryFn: async () => {
-      const response = await fetch("/api/kyc/documents");
-      if (!response.ok) {
-        throw new Error("Failed to fetch KYC documents");
-      }
-      return response.json();
-    }
+      if (!user) return [];
+      const response = await apiRequest("GET", "/api/kyc/documents");
+      const data = await response.json();
+      return data as KycDocument[];
+    },
+    enabled: !!user,
+  });
+  
+  // Update profile mutation
+  const updateProfileMutation = useMutation({
+    mutationFn: async (profileData: ProfileFormValues) => {
+      if (!user) throw new Error("User not authenticated");
+      
+      const response = await apiRequest("PATCH", `/api/users/${user.id}`, profileData);
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      toast({
+        title: "Profile Updated",
+        description: "Your profile information has been updated successfully.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Update Failed",
+        description: error.message || "There was an error updating your profile.",
+        variant: "destructive",
+      });
+    },
   });
   
   // Submit KYC document mutation
   const submitKycMutation = useMutation({
     mutationFn: async (kycData: KycFormValues) => {
-      const res = await apiRequest("POST", "/api/kyc/documents", kycData);
-      return await res.json();
+      if (!user) throw new Error("User not authenticated");
+      
+      const response = await apiRequest("POST", "/api/kyc/submit", {
+        userId: user.id,
+        ...kycData,
+      });
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/kyc/documents"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       toast({
-        title: "KYC document submitted",
-        description: "Your document has been submitted for verification",
+        title: "Documents Submitted",
+        description: "Your KYC documents have been submitted for verification.",
       });
-      kycForm.reset();
+      // Open ZKP verification modal
+      setIsZkpModalOpen(true);
     },
     onError: (error: Error) => {
       toast({
-        title: "Failed to submit KYC document",
-        description: error.message,
+        title: "Submission Failed",
+        description: error.message || "There was an error submitting your KYC documents.",
         variant: "destructive",
       });
     },
   });
   
-  // Demo purpose only: Auto-verify KYC document
+  // Verify KYC document mutation
   const verifyKycMutation = useMutation({
     mutationFn: async (documentId: number) => {
-      const res = await apiRequest("PUT", `/api/kyc/documents/${documentId}/verify`, {});
-      return await res.json();
+      const response = await apiRequest("POST", `/api/kyc/verify/${documentId}`);
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/kyc/documents"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       toast({
-        title: "KYC document verified",
-        description: "Your document has been verified successfully",
+        title: "Document Verified",
+        description: "Your document has been verified successfully.",
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Failed to verify document",
-        description: error.message,
+        title: "Verification Failed",
+        description: error.message || "There was an error verifying the document.",
         variant: "destructive",
       });
     },
   });
   
-  // ZKP identity generation and verification
-  const generateZkpIdentityMutation = useMutation({
-    mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/kyc/generate-identity");
-      return await res.json();
-    },
-    onSuccess: (data) => {
-      queryClient.setQueryData(["/api/user"], data);
-      toast({
-        title: "Zero-Knowledge Identity Created",
-        description: "Your private identity has been generated and securely stored",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Failed to create ZKP identity",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
+  // Event listener for ZKP verification complete
+  useEffect(() => {
+    const handleZkpComplete = () => {
+      console.log("ZKP verification completed");
+      setIsZkpModalOpen(false);
+      
+      // Short delay before showing KYC approval modal
+      setTimeout(() => {
+        setIsKycModalOpen(true);
+      }, 500);
+    };
+    
+    window.addEventListener('zkp-verification-complete', handleZkpComplete);
+    
+    return () => {
+      window.removeEventListener('zkp-verification-complete', handleZkpComplete);
+    };
+  }, []);
   
+  // Event listener for KYC approval complete
+  useEffect(() => {
+    const handleKycApprovalComplete = () => {
+      console.log("KYC approval completed");
+      setIsKycModalOpen(false);
+      
+      // Short delay before showing success modal
+      setTimeout(() => {
+        setIsSuccessModalOpen(true);
+      }, 500);
+    };
+    
+    window.addEventListener('kyc-approval-complete', handleKycApprovalComplete);
+    
+    return () => {
+      window.removeEventListener('kyc-approval-complete', handleKycApprovalComplete);
+    };
+  }, []);
+  
+  // Event listener for showing the platform tour after KYC success
+  useEffect(() => {
+    const handleKycSuccessComplete = () => {
+      console.log("KYC success completed, preparing to show platform tour");
+      // Store a flag in localStorage to indicate KYC is complete
+      localStorage.setItem('kycVerified', 'true');
+      
+      // Force refresh user data
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      
+      // Close success modal
+      setIsSuccessModalOpen(false);
+      
+      // Trigger platform tour (handled by the tour component)
+      const tourEvent = new CustomEvent('start-platform-tour', { detail: { force: true } });
+      window.dispatchEvent(tourEvent);
+    };
+    
+    window.addEventListener('kyc-success-complete', handleKycSuccessComplete);
+    
+    return () => {
+      window.removeEventListener('kyc-success-complete', handleKycSuccessComplete);
+    };
+  }, []);
+  
+  // Form submission handlers
   const onProfileSubmit = (data: ProfileFormValues) => {
     updateProfileMutation.mutate(data);
   };
@@ -205,7 +267,7 @@ export default function ProfilePage() {
     submitKycMutation.mutate(data);
   };
   
-  // Handlers for modal show/hide
+  // Handle opening modals directly
   const handleShowZkpModal = () => {
     setIsZkpModalOpen(true);
   };
@@ -214,218 +276,179 @@ export default function ProfilePage() {
     setIsKycModalOpen(true);
   };
   
+  // Handle KYC completion
   const handleKycComplete = (status: string) => {
-    if (status === "verified") {
-      // Show success modal
-      setIsSuccessModalOpen(true);
-      
-      // Update user data
-      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
-    }
+    console.log(`KYC status updated to: ${status}`);
+    queryClient.invalidateQueries({ queryKey: ["/api/users"] });
   };
-
+  
+  if (!user) {
+    return (
+      <AppShell>
+        <div className="p-6">
+          <Alert>
+            <AlertTitle>Authentication Required</AlertTitle>
+            <AlertDescription>
+              Please sign in to view your profile.
+            </AlertDescription>
+          </Alert>
+        </div>
+      </AppShell>
+    );
+  }
+  
   return (
     <AppShell>
-      <div className="py-6 px-4 sm:px-6 lg:px-8">
-        <div className="mb-6">
-          <h2 className="text-2xl font-semibold text-neutral-600">Profile & KYC</h2>
-          <p className="text-neutral-500">Manage your profile and verify your identity</p>
-        </div>
+      <div className="container mx-auto py-6 max-w-6xl">
+        <h1 className="text-2xl font-bold mb-6">Account & Profile</h1>
         
-        <Tabs value={activeTab} onValueChange={(value) => {
-          setActiveTab(value);
-          // Update URL with tab parameter
-          const url = new URL(window.location.href);
-          url.searchParams.set('tab', value);
-          window.history.pushState({}, '', url.toString());
-        }}>
+        <Tabs defaultValue={activeTab} onValueChange={handleTabChange}>
           <TabsList className="mb-6">
             <TabsTrigger value="profile">Profile</TabsTrigger>
-            <TabsTrigger value="kyc" className="relative">
-              KYC Verification
-              {tabParam !== 'kyc' && activeTab !== 'kyc' && !user?.kycStatus && (
-                <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
-                </span>
-              )}
-            </TabsTrigger>
+            <TabsTrigger value="kyc">KYC Verification</TabsTrigger>
           </TabsList>
           
           <TabsContent value="profile">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Personal Information</CardTitle>
-                    <CardDescription>
-                      Update your personal details
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Form {...profileForm}>
-                      <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-4">
-                        <FormField
-                          control={profileForm.control}
-                          name="fullName"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Full Name</FormLabel>
-                              <FormControl>
-                                <Input placeholder="John Doe" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={profileForm.control}
-                          name="email"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Email</FormLabel>
-                              <FormControl>
-                                <Input type="email" placeholder="john@example.com" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={profileForm.control}
-                          name="role"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Role</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Commodity Trader" {...field} />
-                              </FormControl>
-                              <FormDescription>
-                                Your role in the trading ecosystem
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={profileForm.control}
-                          name="profileImage"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Profile Image URL</FormLabel>
-                              <FormControl>
-                                <Input placeholder="https://example.com/image.jpg" {...field} />
-                              </FormControl>
-                              <FormDescription>
-                                Enter a URL for your profile image
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <Button 
-                          type="submit" 
-                          className="bg-primary text-white"
-                          disabled={updateProfileMutation.isPending}
-                        >
-                          {updateProfileMutation.isPending ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Saving...
-                            </>
-                          ) : (
-                            "Save Changes"
-                          )}
-                        </Button>
-                      </form>
-                    </Form>
-                  </CardContent>
-                </Card>
-              </div>
-              
-              <div>
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Profile Preview</CardTitle>
-                    <CardDescription>
-                      How others see your profile
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="flex flex-col items-center text-center">
-                    <div className="w-32 h-32 rounded-full mb-4 overflow-hidden bg-neutral-200 flex items-center justify-center">
-                      {profileForm.watch("profileImage") ? (
-                        <img 
-                          src={profileForm.watch("profileImage")} 
-                          alt={profileForm.watch("fullName")} 
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <ImageIcon className="h-10 w-10 text-neutral-400" />
+            <Card>
+              <CardHeader>
+                <CardTitle>Personal Information</CardTitle>
+                <CardDescription>
+                  Update your account details and profile information.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Form {...profileForm}>
+                  <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-4">
+                    <FormField
+                      control={profileForm.control}
+                      name="fullName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Full Name</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
                       )}
+                    />
+                    
+                    <FormField
+                      control={profileForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input {...field} type="email" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={profileForm.control}
+                      name="role"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Role</FormLabel>
+                          <FormControl>
+                            <select 
+                              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                              {...field}
+                            >
+                              <option value="trader">Commodity Trader</option>
+                              <option value="producer">Producer</option>
+                              <option value="broker">Broker</option>
+                              <option value="logistics">Logistics Provider</option>
+                            </select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={profileForm.control}
+                      name="profileImage"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Profile Image</FormLabel>
+                          <div className="flex items-center gap-4">
+                            <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center overflow-hidden">
+                              {field.value ? (
+                                <img 
+                                  src={field.value} 
+                                  alt="Profile" 
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                <ImageIcon className="h-8 w-8 opacity-50" />
+                              )}
+                            </div>
+                            <Button type="button" variant="outline" size="sm" className="h-10">
+                              <Upload className="h-4 w-4 mr-2" />
+                              Change Image
+                            </Button>
+                          </div>
+                          <FormDescription>
+                            This feature is simulated in the demo. URLs are accepted.
+                          </FormDescription>
+                          <FormControl>
+                            <Input 
+                              {...field} 
+                              placeholder="Enter image URL" 
+                              className="mt-2"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <div className="flex justify-end">
+                      <Button 
+                        type="submit" 
+                        className="bg-primary text-white"
+                        disabled={updateProfileMutation.isPending}
+                      >
+                        {updateProfileMutation.isPending ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          "Save Changes"
+                        )}
+                      </Button>
                     </div>
-                    <h3 className="text-xl font-semibold text-neutral-700">
-                      {profileForm.watch("fullName") || "Your Name"}
-                    </h3>
-                    <p className="text-neutral-500">
-                      {profileForm.watch("role") || "Your Role"}
-                    </p>
-                    <div className="mt-4">
-                      <Badge variant="outline" className={`${
-                        user?.kycStatus === "verified" 
-                          ? "bg-success bg-opacity-10 text-success" 
-                          : "bg-warning bg-opacity-10 text-warning"
-                      }`}>
-                        {user?.kycStatus === "verified" ? 
-                          <ShieldCheck className="h-4 w-4 mr-1" /> : 
-                          <Key className="h-4 w-4 mr-1" />
-                        }
-                        {user?.kycStatus === "verified" ? "Verified" : "Pending Verification"}
-                      </Badge>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="flex flex-col">
-                    <div className="w-full pt-4 border-t border-neutral-200">
-                      <p className="text-sm text-neutral-500">Account Level</p>
-                      <p className="font-medium">{user?.accountLevel || "Standard"}</p>
-                    </div>
-                    <div className="w-full pt-4">
-                      <p className="text-sm text-neutral-500">Trading Since</p>
-                      <p className="font-medium">
-                        {user?.tradingSince 
-                          ? new Date(user.tradingSince).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) 
-                          : "June 2022"}
-                      </p>
-                    </div>
-                  </CardFooter>
-                </Card>
-              </div>
-            </div>
+                  </form>
+                </Form>
+              </CardContent>
+            </Card>
           </TabsContent>
           
           <TabsContent value="kyc">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2" data-tour="profile-kyc">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
                 <Card>
                   <CardHeader>
-                    <CardTitle>KYC Verification</CardTitle>
+                    <CardTitle>Identity Verification</CardTitle>
                     <CardDescription>
-                      Submit your documents for verification to access all platform features
+                      Verify your identity to unlock full platform features.
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     {user?.kycStatus === "verified" ? (
-                      <div className="p-4 bg-success/10 border border-success/30 rounded-md flex items-center">
-                        <Check className="h-5 w-5 text-success mr-3 flex-shrink-0" />
-                        <div>
-                          <h4 className="font-medium text-success mb-1">Verification Complete</h4>
-                          <p className="text-sm text-neutral-600">
-                            Your identity has been verified using zero-knowledge proofs. You have full access to all platform features.
-                          </p>
+                      <div className="text-center py-8 space-y-3">
+                        <div className="mx-auto h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
+                          <ShieldCheck className="h-6 w-6 text-green-600" />
                         </div>
+                        <h3 className="text-lg font-medium text-green-600">Verification Complete</h3>
+                        <p className="text-sm text-neutral-600">
+                          Your identity has been verified successfully. You have access to all platform features.
+                        </p>
                       </div>
                     ) : (
                       <KycVerificationForm 
@@ -434,76 +457,6 @@ export default function ProfilePage() {
                         onShowKycModal={handleShowKycModal}
                       />
                     )}
-                    
-                    <Form {...kycForm}>
-                      <form onSubmit={kycForm.handleSubmit(onKycSubmit)} className="space-y-4">
-                        <FormField
-                          control={kycForm.control}
-                          name="documentType"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Document Type</FormLabel>
-                              <FormControl>
-                                <select 
-                                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                  {...field}
-                                >
-                                  <option value="">Select document type</option>
-                                  <option value="passport">Passport</option>
-                                  <option value="id">National ID</option>
-                                  <option value="driving_license">Driving License</option>
-                                </select>
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={kycForm.control}
-                          name="documentNumber"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Document Number</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Enter document ID number" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <div className="border-t border-neutral-200 pt-4 mb-4">
-                          <p className="text-sm font-medium mb-2">Upload Document Image</p>
-                          <div className="border-2 border-dashed border-neutral-300 rounded-md p-6 flex flex-col items-center justify-center">
-                            <Upload className="h-8 w-8 text-neutral-400 mb-2" />
-                            <p className="text-sm text-neutral-600 mb-1">Drag and drop your document, or click to browse</p>
-                            <p className="text-xs text-neutral-400">Supports JPEG, PNG, PDF (Max 5MB)</p>
-                            <Button type="button" variant="outline" className="mt-4">
-                              Select File
-                            </Button>
-                          </div>
-                          <p className="text-xs text-neutral-500 mt-2">
-                            Note: Document upload feature is simulated for demo purposes
-                          </p>
-                        </div>
-                        
-                        <Button 
-                          type="submit" 
-                          className="bg-primary text-white"
-                          disabled={submitKycMutation.isPending}
-                        >
-                          {submitKycMutation.isPending ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Submitting...
-                            </>
-                          ) : (
-                            "Submit for Verification"
-                          )}
-                        </Button>
-                      </form>
-                    </Form>
                   </CardContent>
                 </Card>
               </div>
