@@ -55,6 +55,22 @@ export default function ProfilePage() {
   const [isKycModalOpen, setIsKycModalOpen] = useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   
+  // Listen for KYC verification completion event
+  useEffect(() => {
+    const handleKycVerificationComplete = () => {
+      // Show success modal after verification
+      setIsSuccessModalOpen(true);
+      // Refetch the user data to update KYC status
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+    };
+    
+    window.addEventListener('kycVerificationComplete', handleKycVerificationComplete);
+    
+    return () => {
+      window.removeEventListener('kycVerificationComplete', handleKycVerificationComplete);
+    };
+  }, []);
+  
   // Profile form setup
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
