@@ -11,36 +11,8 @@ import {
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
-import connectPg from "connect-pg-simple";
-import pg from "pg";
-import { eq, and, desc } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/node-postgres";
-
-// Define Express namespace with SessionStore
-declare global {
-  namespace Express {
-    interface SessionStore {
-      all: (callback: (err: any, sessions: any) => void) => void;
-      destroy: (sid: string, callback?: (err?: any) => void) => void;
-      clear: (callback?: (err?: any) => void) => void;
-      length: (callback: (err: any, length: number) => void) => void;
-      get: (sid: string, callback: (err: any, session?: any | null) => void) => void;
-      set: (sid: string, session: any, callback?: (err?: any) => void) => void;
-      touch: (sid: string, session: any, callback?: (err?: any) => void) => void;
-    }
-  }
-}
 
 const MemoryStore = createMemoryStore(session);
-const PostgresSessionStore = connectPg(session);
-
-// Setup database connection pool
-const pool = new pg.Pool({
-  connectionString: process.env.DATABASE_URL,
-});
-
-// Create drizzle instance
-const db = drizzle(pool);
 
 // Define the storage interface
 export interface IStorage {
@@ -89,110 +61,127 @@ export interface IStorage {
   createKycDocument(kycDocument: InsertKycDocument): Promise<KycDocument>;
   verifyKycDocument(id: number): Promise<KycDocument | undefined>;
   
-  // Initialize demo data
-  initializeDemoData(): Promise<void>;
-  
   // Session store
-  sessionStore: Express.SessionStore;
+  sessionStore: session.SessionStore;
 }
 
-export class DatabaseStorage implements IStorage {
-  // Session store for persistent sessions  
-  sessionStore: Express.SessionStore;
+export class MemStorage implements IStorage {
+  private usersMap: Map<number, User>;
+  private commoditiesMap: Map<number, Commodity>;
+  private barterOffersMap: Map<number, BarterOffer>;
+  private contractsMap: Map<number, Contract>;
+  private transactionsMap: Map<number, Transaction>;
+  private notificationsMap: Map<number, Notification>;
+  private kycDocumentsMap: Map<number, KycDocument>;
+  
+  sessionStore: session.SessionStore;
+  
+  private userIdCounter: number;
+  private commodityIdCounter: number;
+  private barterIdCounter: number;
+  private contractIdCounter: number;
+  private transactionIdCounter: number;
+  private notificationIdCounter: number;
+  private kycDocumentIdCounter: number;
   
   constructor() {
-    // Create a PostgreSQL session store
-    this.sessionStore = new PostgresSessionStore({
-      pool,
-      createTableIfMissing: true
-    }) as Express.SessionStore;
+    this.usersMap = new Map();
+    this.commoditiesMap = new Map();
+    this.barterOffersMap = new Map();
+    this.contractsMap = new Map();
+    this.transactionsMap = new Map();
+    this.notificationsMap = new Map();
+    this.kycDocumentsMap = new Map();
     
-    // Initialize the database with demo data if needed (async)
-    this.initializeDemoData().catch(err => {
-      console.error("Error initializing demo data:", err);
+    this.userIdCounter = 1;
+    this.commodityIdCounter = 1;
+    this.barterIdCounter = 1;
+    this.contractIdCounter = 1;
+    this.transactionIdCounter = 1;
+    this.notificationIdCounter = 1;
+    this.kycDocumentIdCounter = 1;
+    
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000, // prune expired entries every 24h
     });
+    
+    // Initialize with demo data
+    this.initializeDemoData();
   }
   
-  async initializeDemoData(): Promise<void> {
-    try {
-      // Check if users already exist to avoid duplicating demo data
-      const existingUsers = await db.select().from(users);
-      if (existingUsers.length > 0) {
-        console.log("Demo data already initialized, skipping...");
-        return;
+  private initializeDemoData() {
+    // Add demo users
+    const demoUsers: InsertUser[] = [
+      {
+        username: "demo_seller",
+        password: "$2b$10$UfRxM/1czfWvxz4ChimK3uRvkQFfRxRLJdSgZRzKIzXb5JnxLALEW", // "password"
+        fullName: "Sarah Johnson",
+        email: "sarahjohnson@example.com",
+        role: "trader",
+        accountLevel: "premium",
+        kycStatus: "verified",
+        profileImage: "https://randomuser.me/api/portraits/women/1.jpg",
+        walletAddress: "0x58b9Ce2C10fdD7882abeF545E880387C714c8F7E"
+      },
+      {
+        username: "demo_buyer",
+        password: "$2b$10$UfRxM/1czfWvxz4ChimK3uRvkQFfRxRLJdSgZRzKIzXb5JnxLALEW", // "password"
+        fullName: "Michael Chen",
+        email: "michaelchen@example.com",
+        role: "buyer",
+        accountLevel: "standard",
+        kycStatus: "verified",
+        profileImage: "https://randomuser.me/api/portraits/men/2.jpg",
+        walletAddress: "0xAb3Cc87F22E27b0d7c5a312F058fcb77B74A92A2"
+      },
+      {
+        username: "demo_broker",
+        password: "$2b$10$UfRxM/1czfWvxz4ChimK3uRvkQFfRxRLJdSgZRzKIzXb5JnxLALEW", // "password"
+        fullName: "Olivia Martinez",
+        email: "oliviamartinez@example.com",
+        role: "broker",
+        accountLevel: "premium",
+        kycStatus: "verified",
+        profileImage: "https://randomuser.me/api/portraits/women/3.jpg",
+        walletAddress: "0x6C2fE7E90D13B48B22B39A394e5AaFCD2b6fA12A"
       }
-      
-      console.log("Initializing demo data...");
-      
-      // Add demo users
-      const demoUsers: InsertUser[] = [
-        {
-          username: "demo_seller",
-          password: "$2b$10$UfRxM/1czfWvxz4ChimK3uRvkQFfRxRLJdSgZRzKIzXb5JnxLALEW", // "password"
-          fullName: "Sarah Johnson",
-          email: "sarahjohnson@example.com",
-          role: "trader",
-          accountLevel: "premium",
-          kycStatus: "verified",
-          profileImage: "https://randomuser.me/api/portraits/women/1.jpg"
-        },
-        {
-          username: "demo_buyer",
-          password: "$2b$10$UfRxM/1czfWvxz4ChimK3uRvkQFfRxRLJdSgZRzKIzXb5JnxLALEW", // "password"
-          fullName: "Michael Chen",
-          email: "michaelchen@example.com",
-          role: "buyer",
-          accountLevel: "standard",
-          kycStatus: "verified",
-          profileImage: "https://randomuser.me/api/portraits/men/2.jpg"
-        },
-        {
-          username: "demo_broker",
-          password: "$2b$10$UfRxM/1czfWvxz4ChimK3uRvkQFfRxRLJdSgZRzKIzXb5JnxLALEW", // "password"
-          fullName: "Olivia Martinez",
-          email: "oliviamartinez@example.com",
-          role: "broker",
-          accountLevel: "premium",
-          kycStatus: "verified",
-          profileImage: "https://randomuser.me/api/portraits/women/3.jpg"
-        }
-      ];
-      
-      // Add demo users to database
-      for (const user of demoUsers) {
-        const [insertedUser] = await db.insert(users).values(user).returning();
-        console.log(`Added demo user: ${insertedUser.username} (ID: ${insertedUser.id})`);
-      }
-      
-      // Query the inserted users to get their IDs
-      const insertedUsers = await db.select().from(users);
-      const sellerUser = insertedUsers.find(u => u.username === "demo_seller");
-      const buyerUser = insertedUsers.find(u => u.username === "demo_buyer");
-      const brokerUser = insertedUsers.find(u => u.username === "demo_broker");
-      
-      if (!sellerUser || !buyerUser || !brokerUser) {
-        throw new Error("Failed to retrieve user IDs after insertion");
-      }
-      
-      // Add demo commodities
-      const demoCommodities: InsertCommodity[] = [
-        {
-          name: "Premium Grade Coffee Beans",
-          description: "Organic Arabica coffee beans from Colombian highlands. Certified fair trade and sustainably grown.",
-          ownerId: sellerUser.id,
-          price: 8.95,
-          priceUnit: "lb",
-          volume: 2000,
-          volumeUnit: "lb",
-          category: "agricultural",
-          subcategory: "coffee",
-          grade: "AA",
-          origin: "Colombia",
-          imageUrl: "https://images.unsplash.com/photo-1599639668525-f8be7359a37c?ixlib=rb-4.0.3&q=85&fm=jpg&crop=entropy&cs=srgb&w=500",
-          status: "available",
-          icon: "coffee",
-          iconBg: "amber"
-        },
+    ];
+    
+    // Add demo users to storage
+    for (const user of demoUsers) {
+      const id = this.userIdCounter++;
+      const now = new Date();
+      this.usersMap.set(id, {
+        ...user,
+        id,
+        tradingSince: now,
+        verificationLevel: "full",
+        creditScore: 85,
+        preferredCurrency: "USD",
+        address: "123 Trade Plaza, New York, NY",
+        phone: "+1 (555) 123-4567"
+      });
+    }
+    
+    // Add demo commodities
+    const demoCommodities: InsertCommodity[] = [
+      {
+        name: "Premium Grade Coffee Beans",
+        description: "Organic Arabica coffee beans from Colombian highlands. Certified fair trade and sustainably grown.",
+        ownerId: 1, // Sarah Johnson
+        price: 8.95,
+        priceUnit: "lb",
+        volume: 2000,
+        volumeUnit: "lb",
+        category: "agricultural",
+        subcategory: "coffee",
+        grade: "AA",
+        origin: "Colombia",
+        imageUrl: "https://images.unsplash.com/photo-1599639668525-f8be7359a37c?ixlib=rb-4.0.3&q=85&fm=jpg&crop=entropy&cs=srgb&w=500",
+        status: "available",
+        icon: "coffee",
+        iconBg: "amber"
+      },
       {
         name: "Industrial Grade Copper",
         description: "High purity (99.9%) electrolytic copper cathodes suitable for industrial applications and electronics manufacturing.",
@@ -437,47 +426,88 @@ export class DatabaseStorage implements IStorage {
         verifiedBy: "system",
       });
     }
-    } catch (error) {
-      console.error("Error initializing demo data:", error);
-    }
   }
   
   // User related methods
   async getUser(id: number): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
+    return this.usersMap.get(id);
   }
   
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
-    return user;
+    return Array.from(this.usersMap.values()).find(
+      (user) => user.username === username,
+    );
   }
   
   async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.email, email));
-    return user;
+    return Array.from(this.usersMap.values()).find(
+      (user) => user.email === email,
+    );
   }
   
   async createUser(insertUser: InsertUser): Promise<User> {
-    // For demo purposes - automatically set KYC as verified
-    const userToInsert = {
-      ...insertUser,
-      kycStatus: "pending" // Initially set to pending, not auto-verified
+    const id = this.userIdCounter++;
+    const now = new Date();
+    
+    // For demo purposes - automatically set all users as KYC verified
+    const user: User = { 
+      ...insertUser, 
+      id, 
+      tradingSince: now,
+      kycStatus: "verified", // Auto-approve KYC for demo
+      verificationLevel: "full",
+      creditScore: 85,
+      walletAddress: `0x${Math.random().toString(16).substring(2, 38)}`, // Demo wallet address
     };
     
-    // Insert the user
-    const [user] = await db.insert(users).values(userToInsert).returning();
+    this.usersMap.set(id, user);
+    
+    // Create automatic KYC verification document
+    const kycDocId = this.kycDocumentIdCounter++;
+    this.kycDocumentsMap.set(kycDocId, {
+      id: kycDocId,
+      userId: id,
+      documentType: "identity_card",
+      documentNumber: `ID${Math.floor(Math.random() * 10000000)}`,
+      status: "verified",
+      uploadedAt: now,
+      verifiedAt: now,
+      verifiedBy: "system",
+      fileUrl: "/demo/kyc/id_demo.jpg",
+    });
+    
+    // Create welcome and KYC approved notifications
+    const welcomeNotifId = this.notificationIdCounter++;
+    this.notificationsMap.set(welcomeNotifId, {
+      id: welcomeNotifId,
+      userId: id,
+      type: "system",
+      title: "Welcome to BarterTrade",
+      message: "Thank you for joining BarterTrade! Your account is now active and ready for trading.",
+      isRead: false,
+      createdAt: now,
+    });
+    
+    const kycNotifId = this.notificationIdCounter++;
+    this.notificationsMap.set(kycNotifId, {
+      id: kycNotifId,
+      userId: id,
+      type: "kyc",
+      title: "KYC Verification Complete",
+      message: "Your KYC verification has been approved. You now have full access to all trading features.",
+      isRead: false,
+      createdAt: new Date(now.getTime() + 1000), // 1 second later
+    });
     
     return user;
   }
   
   async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
-    const [updatedUser] = await db
-      .update(users)
-      .set(userData)
-      .where(eq(users.id, id))
-      .returning();
-      
+    const user = await this.getUser(id);
+    if (!user) return undefined;
+    
+    const updatedUser = { ...user, ...userData };
+    this.usersMap.set(id, updatedUser);
     return updatedUser;
   }
   
