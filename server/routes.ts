@@ -148,12 +148,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.post('/api/commodities', isAuthenticated, validateBody(insertCommoditySchema), async (req, res, next) => {
+  // Use a modified schema that omits ownerId for validation since we'll add it after validation
+  const clientCommoditySchema = insertCommoditySchema.omit({ ownerId: true });
+  
+  app.post('/api/commodities', isAuthenticated, validateBody(clientCommoditySchema), async (req, res, next) => {
     try {
+      // Add ownerId from the authenticated user
       const commodityData: InsertCommodity = {
         ...req.body,
         ownerId: req.user!.id,
       };
+      
+      // Create the commodity in storage
       const commodity = await storage.createCommodity(commodityData);
       res.status(201).json(commodity);
     } catch (error) {
