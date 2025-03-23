@@ -30,7 +30,7 @@ export default function MarketplaceWidget() {
         </div>
       </div>
       
-      <div className="overflow-x-auto">
+      <div>
         {isLoading ? (
           <div className="p-8 flex justify-center">
             <Loader2 className="h-8 w-8 animate-spin text-neutral-300" />
@@ -44,22 +44,18 @@ export default function MarketplaceWidget() {
             No commodities available at the moment
           </div>
         ) : (
-          <table className="min-w-full divide-y divide-neutral-200">
-            <thead className="bg-neutral-100">
-              <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Commodity</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Price</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Volume</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Status</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Action</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-neutral-200">
-              {commodities.map((commodity) => (
-                <CommodityRow key={commodity.id} commodity={commodity} />
-              ))}
-            </tbody>
-          </table>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
+            {commodities.slice(0, 4).map((commodity) => (
+              <div key={commodity.id} className="h-full">
+                <CommodityCard 
+                  commodity={commodity}
+                  compactView={true}
+                  showAnimation={false}
+                  isNew={false}
+                />
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </div>
