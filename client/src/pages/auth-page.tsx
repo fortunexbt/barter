@@ -84,10 +84,17 @@ export default function AuthPage() {
   };
 
   const onRegisterSubmit = (data: RegisterFormValues) => {
+    // Ensure KYC status is 'pending' instead of 'verified' on registration
     const { confirmPassword, ...registerData } = data;
-    registerMutation.mutate(registerData, {
+    const userData = {
+      ...registerData,
+      kycStatus: 'pending' // Ensure KYC status starts as pending
+    };
+    
+    registerMutation.mutate(userData, {
       onSuccess: () => {
-        // This will delay navigation slightly to allow React Query to update properly
+        // Short delay to allow React Query to update before navigation
+        // The welcome modal will show automatically after navigation
         setTimeout(() => navigate("/"), 50);
       }
     });
