@@ -89,7 +89,9 @@ export default function SmartContractCreationModal({
       
       toast({
         title: "Smart Contract Created",
-        description: `Escrow contract created with address ${data.contractAddress.substring(0, 8)}...`,
+        description: data.contractAddress 
+          ? `Escrow contract created with address ${data.contractAddress.substring(0, 8)}...`
+          : "Escrow contract created successfully",
       });
       
       if (onSuccess) {
@@ -221,10 +223,12 @@ export default function SmartContractCreationModal({
           <div className="space-y-4">
             <div className="rounded-md bg-muted p-4">
               <dl className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <dt className="font-medium">Contract Address:</dt>
-                  <dd className="text-right font-mono">{`${contractData.contractAddress.substring(0, 6)}...${contractData.contractAddress.substring(contractData.contractAddress.length - 4)}`}</dd>
-                </div>
+                {contractData.contractAddress && (
+                  <div className="flex justify-between">
+                    <dt className="font-medium">Contract Address:</dt>
+                    <dd className="text-right font-mono">{`${contractData.contractAddress.substring(0, 6)}...${contractData.contractAddress.substring(contractData.contractAddress.length - 4)}`}</dd>
+                  </div>
+                )}
                 {contractData.transactionHash && (
                   <div className="flex justify-between">
                     <dt className="font-medium">Transaction Hash:</dt>
