@@ -125,7 +125,7 @@ export default function DealsPage() {
   
   return (
     <AppShell>
-      <div className="py-6 px-4 sm:px-6 lg:px-8">
+      <div className="py-6 px-4 sm:px-6 lg:px-8" data-tour="deals">
         <div className="mb-6">
           <h2 className="text-2xl font-semibold text-neutral-600">My Deals</h2>
           <p className="text-neutral-500">Track and manage all your trades, barters, and contracts</p>
@@ -156,8 +156,11 @@ export default function DealsPage() {
                     </CardHeader>
                     <CardContent>
                       <div className="grid gap-4">
-                        {filteredDeals.contracts.map((contract) => (
-                          <div key={contract.id} className="border rounded-lg p-4">
+                        {filteredDeals.contracts.map((contract, index) => (
+                          <div 
+                            key={contract.id} 
+                            className="border rounded-lg p-4"
+                            data-tour={index === 0 ? "deals-contract" : undefined}>
                             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4">
                               <div>
                                 <h3 className="font-semibold text-lg">
