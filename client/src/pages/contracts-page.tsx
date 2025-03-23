@@ -4,7 +4,7 @@ import AppShell from "@/components/layout/app-shell";
 import { Contract, InsertContract } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Filter, FileText, Plus } from "lucide-react";
+import { Loader2, Filter, FileText, Plus, Search } from "lucide-react";
 import { 
   Card,
   CardContent
@@ -337,7 +337,7 @@ export default function ContractsPage() {
               className="pl-10"
             />
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <span className="material-icons text-neutral-400 text-sm">search</span>
+              <Search className="h-4 w-4 text-neutral-400" />
             </div>
           </div>
           
