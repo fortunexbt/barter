@@ -6,6 +6,13 @@ import { BarterOffer, Commodity, User } from "@shared/schema";
 import { formatDate, formatCurrency, formatNumber } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Loader2, Check, X, ArrowRight, User as UserIcon, Package, DollarSign, Shield } from "lucide-react";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
+import ZkpVerificationModal from "@/components/modals/zkp-verification-modal";
+import SmartContractCreationModal from "@/components/modals/smart-contract-creation-modal";
+import EscrowDepositModal from "@/components/modals/escrow-deposit-modal";
+import EscrowReleaseModal from "@/components/modals/escrow-release-modal";
 import { 
   Card, 
   CardContent, 
@@ -28,13 +35,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useAuth } from "@/hooks/use-auth";
-import ZkpVerificationModal from "@/components/modals/zkp-verification-modal";
-import SmartContractCreationModal from "@/components/modals/smart-contract-creation-modal";
-import EscrowDepositModal from "@/components/modals/escrow-deposit-modal";
-import EscrowReleaseModal from "@/components/modals/escrow-release-modal";
 
 // Extended type for the enhanced barter offer from the API
 interface EnhancedBarterOffer extends BarterOffer {
@@ -393,8 +393,8 @@ export default function BarterDetailPage() {
                     </div>
                   </div>
                   
-                  <div className="mb-4">
-                    <h4 className="text-sm font-medium text-neutral-500 mb-2">Owned By</h4>
+                  <div>
+                    <h4 className="text-sm font-medium text-neutral-500 mb-2">Requested By</h4>
                     {barterOffer.requestingUser ? (
                       <div className="flex items-center">
                         <Avatar className="h-8 w-8 mr-2">
@@ -432,183 +432,226 @@ export default function BarterDetailPage() {
           </Card>
         </div>
         
-        {/* Value Match Analysis */}
+        {/* Value Comparison */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Value Match Analysis</CardTitle>
-            <CardDescription>Analysis of the value match between the offered commodities</CardDescription>
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-primary" />
+              Value Analysis
+            </CardTitle>
+            <CardDescription>
+              Comparison of commodity values for this barter
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col md:flex-row gap-6 md:items-center">
-              <div className="flex-1 space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Value Match Score</span>
-                  <span className={`text-lg font-bold ${getValueMatchColor(barterOffer.valueMatch)}`}>
-                    {barterOffer.valueMatch}%
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Value Difference</span>
-                  <span className="text-lg font-medium">
-                    {getValueDifference()}%
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Offered Value</span>
-                  <span className="text-lg">
-                    {barterOffer.offeringCommodity 
-                      ? formatCurrency(barterOffer.offeringCommodity.price * barterOffer.offeringCommodity.volume, "USD") 
-                      : "N/A"}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Requested Value</span>
-                  <span className="text-lg">
-                    {barterOffer.requestingCommodity 
-                      ? formatCurrency(barterOffer.requestingCommodity.price * barterOffer.requestingCommodity.volume, "USD") 
-                      : "N/A"}
-                  </span>
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <h4 className="text-sm font-medium text-neutral-500">Value Match Score</h4>
+                <p className={`text-lg font-medium ${getValueMatchColor(barterOffer.valueMatch)}`}>
+                  {barterOffer.valueMatch}%
+                </p>
+                <p className="text-xs text-neutral-500">
+                  {barterOffer.valueMatch >= 95 
+                    ? "Excellent match" 
+                    : barterOffer.valueMatch >= 80 
+                      ? "Good match" 
+                      : "Poor match"}
+                </p>
               </div>
-              <div className="md:w-1/2">
-                <div className="p-4 bg-gray-50 rounded-lg">
-                  <h4 className="text-sm font-medium mb-2">AI-Powered Recommendation</h4>
-                  <p className="text-sm text-neutral-600 mb-3">
-                    {barterOffer.valueMatch >= 90 
-                      ? "This barter offer has an excellent value match. We recommend accepting this offer as it represents fair market value for both parties."
-                      : barterOffer.valueMatch >= 75
-                        ? "This barter offer has a good value match. Consider accepting this offer as it's within a reasonable range of market values."
-                        : "This barter offer has a poor value match. You may want to negotiate or counter with a different offer."}
-                  </p>
-                  {barterOffer.valueMatch < 90 && (
-                    <p className="text-xs text-neutral-500">
-                      For more balanced trades, consider adjusting commodity volumes or selecting different commodities.
-                    </p>
-                  )}
-                </div>
+              
+              <div>
+                <h4 className="text-sm font-medium text-neutral-500">Value Difference</h4>
+                <p className="text-lg font-medium">
+                  {getValueDifference()}%
+                </p>
+                <p className="text-xs text-neutral-500">
+                  Percentage difference between commodity values
+                </p>
+              </div>
+              
+              <div>
+                <h4 className="text-sm font-medium text-neutral-500">Recommendation</h4>
+                {barterOffer.valueMatch >= 90 ? (
+                  <Badge variant="success" className="mb-1">Proceed with confidence</Badge>
+                ) : barterOffer.valueMatch >= 75 ? (
+                  <Badge variant="warning" className="mb-1">Consider carefully</Badge>
+                ) : (
+                  <Badge variant="destructive" className="mb-1">Not recommended</Badge>
+                )}
+                <p className="text-xs text-neutral-500">
+                  {barterOffer.valueMatch >= 90 
+                    ? "This is a fair trade with balanced value" 
+                    : barterOffer.valueMatch >= 75 
+                      ? "The value is slightly imbalanced" 
+                      : "Significant value disparity exists"}
+                </p>
               </div>
             </div>
           </CardContent>
-          {canAcceptOrReject && (
-            <CardFooter className="flex justify-end space-x-2">
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="destructive">
-                    <X className="mr-2 h-4 w-4" />
-                    Reject Offer
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Are you sure you want to reject this offer?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This action cannot be undone. The offering party will be notified of your decision.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction 
-                      onClick={() => rejectBarterMutation.mutate()}
-                      className="bg-destructive"
-                    >
-                      {rejectBarterMutation.isPending ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Rejecting...
-                        </>
-                      ) : (
-                        "Yes, Reject Offer"
-                      )}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-              
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button className="bg-success hover:bg-success/90 text-white">
-                    <Check className="mr-2 h-4 w-4" />
-                    Accept Offer
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Accept this barter offer?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      By accepting this offer, you agree to trade your commodity for the offered commodity. A smart contract will be generated to facilitate the exchange.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction 
-                      onClick={() => acceptBarterMutation.mutate()}
-                      className="bg-success"
-                    >
-                      {acceptBarterMutation.isPending ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Accepting...
-                        </>
-                      ) : (
-                        "Yes, Accept Offer"
-                      )}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </CardFooter>
-          )}
         </Card>
         
-        {/* Transaction Timeline (show only for accepted barters) */}
+        {/* Actions */}
+        {barterOffer.status === "pending" && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Barter Actions</CardTitle>
+              <CardDescription>
+                Accept or reject this barter offer
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col space-y-2">
+                {canAcceptOrReject ? (
+                  <div className="flex flex-wrap gap-4">
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="success" className="min-w-[120px]">
+                          <Check className="mr-2 h-4 w-4" />
+                          Accept Offer
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Accept Barter Offer?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Accepting this offer will initiate the barter process. You will exchange your commodity with the offered one. This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => acceptBarterMutation.mutate()}>
+                            {acceptBarterMutation.isPending ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Processing...
+                              </>
+                            ) : (
+                              "Accept Offer"
+                            )}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                    
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" className="min-w-[120px]">
+                          <X className="mr-2 h-4 w-4" />
+                          Reject Offer
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Reject Barter Offer?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to reject this barter offer? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => rejectBarterMutation.mutate()}>
+                            {rejectBarterMutation.isPending ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Processing...
+                              </>
+                            ) : (
+                              "Reject Offer"
+                            )}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                ) : (
+                  <p className="text-neutral-500 italic">
+                    This offer is waiting for a response from {barterOffer.requestingUser?.username || "the other party"}.
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+        
+        {/* Contract Timeline for Accepted Offers */}
         {barterOffer.status === "accepted" && (
           <Card>
             <CardHeader>
-              <CardTitle>Transaction Timeline</CardTitle>
-              <CardDescription>Step-by-step progress of this barter transaction</CardDescription>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5 text-secondary" />
+                Smart Contract Timeline
+              </CardTitle>
+              <CardDescription>
+                Secure your barter with a smart contract escrow
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="relative">
-                <div className="absolute left-3 top-0 bottom-0 w-px bg-secondary/20"></div>
-                
-                <div className="relative pl-10 pb-6">
-                  <div className="absolute left-0 rounded-full bg-secondary w-6 h-6 flex items-center justify-center">
-                    <Check className="h-3 w-3 text-white" />
+              <div className="space-y-6">
+                <div className="flex">
+                  <div className="mr-4 flex flex-col items-center">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-white">
+                      1
+                    </div>
+                    <div className="h-full w-px bg-secondary/20" />
                   </div>
-                  <h4 className="text-md font-medium">Barter Offer Created</h4>
-                  <p className="text-neutral-500 text-sm">{formatDate(barterOffer.createdAt || new Date())}</p>
+                  <div>
+                    <h4 className="font-medium">Create Smart Contract</h4>
+                    <p className="text-neutral-500 text-sm mb-2">
+                      Initialize a secure escrow contract for this barter
+                    </p>
+                    <Button 
+                      onClick={handleCreateSmartContract}
+                      size="sm"
+                      className="bg-secondary text-white"
+                    >
+                      Create Contract
+                    </Button>
+                  </div>
                 </div>
                 
-                <div className="relative pl-10 pb-6">
-                  <div className="absolute left-0 rounded-full bg-secondary w-6 h-6 flex items-center justify-center">
-                    <Check className="h-3 w-3 text-white" />
+                <div className="flex">
+                  <div className="mr-4 flex flex-col items-center">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-neutral-200">
+                      2
+                    </div>
+                    <div className="h-full w-px bg-neutral-200" />
                   </div>
-                  <h4 className="text-md font-medium">Barter Offer Accepted</h4>
-                  <p className="text-neutral-500 text-sm">Commodities ready for exchange</p>
+                  <div>
+                    <h4 className="font-medium text-neutral-500">Deposit Funds to Escrow</h4>
+                    <p className="text-neutral-500 text-sm mb-2">
+                      Lock funds in the escrow contract to secure the transaction
+                    </p>
+                    <Button 
+                      onClick={() => setIsEscrowDepositModalOpen(true)}
+                      size="sm"
+                      variant="outline"
+                      disabled={!contractAddress}
+                    >
+                      Deposit to Escrow
+                    </Button>
+                  </div>
                 </div>
                 
-                <div className="relative pl-10 pb-6">
-                  <div className="absolute left-0 rounded-full bg-neutral-200 w-6 h-6 flex items-center justify-center">
-                    <span className="text-xs text-neutral-500">3</span>
+                <div className="flex">
+                  <div className="mr-4 flex flex-col items-center">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-neutral-200">
+                      3
+                    </div>
                   </div>
-                  <h4 className="text-md font-medium text-neutral-500">Smart Contract Generated</h4>
-                  <p className="text-neutral-500 text-sm">Pending blockchain confirmation</p>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="mt-2"
-                    onClick={handleCreateSmartContract}
-                  >
-                    Generate Smart Contract
-                  </Button>
-                </div>
-                
-                <div className="relative pl-10">
-                  <div className="absolute left-0 rounded-full bg-neutral-200 w-6 h-6 flex items-center justify-center">
-                    <span className="text-xs text-neutral-500">4</span>
+                  <div>
+                    <h4 className="font-medium text-neutral-500">Release Funds to Seller</h4>
+                    <p className="text-neutral-500 text-sm mb-2">
+                      Release escrow funds after confirming delivery
+                    </p>
+                    <Button 
+                      onClick={() => setIsEscrowReleaseModalOpen(true)}
+                      size="sm"
+                      variant="outline"
+                      disabled={!contractAddress}
+                    >
+                      Release Escrow
+                    </Button>
                   </div>
-                  <h4 className="text-md font-medium text-neutral-500">Exchange Completed</h4>
-                  <p className="text-neutral-500 text-sm">Awaiting final confirmation</p>
                 </div>
               </div>
             </CardContent>
