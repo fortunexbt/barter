@@ -503,6 +503,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // New endpoint to handle KYC document uploads with file
+  app.post('/api/kyc/submit', isAuthenticated, async (req, res, next) => {
+    try {
+      // In a real implementation, we would process the uploaded file
+      // For this demo, we'll just create a KYC document record
+      const kycDocumentData: InsertKycDocument = {
+        userId: req.user!.id,
+        documentType: req.body.documentType || "identity_document",
+        documentNumber: req.body.documentNumber || `ID${Math.floor(Math.random() * 1000000)}`,
+        verified: false, // Start as unverified
+      };
+      
+      const kycDocument = await storage.createKycDocument(kycDocumentData);
+      
+      // Create notification
+      const notification: InsertNotification = {
+        userId: req.user!.id,
+        message: "Your KYC document has been submitted for verification",
+        type: "kyc",
+        icon: "file_present",
+        iconBg: "info",
+        read: false,
+      };
+      
+      await storage.createNotification(notification);
+      
+      res.status(201).json(kycDocument);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
   app.get('/api/kyc/documents', isAuthenticated, async (req, res, next) => {
     try {
       const kycDocuments = await storage.getKycDocumentsByUser(req.user!.id);
@@ -512,6 +544,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // ZKP identity generation endpoint
+  app.post('/api/kyc/generate-identity', isAuthenticated, async (req, res, next) => {
+    try {
+      // Generate ZKP identity using the ZKP service
+      const identityData = ZKPService.createIdentity();
+      
+      // Update the user with the identity commitment
+      const updatedUser = await storage.updateUser(req.user!.id, {
+        identityCommitment: identityData.identityCommitment,
+        zkpIdentity: identityData.serializedIdentity,
+      });
+      
+      // Create a notification
+      const notification: InsertNotification = {
+        userId: req.user!.id,
+        message: "Your zero-knowledge identity has been generated",
+        type: "kyc",
+        icon: "shield",
+        iconBg: "info",
+        read: false,
+      };
+      
+      await storage.createNotification(notification);
+      
+      res.status(201).json(updatedUser);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  // ZKP verification endpoint
+  app.post('/api/kyc/verify-proof', isAuthenticated, async (req, res, next) => {
+    try {
+      // Get the user's ZKP identity
+      const user = await storage.getUser(req.user!.id);
+      if (!user || !user.zkpIdentity) {
+        return res.status(400).json({ message: "No ZKP identity found for this user" });
+      }
+      
+      // Deserialize the identity
+      const identity = ZKPService.deserializeIdentity(user.zkpIdentity);
+      if (!identity) {
+        return res.status(400).json({ message: "Failed to deserialize identity" });
+      }
+      
+      // Generate ZKP proof
+      const proofData = await ZKPService.generateVerificationProof(identity);
+      
+      // Verify the proof
+      const isValid = await ZKPService.verifyIdentityProof(proofData);
+      
+      if (!isValid) {
+        return res.status(400).json({ message: "Proof verification failed" });
+      }
+      
+      // Update user's ZKP verification status
+      const updatedUser = await storage.updateUser(req.user!.id, {
+        zkpVerified: true,
+      });
+      
+      // Create a notification
+      const notification: InsertNotification = {
+        userId: req.user!.id,
+        message: "Your identity has been verified with zero-knowledge proofs",
+        type: "kyc",
+        icon: "shield_check",
+        iconBg: "success",
+        read: false,
+      };
+      
+      await storage.createNotification(notification);
+      
+      res.json({ success: true, user: updatedUser });
+    } catch (error) {
+      next(error);
+    }
+  });
+
   // For demo purposes, auto-verify KYC documents. In a real app, this would be an admin-only route
   app.put('/api/kyc/documents/:id/verify', isAuthenticated, async (req, res, next) => {
     try {
