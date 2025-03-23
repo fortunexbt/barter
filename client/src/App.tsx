@@ -6,6 +6,7 @@ import NotFound from "@/pages/not-found";
 import HomePage from "@/pages/home-page";
 import AuthPage from "@/pages/auth-page";
 import MarketplacePage from "@/pages/marketplace-page";
+import CommodityDetailPage from "@/pages/commodity-detail-page";
 import BarterPage from "@/pages/barter-page";
 import TransactionsPage from "@/pages/transactions-page";
 import ContractsPage from "@/pages/contracts-page";
@@ -20,6 +21,7 @@ function Router() {
       <Route path="/auth" component={AuthPage} />
       <ProtectedRoute path="/" component={HomePage} />
       <ProtectedRoute path="/marketplace" component={MarketplacePage} />
+      <ProtectedRoute path="/marketplace/:id" component={CommodityDetailPage} />
       <ProtectedRoute path="/barter" component={BarterPage} />
       <ProtectedRoute path="/transactions" component={TransactionsPage} />
       <ProtectedRoute path="/contracts" component={ContractsPage} />

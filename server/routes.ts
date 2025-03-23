@@ -430,6 +430,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // User routes
+  
+  // Get user by ID (public info only)
+  app.get('/api/user/:id', async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      const user = await storage.getUser(id);
+      
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      // Remove sensitive information
+      const publicUser = {
+        id: user.id,
+        fullName: user.fullName,
+        role: user.role,
+        kycStatus: user.kycStatus,
+        accountLevel: user.accountLevel,
+        tradingSince: user.tradingSince,
+        profileImage: user.profileImage,
+        zkpVerified: user.zkpVerified
+      };
+      
+      res.json(publicUser);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
   // KYC routes
   
   // Generate ZKP identity for KYC verification
