@@ -500,6 +500,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Smart contract routes integrated with the SmartContractService
+  
   app.post('/api/transactions', isAuthenticated, validateBody(insertTransactionSchema), async (req, res, next) => {
     try {
       const transactionData: InsertTransaction = {
