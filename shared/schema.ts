@@ -14,6 +14,9 @@ export const users = pgTable("users", {
   accountLevel: text("account_level").default("standard"),
   tradingSince: timestamp("trading_since").defaultNow(),
   profileImage: text("profile_image").default(""),
+  // ZKP identity fields
+  identityCommitment: text("identity_commitment"),
+  zkpVerified: boolean("zkp_verified").default(false),
 });
 
 // Commodities table
