@@ -1,6 +1,7 @@
-import { drizzle } from 'drizzle-orm/neon-serverless';
 import { eq, or } from 'drizzle-orm';
-import { Pool } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/neon-serverless';
+import { neon } from '@neondatabase/serverless';
+
 import { 
   users, commodities, barterOffers, contracts, 
   transactions, notifications, kycDocuments,
@@ -16,11 +17,19 @@ import session from "express-session";
 import pgStoreFactory from "connect-pg-simple";
 import { IStorage } from "./storage";
 
-// Create a PostgreSQL client for the database
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+// Create a PostgreSQL client for the database using Neon serverless
+const sql = neon(process.env.DATABASE_URL || '');
 
 // Initialize Drizzle with the PostgreSQL client
-const db = drizzle(pool);
+const db = drizzle(sql);
+
+// For the session store, we need to use a different approach
+// Since we use serverless, wrap each query in a new connection
+const sessionPool = {
+  query: async (text, params) => {
+    return sql(text, params);
+  }
+};
 
 // Create a PostgreSQL-backed session store
 const PgStore = pgStoreFactory(session);
@@ -31,7 +40,7 @@ export class PostgresStorage implements IStorage {
   constructor() {
     // Create a session store that uses PostgreSQL
     this.sessionStore = new PgStore({
-      pool,
+      pool: sessionPool,
       tableName: 'sessions',
     });
   }
