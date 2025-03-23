@@ -28,15 +28,14 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Loader2, Wallet } from "lucide-react";
 
 const loginSchema = z.object({
-  username: z.string().min(3, { message: "Username must be at least 3 characters" }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
+  username: z.string().min(3).max(20),
+  password: z.string().min(6),
 });
 
 const registerSchema = insertUserSchema.extend({
-  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
-  confirmPassword: z.string(),
+  confirmPassword: z.string().min(6),
 }).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
+  message: "Passwords do not match",
   path: ["confirmPassword"],
 });
 
@@ -94,19 +93,16 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-neutral-100">
+    <div className="flex min-h-screen bg-neutral-50">
       {/* Left side - Auth form */}
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-md">
-          <div className="mb-8 text-center">
-            <div className="flex items-center justify-center mb-4">
-              <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-white font-bold text-lg">BT</div>
-            </div>
-            <h1 className="text-2xl font-bold text-neutral-800">BarterTrade Platform</h1>
-            <p className="text-neutral-500 mt-2">Commodity Trading & Barter System</p>
+          <div className="mb-10 text-center">
+            <h2 className="text-3xl font-bold mb-1">BarterTrade</h2>
+            <p className="text-neutral-500">Commodities Trading & Barter Platform</p>
           </div>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-6">
               <TabsTrigger value="login">Login</TabsTrigger>
               <TabsTrigger value="register">Register</TabsTrigger>
@@ -116,7 +112,7 @@ export default function AuthPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Welcome back</CardTitle>
-                  <CardDescription>Enter your credentials to access your account</CardDescription>
+                  <CardDescription>Enter your credentials to sign in</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Form {...loginForm}>
@@ -182,12 +178,12 @@ export default function AuthPage() {
                         MetaMask
                       </Button>
                       <Button variant="outline" type="button" className="flex items-center justify-center">
-                        <Wallet className="h-5 w-5 mr-2 text-blue-500" />
-                        Rabby
+                        <Wallet className="h-5 w-5 mr-2 text-green-600" />
+                        Yubikey
                       </Button>
                       <Button variant="outline" type="button" className="flex items-center justify-center col-span-2">
-                        <Wallet className="h-5 w-5 mr-2 text-blue-600" />
-                        WalletConnect
+                        <Wallet className="h-5 w-5 mr-2 text-black" />
+                        Ledger
                       </Button>
                     </div>
                   </div>
@@ -281,6 +277,7 @@ export default function AuthPage() {
                           )}
                         />
                       </div>
+
                       <FormField
                         control={registerForm.control}
                         name="role"
@@ -288,15 +285,15 @@ export default function AuthPage() {
                           <FormItem>
                             <FormLabel>Role</FormLabel>
                             <FormControl>
-                              <Select
-                                onValueChange={field.onChange}
-                                defaultValue={field.value as string}
+                              <Select 
+                                value={field.value || "trader"} 
+                                onValueChange={(value) => field.onChange(value)}
                               >
                                 <SelectTrigger>
-                                  <SelectValue placeholder="Select your role" />
+                                  <SelectValue placeholder="Select role" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="trader">Commodity Trader</SelectItem>
+                                  <SelectItem value="trader">Trader</SelectItem>
                                   <SelectItem value="broker">Broker</SelectItem>
                                   <SelectItem value="producer">Producer</SelectItem>
                                   <SelectItem value="buyer">Buyer</SelectItem>
@@ -345,12 +342,12 @@ export default function AuthPage() {
                         MetaMask
                       </Button>
                       <Button variant="outline" type="button" className="flex items-center justify-center">
-                        <Wallet className="h-5 w-5 mr-2 text-blue-500" />
-                        Rabby
+                        <Wallet className="h-5 w-5 mr-2 text-green-600" />
+                        Yubikey
                       </Button>
                       <Button variant="outline" type="button" className="flex items-center justify-center col-span-2">
-                        <Wallet className="h-5 w-5 mr-2 text-blue-600" />
-                        WalletConnect
+                        <Wallet className="h-5 w-5 mr-2 text-black" />
+                        Ledger
                       </Button>
                     </div>
                   </div>
@@ -361,7 +358,7 @@ export default function AuthPage() {
                       onClick={() => setActiveTab("login")}
                       className="text-primary hover:underline"
                     >
-                      Login
+                      Login instead
                     </button>
                   </div>
                 </CardFooter>
@@ -371,30 +368,38 @@ export default function AuthPage() {
         </div>
       </div>
 
-      {/* Right side - Hero section */}
-      <div className="hidden lg:flex lg:flex-1 bg-primary p-8 items-center justify-center">
-        <div className="max-w-lg text-white">
-          <h1 className="text-4xl font-bold mb-4">Trade Commodities. Barter with Confidence.</h1>
-          <p className="text-lg mb-6">
-            BarterTrade is an all-in-one platform that simplifies commodity trading, enables barter
-            exchanges, and ensures secure transactions with integrated KYC and smart contracts.
-          </p>
-          <div className="grid grid-cols-2 gap-6 mt-10">
-            <div className="bg-white/10 p-4 rounded-lg backdrop-blur-sm">
-              <h3 className="font-medium text-xl mb-2">Commodity Trading</h3>
-              <p className="text-white/80">List, search, and trade commodities easily and securely</p>
+      {/* Right side - Feature highlight */}
+      <div className="hidden lg:block flex-1 bg-primary/10 p-12">
+        <div className="h-full flex flex-col justify-center max-w-md mx-auto">
+          <div className="space-y-6">
+            <div className="rounded-lg bg-white p-2 w-12 h-12 flex items-center justify-center shadow-sm">
+              <img src="/logo.svg" alt="BarterTrade Logo" className="w-8 h-8" />
             </div>
-            <div className="bg-white/10 p-4 rounded-lg backdrop-blur-sm">
-              <h3 className="font-medium text-xl mb-2">Barter System</h3>
-              <p className="text-white/80">Exchange goods without cash through our intelligent matching</p>
-            </div>
-            <div className="bg-white/10 p-4 rounded-lg backdrop-blur-sm">
-              <h3 className="font-medium text-xl mb-2">Smart Contracts</h3>
-              <p className="text-white/80">Automatically generate and execute secure trading contracts</p>
-            </div>
-            <div className="bg-white/10 p-4 rounded-lg backdrop-blur-sm">
-              <h3 className="font-medium text-xl mb-2">KYC Compliance</h3>
-              <p className="text-white/80">Fully compliant with regulatory requirements for security</p>
+            <h2 className="text-3xl font-bold">AI-Powered Commodity Trading</h2>
+            <p className="text-gray-600">
+              BarterTrade uses advanced zero-knowledge proofs and blockchain smart contracts to create a secure, private, and efficient marketplace for commodity trading.
+            </p>
+            
+            <div className="border-t border-gray-200 pt-6 mt-8">
+              <h3 className="font-medium mb-4">Platform Features</h3>
+              <ul className="space-y-3">
+                <li className="flex items-center">
+                  <div className="h-6 w-6 rounded-full bg-primary/20 mr-3 flex items-center justify-center text-primary text-sm">✓</div>
+                  <span>Secure identity verification with ZKP</span>
+                </li>
+                <li className="flex items-center">
+                  <div className="h-6 w-6 rounded-full bg-primary/20 mr-3 flex items-center justify-center text-primary text-sm">✓</div>
+                  <span>Blockchain-backed smart contracts</span>
+                </li>
+                <li className="flex items-center">
+                  <div className="h-6 w-6 rounded-full bg-primary/20 mr-3 flex items-center justify-center text-primary text-sm">✓</div>
+                  <span>AI-powered barter matching</span>
+                </li>
+                <li className="flex items-center">
+                  <div className="h-6 w-6 rounded-full bg-primary/20 mr-3 flex items-center justify-center text-primary text-sm">✓</div>
+                  <span>Real-time market insights</span>
+                </li>
+              </ul>
             </div>
           </div>
         </div>
