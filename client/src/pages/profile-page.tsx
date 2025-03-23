@@ -18,11 +18,12 @@ import {
   FormLabel, 
   FormMessage 
 } from "@/components/ui/form";
-import { Loader2, Upload, Check, Image as ImageIcon } from "lucide-react";
+import { Loader2, Upload, Check, Image as ImageIcon, ShieldCheck, Key } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { KycDocument } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const profileFormSchema = z.object({
   fullName: z.string().min(1, "Full name is required"),
