@@ -13,13 +13,9 @@ import ContractsPage from "@/pages/contracts-page";
 import ProfilePage from "@/pages/profile-page";
 import SettingsPage from "@/pages/settings-page";
 import DealsPage from "@/pages/deals-page";
-import PlatformTour from "@/components/onboarding/platform-tour";
-import TourGuide from "@/components/onboarding/tour-guide";
 import { WelcomeModal } from "@/components/modals/welcome-modal";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./hooks/use-auth";
-import { useState, useEffect } from "react";
-import { useLocalStorage } from "@/hooks/use-local-storage";
 
 function Router() {
   return (
@@ -40,12 +36,9 @@ function Router() {
 }
 
 function AppContent() {
-  const [useTourGuide, setUseTourGuide] = useLocalStorage("useTourGuide", true);
-  
   return (
     <>
       <Router />
-      {useTourGuide ? <TourGuide /> : <PlatformTour />}
       <WelcomeModal />
       <Toaster />
     </>
