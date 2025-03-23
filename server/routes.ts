@@ -19,6 +19,7 @@ import {
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { WebSocketServer } from 'ws';
+import { ZKPService } from './services/zkp-service';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup auth routes (/api/register, /api/login, /api/logout, /api/user)
@@ -429,6 +430,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // KYC routes
+  
+  // Generate ZKP identity for KYC verification
+  app.post('/api/kyc/generate-identity', isAuthenticated, async (req, res, next) => {
+    try {
+      // Initialize ZKP group if not already done
+      ZKPService.initialize();
+      
+      // Create a new identity for the user
+      const { identity, identityCommitment, serializedIdentity } = ZKPService.createIdentity();
+      
+      // Add the identity commitment to the group
+      ZKPService.addMember(identityCommitment);
+      
+      // Update the user's record with the serialized identity
+      const updatedUser = await storage.updateUser(req.user!.id, {
+        zkpIdentity: serializedIdentity
+      });
+      
+      // Return the updated user data
+      res.json(updatedUser);
+    } catch (error) {
+      console.error('Error generating ZKP identity:', error);
+      next(error);
+    }
+  });
+
   app.post('/api/kyc/documents', isAuthenticated, validateBody(insertKycDocumentSchema), async (req, res, next) => {
     try {
       const kycDocumentData: InsertKycDocument = {

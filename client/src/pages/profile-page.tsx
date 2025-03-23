@@ -150,16 +150,15 @@ export default function ProfilePage() {
   // ZKP identity generation and verification
   const generateZkpIdentityMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/kyc/zkp/generate", {});
+      const res = await apiRequest("POST", "/api/kyc/generate-identity");
       return await res.json();
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      queryClient.setQueryData(["/api/user"], data);
       toast({
         title: "Zero-Knowledge Identity Created",
         description: "Your private identity has been generated and securely stored",
       });
-      // In a real app, we would now redirect to a verification flow
     },
     onError: (error: Error) => {
       toast({
