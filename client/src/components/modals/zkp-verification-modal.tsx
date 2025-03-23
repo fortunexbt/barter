@@ -100,20 +100,44 @@ export default function ZkpVerificationModal({
   // Submit the verification to the backend
   const submitVerificationMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/zkp/verify", { 
+      // First verify the ZKP proof
+      const zkpRes = await apiRequest("POST", "/api/zkp/verify", { 
         userId: user?.id,
         proofData: proof
       });
-      return await res.json();
+      
+      if (!zkpRes.ok) {
+        throw new Error("ZKP verification failed");
+      }
+      
+      // Then update the user's KYC status to "verified"
+      const updateRes = await apiRequest("PATCH", `/api/users/${user?.id}`, {
+        kycStatus: "verified",
+        zkpVerified: true
+      });
+      
+      return await updateRes.json();
     },
     onSuccess: () => {
+      // Invalidate user queries to refresh the data
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      
       toast({
         title: "Identity Verified",
         description: "Your identity has been verified using zero-knowledge proof.",
         variant: "default",
       });
+      
+      // Close this modal and let the parent component know verification is complete
       onOpenChange(false);
+      
+      // Show the KYC success modal after a short delay
+      setTimeout(() => {
+        // The parent component will handle this by showing the KYC success modal
+        if (window.dispatchEvent) {
+          window.dispatchEvent(new CustomEvent('kycVerificationComplete'));
+        }
+      }, 500);
     },
     onError: (error: Error) => {
       toast({
