@@ -62,11 +62,7 @@ export function CommodityCard({
   const getCommodityIcon = (iconName: string | null): ReactNode => {
     if (!iconName) return <Package size={compactView ? 16 : 20} />;
     
-    // Import needed icons from lucide-react
-    const { 
-      Wheat, Droplets, Fuel, Banana, Gem, Tractor, Leaf
-    } = require("lucide-react");
-    
+    // Icons are already imported at the top, use them directly
     switch (iconName.toLowerCase()) {
       case "agriculture":
       case "wheat":
