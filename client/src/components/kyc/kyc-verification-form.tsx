@@ -90,10 +90,15 @@ export function KycVerificationForm({ onComplete, onShowZkpModal, onShowKycModal
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/kyc/documents"] });
       setStep(2);
-      // Show ZKP verification modal after 500ms
-      setTimeout(() => {
-        onShowZkpModal();
-      }, 500);
+      
+      // Show success toast instead of automatically continuing
+      toast({
+        title: "KYC Documents Submitted",
+        description: "Your documents have been submitted. Please continue with identity verification.",
+      });
+      
+      // Instead of automatically showing the ZKP verification modal,
+      // let the user decide when to proceed
     },
     onError: (error: Error) => {
       toast({
@@ -107,10 +112,12 @@ export function KycVerificationForm({ onComplete, onShowZkpModal, onShowKycModal
   // Handle ZKP verification completion
   const handleZkpComplete = () => {
     setStep(3);
-    // Show KYC approval modal after 500ms
-    setTimeout(() => {
-      onShowKycModal();
-    }, 500);
+    
+    // Let the user decide when to continue to the next step instead of automatically showing KYC modal
+    toast({
+      title: "ZKP Verification Complete",
+      description: "Your identity has been cryptographically verified. You can now complete the KYC process.",
+    });
   };
   
   // Handle KYC approval completion
@@ -150,9 +157,11 @@ export function KycVerificationForm({ onComplete, onShowZkpModal, onShowKycModal
     }
     
     setStep(2);
-    setTimeout(() => {
-      onShowZkpModal();
-    }, 500);
+    // Show toast with instructions instead of automatically showing ZKP modal
+    toast({
+      title: "Documents Submitted",
+      description: "Your documents are ready. Click 'Generate ZKP' to continue with identity verification.",
+    });
   };
   
   return (
@@ -334,6 +343,17 @@ export function KycVerificationForm({ onComplete, onShowZkpModal, onShowKycModal
             <p className="text-sm text-muted-foreground">
               Zero-knowledge proofs allow us to verify your identity without storing or sharing your personal information. This cryptographic technique enhances your privacy while maintaining trust between trading parties.
             </p>
+          </div>
+          
+          <div className="flex justify-end">
+            <Button 
+              type="button"
+              onClick={onShowZkpModal}
+              className="mt-4"
+            >
+              Generate ZKP
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
           </div>
         </div>
       )}
