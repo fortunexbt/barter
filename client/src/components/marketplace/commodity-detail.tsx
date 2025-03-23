@@ -97,37 +97,36 @@ export default function CommodityDetail({ commodityId }: CommodityDetailProps) {
   // Fetch commodity details
   const { data: commodity, isLoading: isLoadingCommodity, error: commodityError } = useQuery<Commodity>({
     queryKey: [`/api/commodities/${commodityId}`],
-    queryFn: async () => {
-      const response = await fetch(`/api/commodities/${commodityId}`);
-      if (!response.ok) {
-        throw new Error("Failed to fetch commodity details");
-      }
-      return response.json();
-    }
+    // Use the default queryFn instead of a custom one
+    // This automatically uses our error handling
+    retry: 1,
+    refetchOnWindowFocus: false,
   });
   
   // Fetch owner details if commodity is available
   const { data: owner, isLoading: isLoadingOwner } = useQuery<User>({
     queryKey: [`/api/user/${commodity?.ownerId}`],
-    queryFn: async () => {
-      const response = await fetch(`/api/user/${commodity?.ownerId}`);
-      if (!response.ok) {
-        throw new Error("Failed to fetch owner details");
-      }
-      return response.json();
-    },
+    // Use the default queryFn instead of a custom one
+    // This automatically uses our error handling
+    retry: 1,
+    refetchOnWindowFocus: false,
     enabled: !!commodity?.ownerId
   });
   
   // Create escrow contract mutation
   const createEscrowMutation = useMutation({
     mutationFn: async ({ buyerId, commodityId, amount }: { buyerId: number, commodityId: number, amount: number }) => {
-      const res = await apiRequest("POST", "/api/smart-contracts/escrow", {
-        buyerId,
-        commodityId,
-        amount
-      });
-      return await res.json();
+      try {
+        const res = await apiRequest("POST", "/api/smart-contracts/escrow", {
+          buyerId,
+          commodityId,
+          amount
+        });
+        return await res.json();
+      } catch (error) {
+        console.error("Error creating escrow contract:", error);
+        throw error;
+      }
     },
     onSuccess: (data) => {
       setEscrowAddress(data.contractAddress);
@@ -151,11 +150,16 @@ export default function CommodityDetail({ commodityId }: CommodityDetailProps) {
   // Deposit to escrow mutation
   const depositToEscrowMutation = useMutation({
     mutationFn: async ({ contractAddress, amount }: { contractAddress: string, amount: number }) => {
-      const res = await apiRequest("POST", "/api/smart-contracts/escrow/deposit", {
-        contractAddress,
-        amount
-      });
-      return await res.json();
+      try {
+        const res = await apiRequest("POST", "/api/smart-contracts/escrow/deposit", {
+          contractAddress,
+          amount
+        });
+        return await res.json();
+      } catch (error) {
+        console.error("Error depositing to escrow:", error);
+        throw error;
+      }
     },
     onSuccess: (data) => {
       toast({
@@ -178,10 +182,15 @@ export default function CommodityDetail({ commodityId }: CommodityDetailProps) {
   // Release funds from escrow mutation
   const releaseFromEscrowMutation = useMutation({
     mutationFn: async ({ contractAddress }: { contractAddress: string }) => {
-      const res = await apiRequest("POST", "/api/smart-contracts/escrow/release", {
-        contractAddress
-      });
-      return await res.json();
+      try {
+        const res = await apiRequest("POST", "/api/smart-contracts/escrow/release", {
+          contractAddress
+        });
+        return await res.json();
+      } catch (error) {
+        console.error("Error releasing escrow funds:", error);
+        throw error;
+      }
     },
     onSuccess: (data) => {
       toast({
