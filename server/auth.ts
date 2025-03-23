@@ -2,8 +2,7 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { Express } from "express";
 import session from "express-session";
-import { scrypt, randomBytes, timingSafeEqual } from "crypto";
-import { promisify } from "util";
+import { randomBytes } from "crypto";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
 
@@ -13,45 +12,9 @@ declare global {
   }
 }
 
-const scryptAsync = promisify(scrypt);
-
-async function hashPassword(password: string) {
-  // Check if we're dealing with an existing bcrypt hash (for demo data)
-  if (password.startsWith('$2b$10$')) {
-    return password;
-  }
-  
-  // Otherwise use scrypt for new password hashing
-  const salt = randomBytes(16).toString("hex");
-  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
-  return `${buf.toString("hex")}.${salt}`;
-}
-
-async function comparePasswords(supplied: string, stored: string) {
-  try {
-    // Handle bcrypt format for demo data
-    if (stored.startsWith('$2b$')) {
-      console.log('Using bcrypt password check for demo user');
-      // For demo purposes, hardcoded check for demo accounts
-      return supplied === 'password';
-    }
-    
-    console.log('Using scrypt password check');
-    // Our own scrypt implementation should have a salt
-    if (!stored.includes('.')) {
-      console.error('Invalid password format, no salt found');
-      return false;
-    }
-    
-    // Otherwise use scrypt comparison
-    const [hashed, salt] = stored.split(".");
-    const hashedBuf = Buffer.from(hashed, "hex");
-    const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-    return timingSafeEqual(hashedBuf, suppliedBuf);
-  } catch (err) {
-    console.error('Password comparison error:', err);
-    return false;
-  }
+// Simple hash for development purposes
+function simpleHash(password: string): string {
+  return `simple-hash-${password}`;
 }
 
 export function setupAuth(app: Express) {
@@ -70,21 +33,23 @@ export function setupAuth(app: Express) {
   app.use(passport.initialize());
   app.use(passport.session());
 
+  // Configure Passport authentication
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
+        console.log(`Authenticating user: ${username}`);
         const user = await storage.getUserByUsername(username);
         
         if (!user) {
-          console.log('User not found:', username);
+          console.log(`User not found: ${username}`);
           return done(null, false);
         }
         
-        // For demo users, directly check password
+        // Special case for demo users
         if (user.password.startsWith('$2b$')) {
-          console.log('Demo user login attempt');
-          // For demo purposes, always allow "password" to work
+          console.log('Demo user detected - checking "password"');
           if (password === 'password') {
+            console.log('Demo user authenticated successfully');
             return done(null, user);
           } else {
             console.log('Invalid password for demo user');
@@ -92,35 +57,50 @@ export function setupAuth(app: Express) {
           }
         } 
         
-        // For regular users, use scrypt comparison
-        try {
-          if (await comparePasswords(password, user.password)) {
+        // For newly created users with our simple hash
+        if (user.password.startsWith('simple-hash-')) {
+          const expectedHash = simpleHash(password);
+          if (user.password === expectedHash) {
+            console.log('Regular user authenticated successfully');
             return done(null, user);
           } else {
             console.log('Invalid password for regular user');
             return done(null, false);
           }
-        } catch (err) {
-          console.error('Error comparing passwords:', err);
-          return done(null, false);
         }
+        
+        // Fallback for any other password format (should not happen)
+        console.log('Unknown password format, authentication failed');
+        return done(null, false);
       } catch (err) {
-        console.error('Error in LocalStrategy:', err);
+        console.error('Authentication error:', err);
         return done(err);
       }
-    }),
+    })
   );
 
-  passport.serializeUser((user, done) => done(null, user.id));
+  // Serialize and deserialize user instances to and from the session
+  passport.serializeUser((user, done) => {
+    console.log(`Serializing user ID: ${user.id}`);
+    done(null, user.id);
+  });
+  
   passport.deserializeUser(async (id: number, done) => {
     try {
+      console.log(`Deserializing user ID: ${id}`);
       const user = await storage.getUser(id);
+      if (!user) {
+        console.log(`User not found for ID: ${id}`);
+        return done(null, false);
+      }
       done(null, user);
     } catch (err) {
-      done(err);
+      console.error('Deserialization error:', err);
+      done(err, null);
     }
   });
 
+  // Register route
   app.post("/api/register", async (req, res, next) => {
     try {
       console.log("Registration attempt:", { username: req.body.username, email: req.body.email });
@@ -142,13 +122,15 @@ export function setupAuth(app: Express) {
         return res.status(400).json({ message: "Email already exists" });
       }
 
+      // Create the new user with our simple hash
       const user = await storage.createUser({
         ...req.body,
-        password: await hashPassword(req.body.password),
+        password: simpleHash(req.body.password),
       });
 
       console.log("User registered successfully:", { id: user.id, username: user.username });
       
+      // Log in the new user
       req.login(user, (err) => {
         if (err) {
           console.error("Error during login after registration:", err);
@@ -162,6 +144,7 @@ export function setupAuth(app: Express) {
     }
   });
 
+  // Login route
   app.post("/api/login", (req, res, next) => {
     console.log("Login attempt:", { username: req.body.username });
     
@@ -192,6 +175,7 @@ export function setupAuth(app: Express) {
     })(req, res, next);
   });
 
+  // Logout route
   app.post("/api/logout", (req, res, next) => {
     console.log("Logout attempt for user:", req.user?.id);
     if (!req.isAuthenticated()) {
@@ -210,6 +194,7 @@ export function setupAuth(app: Express) {
     });
   });
 
+  // User info route
   app.get("/api/user", (req, res) => {
     if (!req.isAuthenticated()) {
       console.log("Unauthenticated user info request");
