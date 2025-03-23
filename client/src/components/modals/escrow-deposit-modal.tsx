@@ -205,10 +205,12 @@ export default function EscrowDepositModal({
                   <dt className="font-medium">Transaction Status:</dt>
                   <dd className="text-right font-medium text-green-600">{depositData.success ? "Success" : "Failed"}</dd>
                 </div>
-                <div className="flex justify-between">
-                  <dt className="font-medium">Transaction Hash:</dt>
-                  <dd className="text-right font-mono">{`${depositData.transactionHash.substring(0, 6)}...${depositData.transactionHash.substring(depositData.transactionHash.length - 4)}`}</dd>
-                </div>
+                {depositData.transactionHash && (
+                  <div className="flex justify-between">
+                    <dt className="font-medium">Transaction Hash:</dt>
+                    <dd className="text-right font-mono">{`${depositData.transactionHash.substring(0, 6)}...${depositData.transactionHash.substring(depositData.transactionHash.length - 4)}`}</dd>
+                  </div>
+                )}
               </dl>
             </div>
 
