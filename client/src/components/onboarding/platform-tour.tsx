@@ -42,8 +42,18 @@ export default function PlatformTour({ forceTour = false }: PlatformTourProps) {
   const [isVisible, setIsVisible] = useState(false);
   
   useEffect(() => {
-    // Only show the tour if the user hasn't seen it before, or if forced
-    if ((showTour || forceTour) && user) {
+    // Check if we have the startTour flag in localStorage (set by KYC success modal)
+    const shouldStartTour = localStorage.getItem("startTour") === "true";
+    
+    // Only show the tour if:
+    // 1. User hasn't seen it before OR it's forced OR startTour flag is set
+    // 2. User is logged in
+    if ((showTour || forceTour || shouldStartTour) && user) {
+      // Clear the startTour flag from localStorage
+      if (shouldStartTour) {
+        localStorage.removeItem("startTour");
+      }
+      
       const timer = setTimeout(() => {
         setIsVisible(true);
       }, 1000);
