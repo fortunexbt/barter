@@ -140,7 +140,15 @@ export function KycVerificationForm({ onComplete, onShowZkpModal, onShowKycModal
   };
   
   // For demo purposes, advance to the next step directly
+  // This is used to avoid actual file upload requirements in this demo
   const simulateKycSubmission = () => {
+    // Create a simulated uploaded file
+    if (!uploadedFile) {
+      const blob = new Blob(["document content"], { type: "application/pdf" });
+      const simulatedFile = new File([blob], "identity_document.pdf", { type: "application/pdf" });
+      setUploadedFile(simulatedFile);
+    }
+    
     setStep(2);
     setTimeout(() => {
       onShowZkpModal();
