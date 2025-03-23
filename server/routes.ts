@@ -870,7 +870,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create an escrow smart contract
   app.post('/api/smart-contracts/escrow', isAuthenticated, async (req, res, next) => {
     try {
-      const { buyerId, commodityId, amount } = req.body;
+      const { buyerId, commodityId, amount, barterId } = req.body;
       
       if (!buyerId || !commodityId || !amount) {
         return res.status(400).json({ message: 'Missing required fields' });
@@ -879,12 +879,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // The authenticated user is the seller
       const sellerId = req.user!.id;
       
-      // Create escrow contract
+      // Create escrow contract - include barterId if provided to link contract with barter
       const result = await SmartContractService.createEscrow(
         buyerId,
         sellerId,
         commodityId,
-        amount
+        amount,
+        barterId || null
       );
       
       // Create notification for the buyer

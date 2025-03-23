@@ -50,6 +50,7 @@ interface SmartContractCreationModalProps {
   onOpenChange: (open: boolean) => void;
   buyerId?: string;
   commodityId?: string;
+  barterId?: number; // Add barter ID for linking contract to barter offer
   onSuccess?: (contractData: any) => void;
 }
 
@@ -58,6 +59,7 @@ export default function SmartContractCreationModal({
   onOpenChange,
   buyerId = "",
   commodityId = "",
+  barterId,
   onSuccess,
 }: SmartContractCreationModalProps) {
   const { toast } = useToast();
@@ -114,6 +116,7 @@ export default function SmartContractCreationModal({
             buyerId: parseInt(data.buyerId),
             commodityId: parseInt(data.commodityId),
             amount: parseFloat(data.amount),
+            barterId: barterId || undefined, // Include barterId if provided
           }),
         });
         
