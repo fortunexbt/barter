@@ -190,6 +190,9 @@ const sellerNames = [
 // Notification component for new commodity listings - memoized to prevent unnecessary re-renders
 // Made more subtle and less intrusive
 const NewListingNotification = React.memo(({ commodity, onClose }: { commodity: string, onClose: () => void }) => {
+  // Parse the commodity string to extract the actual notification text if there's a timestamp ID
+  const displayText = commodity.includes('_') ? commodity.split('_')[0] : commodity;
+  
   return (
     <motion.div
       initial={{ x: 300, opacity: 0 }}
@@ -204,7 +207,7 @@ const NewListingNotification = React.memo(({ commodity, onClose }: { commodity: 
         </div>
         <div className="ml-2 flex-1">
           <p className="text-xs font-medium text-gray-800">New Listing</p>
-          <p className="mt-0.5 text-xs text-gray-500">{commodity}</p>
+          <p className="mt-0.5 text-xs text-gray-500">{displayText}</p>
         </div>
         <button
           onClick={onClose}

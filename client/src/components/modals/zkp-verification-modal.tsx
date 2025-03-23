@@ -146,7 +146,8 @@ export default function ZkpVerificationModal({
         description: "Your identity has been verified using zero-knowledge proof.",
         variant: "default",
       });
-      onOpenChange(false);
+      // Don't automatically close the modal - let the user review the proof and press the button
+      // onOpenChange(false);
     },
     onError: (error: Error) => {
       // For demo purposes, let's handle the error but still proceed with verification
