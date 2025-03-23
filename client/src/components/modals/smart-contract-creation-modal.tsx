@@ -225,14 +225,18 @@ export default function SmartContractCreationModal({
                   <dt className="font-medium">Contract Address:</dt>
                   <dd className="text-right font-mono">{`${contractData.contractAddress.substring(0, 6)}...${contractData.contractAddress.substring(contractData.contractAddress.length - 4)}`}</dd>
                 </div>
-                <div className="flex justify-between">
-                  <dt className="font-medium">Transaction Hash:</dt>
-                  <dd className="text-right font-mono">{`${contractData.transactionHash.substring(0, 6)}...${contractData.transactionHash.substring(contractData.transactionHash.length - 4)}`}</dd>
-                </div>
-                <div className="flex justify-between">
-                  <dt className="font-medium">Transaction ID:</dt>
-                  <dd className="text-right">{contractData.transactionId}</dd>
-                </div>
+                {contractData.transactionHash && (
+                  <div className="flex justify-between">
+                    <dt className="font-medium">Transaction Hash:</dt>
+                    <dd className="text-right font-mono">{`${contractData.transactionHash.substring(0, 6)}...${contractData.transactionHash.substring(contractData.transactionHash.length - 4)}`}</dd>
+                  </div>
+                )}
+                {contractData.transactionId && (
+                  <div className="flex justify-between">
+                    <dt className="font-medium">Transaction ID:</dt>
+                    <dd className="text-right">{contractData.transactionId}</dd>
+                  </div>
+                )}
               </dl>
             </div>
 

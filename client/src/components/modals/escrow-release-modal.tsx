@@ -220,10 +220,12 @@ export default function EscrowReleaseModal({
                   <dt className="font-medium">Transaction Status:</dt>
                   <dd className="text-right font-medium text-green-600">{releaseData.success ? "Success" : "Failed"}</dd>
                 </div>
-                <div className="flex justify-between">
-                  <dt className="font-medium">Transaction Hash:</dt>
-                  <dd className="text-right font-mono">{`${releaseData.transactionHash.substring(0, 6)}...${releaseData.transactionHash.substring(releaseData.transactionHash.length - 4)}`}</dd>
-                </div>
+                {releaseData.transactionHash && (
+                  <div className="flex justify-between">
+                    <dt className="font-medium">Transaction Hash:</dt>
+                    <dd className="text-right font-mono">{`${releaseData.transactionHash.substring(0, 6)}...${releaseData.transactionHash.substring(releaseData.transactionHash.length - 4)}`}</dd>
+                  </div>
+                )}
               </dl>
             </div>
 
