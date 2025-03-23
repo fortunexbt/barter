@@ -53,6 +53,10 @@ const CommodityCard = memo(({
   getStatusColor,
   getCommodityIcon
 }: CommodityCardProps) => {
+  // Determine icon background and text colors
+  const bgColorClass = `bg-${commodity.iconBg || "neutral"}-100`;
+  const textColorClass = `text-${commodity.iconBg || "neutral"}-600`;
+  
   return (
     <Link href={`/marketplace/${commodity.id}`}>
       <motion.div
@@ -76,7 +80,7 @@ const CommodityCard = memo(({
         >
           <CardContent className="p-6">
             <div className="flex items-start">
-              <div className={`flex-shrink-0 w-10 h-10 bg-${commodity.iconBg || "neutral"}-100 rounded-full flex items-center justify-center text-${commodity.iconBg || "neutral"}-600`}>
+              <div className={`flex-shrink-0 w-10 h-10 ${bgColorClass} rounded-full flex items-center justify-center ${textColorClass}`}>
                 {getCommodityIcon(commodity.icon)}
               </div>
               <div className="ml-4 flex-1">
@@ -238,6 +242,47 @@ export default function MarketplacePage() {
     }
   });
 
+  // Generate a random listing notification
+  const generateRandomListing = useCallback(() => {
+    const commodityName = commodityNames[Math.floor(Math.random() * commodityNames.length)];
+    const sellerName = sellerNames[Math.floor(Math.random() * sellerNames.length)];
+    const grade = ["Grade A", "Premium", "Standard", "Industrial"][Math.floor(Math.random() * 4)];
+    
+    return `New ${grade} ${commodityName} from ${sellerName}`;
+  }, []);
+  
+  // Function to update highlighted commodities
+  const highlightRandomCommodity = useCallback(() => {
+    if (commodities && commodities.length > 0) {
+      // Get a random existing commodity to highlight
+      const randomId = commodities[Math.floor(Math.random() * commodities.length)].id;
+      setNewCommodities(prev => [...prev, randomId]);
+      
+      // Remove the highlight after 5 seconds
+      setTimeout(() => {
+        setNewCommodities(prev => prev.filter(id => id !== randomId));
+      }, 5000);
+    }
+  }, [commodities]);
+  
+  // Display a toast notification with new listing
+  const showNewListingNotification = useCallback(() => {
+    const notification = generateRandomListing();
+    
+    // Limit to 3 notifications to prevent memory buildup
+    setNotifications(prev => [notification, ...prev].slice(0, 3));
+    
+    // Also show a toast
+    toast({
+      title: "New Listing Alert",
+      description: notification,
+      duration: 5000
+    });
+    
+    // Highlight a random commodity
+    highlightRandomCommodity();
+  }, [generateRandomListing, highlightRandomCommodity, toast]);
+  
   // Simulate periodic new listings
   useEffect(() => {
     // Don't run if commodities haven't loaded yet
@@ -245,49 +290,6 @@ export default function MarketplacePage() {
     
     // Store all timeouts to properly clean up
     const timeouts: NodeJS.Timeout[] = [];
-    
-    // Function to generate a random listing notification
-    const generateRandomListing = useCallback(() => {
-      const commodityName = commodityNames[Math.floor(Math.random() * commodityNames.length)];
-      const sellerName = sellerNames[Math.floor(Math.random() * sellerNames.length)];
-      const grade = ["Grade A", "Premium", "Standard", "Industrial"][Math.floor(Math.random() * 4)];
-      
-      return `New ${grade} ${commodityName} from ${sellerName}`;
-    }, []);
-    
-    // Function to update highlighted commodities
-    const highlightRandomCommodity = useCallback(() => {
-      if (commodities && commodities.length > 0) {
-        // Get a random existing commodity to highlight
-        const randomId = commodities[Math.floor(Math.random() * commodities.length)].id;
-        setNewCommodities(prev => [...prev, randomId]);
-        
-        // Remove the highlight after 5 seconds
-        const highlightTimeout = setTimeout(() => {
-          setNewCommodities(prev => prev.filter(id => id !== randomId));
-        }, 5000);
-        
-        timeouts.push(highlightTimeout);
-      }
-    }, [commodities]);
-    
-    // Display a toast notification with new listing
-    const showNewListingNotification = useCallback(() => {
-      const notification = generateRandomListing();
-      
-      // Limit to 3 notifications to prevent memory buildup
-      setNotifications(prev => [notification, ...prev].slice(0, 3));
-      
-      // Also show a toast
-      toast({
-        title: "New Listing Alert",
-        description: notification,
-        duration: 5000
-      });
-      
-      // Highlight a random commodity
-      highlightRandomCommodity();
-    }, [generateRandomListing, highlightRandomCommodity, toast]);
     
     // Show one immediately on first load - but not too early
     const initialTimeout = setTimeout(() => {
@@ -309,7 +311,7 @@ export default function MarketplacePage() {
       clearInterval(interval);
       timeouts.forEach(timeout => clearTimeout(timeout));
     };
-  }, [commodities, isLoading, toast]);
+  }, [commodities, isLoading, showNewListingNotification]);
   
   const getFilteredCommodities = () => {
     if (!commodities) return [];
