@@ -141,10 +141,24 @@ export function KycVerificationForm({ onComplete, onShowZkpModal, onShowKycModal
   
   // For demo purposes, advance to the next step directly
   const simulateKycSubmission = () => {
+    if (!uploadedFile) {
+      toast({
+        title: "Document Required",
+        description: "Please upload an identification document to continue.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    toast({
+      title: "KYC Document Submitted",
+      description: "Your document has been received. Proceeding to verification.",
+    });
+    
     setStep(2);
     setTimeout(() => {
       onShowZkpModal();
-    }, 500);
+    }, 1500);
   };
   
   return (
