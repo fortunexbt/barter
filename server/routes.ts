@@ -244,6 +244,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Commodity search route
+  app.get('/api/commodities/search', async (req, res, next) => {
+    try {
+      const searchTerm = req.query.q as string || '';
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
+      
+      if (!searchTerm.trim()) {
+        return res.json([]);
+      }
+      
+      const results = await storage.searchCommodities(searchTerm, limit);
+      
+      // Include owner details in search results
+      const enhancedResults = await Promise.all(
+        results.map(async (commodity) => {
+          const owner = await storage.getUser(commodity.ownerId);
+          return {
+            ...commodity,
+            owner: owner ? {
+              id: owner.id,
+              username: owner.username,
+              fullName: owner.fullName || owner.username,
+              avatarUrl: owner.avatarUrl,
+              verificationStatus: owner.verificationStatus
+            } : null
+          };
+        })
+      );
+      
+      res.json(enhancedResults);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
   // Barter routes
   app.get('/api/barter', isAuthenticated, async (req, res, next) => {
     try {
