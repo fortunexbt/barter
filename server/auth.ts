@@ -63,29 +63,46 @@ export function setupAuth(app: Express) {
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
-        // Quick admin login for testing
-        if (username === "admin" && password === "admin123") {
-          // Create an admin user object for the quick login
-          const adminUser = {
-            id: 9999, // Special ID for quick admin login
-            username: "admin",
-            password: "admin_hash", // Not actually used for verification
-            fullName: "Admin User",
-            email: "admin@example.com",
-            role: "admin",
-            kycStatus: "verified",
-            accountLevel: "premium",
-            tradingSince: new Date(),
-            profileImage: "https://randomuser.me/api/portraits/men/99.jpg",
-            identityCommitment: null,
-            zkpIdentity: null,
-            zkpVerified: true
-          };
-          return done(null, adminUser);
-        }
-        
         // Regular user authentication
         const user = await storage.getUserByUsername(username);
+        
+        // Quick admin login for testing
+        if (username === "admin" && password === "admin123") {
+          // Check if admin exists in storage first
+          if (user && user.role === "admin") {
+            return done(null, user);
+          }
+          
+          // Create and register the admin user in storage
+          try {
+            // Check if admin already exists but with wrong credentials
+            if (user) {
+              console.log("Admin user exists but credentials didn't match");
+              return done(null, false);
+            }
+            
+            // Create new admin user
+            const hashedPassword = await hashPassword("admin123");
+            const adminUser = await storage.createUser({
+              username: "admin",
+              password: hashedPassword,
+              fullName: "Admin User",
+              email: "admin@example.com",
+              role: "admin",
+              kycStatus: "verified",
+              accountLevel: "premium",
+              profileImage: "https://randomuser.me/api/portraits/men/99.jpg",
+            });
+            
+            console.log("Admin user created successfully", { id: adminUser.id });
+            return done(null, adminUser);
+          } catch (adminErr) {
+            console.error("Error creating admin user:", adminErr);
+            return done(null, false);
+          }
+        }
+        
+        // Normal authentication check
         if (!user || !(await comparePasswords(password, user.password))) {
           return done(null, false);
         } else {
