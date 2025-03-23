@@ -84,21 +84,37 @@ export default function SmartContractCreationModal({
 
   const createContractMutation = useMutation({
     mutationFn: async (data: SmartContractFormValues) => {
+      console.log("Submitting contract creation with data:", data);
       setStep("processing");
-      const response = await apiRequest(
-        "POST",
-        "/api/smart-contracts/escrow",
-        {
-          buyerId: parseInt(data.buyerId),
-          commodityId: parseInt(data.commodityId),
-          amount: parseFloat(data.amount),
-        }
-      );
       
-      // Parse the response to get the data
-      const responseData = await response.json();
-      console.log("Contract created API response data:", responseData);
-      return responseData;
+      try {
+        // Make API request
+        const response = await fetch("/api/smart-contracts/escrow", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            buyerId: parseInt(data.buyerId),
+            commodityId: parseInt(data.commodityId),
+            amount: parseFloat(data.amount),
+          }),
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("Error response:", errorText);
+          throw new Error(`API Error: ${response.status} ${errorText}`);
+        }
+        
+        // Parse the response to get the data
+        const responseData = await response.json();
+        console.log("Contract created API response data:", responseData);
+        return responseData;
+      } catch (error) {
+        console.error("Contract creation error:", error);
+        throw error;
+      }
     },
     onSuccess: (data) => {
       console.log("Contract created success callback data:", JSON.stringify(data, null, 2));
@@ -176,28 +192,39 @@ export default function SmartContractCreationModal({
     setIsDepositModalOpen(true);
   };
 
-  // Auto-fill and auto-submit when commodity data is available
+  // Auto-fill when commodity data is available
   useEffect(() => {
     if (isOpen && buyerId && commodityId && commodityData && step === "create") {
       // Auto fill the amount based on commodity price if available
       const suggestedPrice = commodityData?.price || 0;
       if (suggestedPrice > 0) {
+        console.log("Setting contract form values:", {
+          buyerId,
+          commodityId,
+          amount: suggestedPrice.toString()
+        });
+        
         form.setValue("amount", suggestedPrice.toString());
         form.setValue("buyerId", buyerId);
         form.setValue("commodityId", commodityId);
+        
         // Trigger form validation
-        form.trigger("amount");
-        
-        // Auto-submit the form after a short delay
-        const timer = setTimeout(() => {
-          console.log("Auto-submitting contract creation with amount:", suggestedPrice);
-          onSubmit(form.getValues() as SmartContractFormValues);
-        }, 800);
-        
-        return () => clearTimeout(timer);
+        form.trigger();
       }
     }
   }, [isOpen, buyerId, commodityId, commodityData, step, form]);
+  
+  // Debug logging for form values
+  useEffect(() => {
+    if (isOpen && step === "create") {
+      console.log("Current form values:", form.getValues());
+      console.log("Form state:", {
+        isValid: form.formState.isValid,
+        isDirty: form.formState.isDirty,
+        errors: form.formState.errors
+      });
+    }
+  }, [isOpen, step, form]);
 
   return (
     <>
