@@ -27,6 +27,9 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Loader2 } from "lucide-react";
 
+// Import the EscrowDepositModal
+import EscrowDepositModal from "./escrow-deposit-modal";
+
 // Form validation schema
 const smartContractSchema = z.object({
   buyerId: z.string().min(1, "Buyer ID is required"),
