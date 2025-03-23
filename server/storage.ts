@@ -458,6 +458,24 @@ export class MemStorage implements IStorage {
     );
   }
   
+  async searchUsers(searchTerm: string, limit?: number): Promise<User[]> {
+    // Filter users whose username, fullName, or email contains the search term
+    const lowerSearchTerm = searchTerm.toLowerCase();
+    
+    const matchingUsers = Array.from(this.usersMap.values()).filter(user => 
+      user.username.toLowerCase().includes(lowerSearchTerm) ||
+      (user.fullName && user.fullName.toLowerCase().includes(lowerSearchTerm)) ||
+      user.email.toLowerCase().includes(lowerSearchTerm)
+    );
+    
+    // Apply limit if provided
+    if (limit && limit > 0) {
+      return matchingUsers.slice(0, limit);
+    }
+    
+    return matchingUsers;
+  }
+  
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.userIdCounter++;
     const now = new Date();
@@ -521,6 +539,25 @@ export class MemStorage implements IStorage {
     return Array.from(this.commoditiesMap.values()).filter(
       (commodity) => commodity.ownerId === ownerId,
     );
+  }
+  
+  async searchCommodities(searchTerm: string, limit?: number): Promise<Commodity[]> {
+    // Filter commodities whose name, grade, status, or icon contains the search term
+    const lowerSearchTerm = searchTerm.toLowerCase();
+    
+    const matchingCommodities = Array.from(this.commoditiesMap.values()).filter(commodity => 
+      commodity.name.toLowerCase().includes(lowerSearchTerm) ||
+      commodity.grade.toLowerCase().includes(lowerSearchTerm) ||
+      (commodity.status && commodity.status.toLowerCase().includes(lowerSearchTerm)) ||
+      (commodity.icon && commodity.icon.toLowerCase().includes(lowerSearchTerm))
+    );
+    
+    // Apply limit if provided
+    if (limit && limit > 0) {
+      return matchingCommodities.slice(0, limit);
+    }
+    
+    return matchingCommodities;
   }
   
   async createCommodity(insertCommodity: InsertCommodity): Promise<Commodity> {
