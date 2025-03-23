@@ -289,6 +289,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get single barter offer with details
+  app.get('/api/barter/:id', isAuthenticated, async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id);
+      const barterOffer = await storage.getBarterOffer(id);
+      
+      if (!barterOffer) {
+        return res.status(404).json({ message: 'Barter offer not found' });
+      }
+      
+      // Check if user is authorized to view this barter offer
+      if (barterOffer.offeringUserId !== req.user!.id && barterOffer.requestingUserId !== req.user!.id) {
+        return res.status(403).json({ message: 'Forbidden' });
+      }
+      
+      // Get additional details for the barter offer
+      const offeringCommodity = await storage.getCommodity(barterOffer.offeringCommodityId);
+      const requestingCommodity = await storage.getCommodity(barterOffer.requestingCommodityId);
+      const offeringUser = await storage.getUser(barterOffer.offeringUserId);
+      const requestingUser = await storage.getUser(barterOffer.requestingUserId);
+      
+      // Create enhanced barter offer with all details
+      const enhancedBarterOffer = {
+        ...barterOffer,
+        offeringCommodity: offeringCommodity || null,
+        requestingCommodity: requestingCommodity || null,
+        offeringUser: offeringUser ? {
+          id: offeringUser.id,
+          username: offeringUser.username,
+          fullName: offeringUser.fullName || offeringUser.username,
+          avatarUrl: offeringUser.profileImage,
+          verificationStatus: offeringUser.kycStatus
+        } : null,
+        requestingUser: requestingUser ? {
+          id: requestingUser.id,
+          username: requestingUser.username,
+          fullName: requestingUser.fullName || requestingUser.username,
+          avatarUrl: requestingUser.profileImage,
+          verificationStatus: requestingUser.kycStatus
+        } : null
+      };
+      
+      res.json(enhancedBarterOffer);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
   app.post('/api/barter', isAuthenticated, validateBody(insertBarterOfferSchema), async (req, res, next) => {
     try {
       const barterData: InsertBarterOffer = {
