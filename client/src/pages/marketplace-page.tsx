@@ -188,29 +188,30 @@ const sellerNames = [
 ];
 
 // Notification component for new commodity listings - memoized to prevent unnecessary re-renders
+// Made more subtle and less intrusive
 const NewListingNotification = React.memo(({ commodity, onClose }: { commodity: string, onClose: () => void }) => {
   return (
     <motion.div
       initial={{ x: 300, opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
+      animate={{ x: 0, opacity: 0.9 }}
       exit={{ x: 300, opacity: 0 }}
-      className="fixed top-20 right-4 bg-white shadow-lg rounded-lg p-4 z-50 border-l-4 border-primary"
-      style={{ maxWidth: "350px" }}
+      className="fixed bottom-4 right-4 bg-white/90 shadow-sm rounded-lg p-3 z-50 border-l-2 border-primary"
+      style={{ maxWidth: "300px" }}
     >
       <div className="flex items-start">
         <div className="flex-shrink-0 pt-0.5">
-          <Bell className="h-5 w-5 text-primary" />
+          <Bell className="h-4 w-4 text-primary/70" />
         </div>
-        <div className="ml-3 flex-1">
-          <p className="text-sm font-medium text-gray-900">New Listing Alert</p>
-          <p className="mt-1 text-sm text-gray-500">{commodity}</p>
+        <div className="ml-2 flex-1">
+          <p className="text-xs font-medium text-gray-800">New Listing</p>
+          <p className="mt-0.5 text-xs text-gray-500">{commodity}</p>
         </div>
         <button
           onClick={onClose}
-          className="ml-4 inline-flex text-gray-400 hover:text-gray-500"
+          className="ml-2 inline-flex text-gray-400 hover:text-gray-500"
         >
           <span className="sr-only">Close</span>
-          <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+          <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
             <path
               fillRule="evenodd"
               d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
@@ -331,12 +332,15 @@ export default function MarketplacePage() {
       // Add to notifications
       setNotifications(prev => [notification, ...prev].slice(0, 3));
       
-      // Show toast
-      toast({
-        title: "New Listing Added",
-        description: notification,
-        duration: 5000
-      });
+      // Show less intrusive toast (only during active use)
+      if (document.hasFocus()) {
+        toast({
+          title: "New Listing Added",
+          description: notification,
+          duration: 3000, // shorter duration
+          variant: "soft" // less visible variant
+        });
+      }
     },
     onError: (error) => {
       console.error("Failed to create commodity:", error);
@@ -361,7 +365,7 @@ export default function MarketplacePage() {
     createRandomCommodityMutation.mutate();
   }, [createRandomCommodityMutation]);
   
-  // Simulate periodic new listings
+  // Simulate periodic new listings (less frequently to make it less intrusive)
   useEffect(() => {
     // Don't run if commodities haven't loaded yet
     if (!commodities || isLoading) return;
@@ -369,20 +373,20 @@ export default function MarketplacePage() {
     // Store all timeouts to properly clean up
     const timeouts: NodeJS.Timeout[] = [];
     
-    // Show one immediately on first load - but not too early
+    // Show one after a reasonable delay on first load (less intrusive)
     const initialTimeout = setTimeout(() => {
       // Only proceed if component is still mounted
       if (commodities && commodities.length > 0) {
         showNewListingNotification();
       }
-    }, 3000);
+    }, 8000); // Longer delay before first notification
     
     timeouts.push(initialTimeout);
     
-    // Set up the interval for new listings (every 25-35 seconds to prevent too many notifications)
+    // Set up the interval for new listings with much longer intervals
     const interval = setInterval(() => {
       showNewListingNotification();
-    }, Math.random() * 10000 + 25000); // Random interval between 25-35 seconds
+    }, Math.random() * 20000 + 60000); // Random interval between 60-80 seconds (much less frequent)
     
     // Clean up all timeouts and intervals to prevent memory leaks
     return () => {
