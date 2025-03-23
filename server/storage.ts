@@ -119,7 +119,7 @@ export class MemStorage implements IStorage {
         email: "sarahjohnson@example.com",
         role: "trader",
         accountLevel: "premium",
-        kycStatus: "verified",
+        kycStatus: "pending",
         profileImage: "https://randomuser.me/api/portraits/women/1.jpg",
         walletAddress: "0x58b9Ce2C10fdD7882abeF545E880387C714c8F7E"
       },
