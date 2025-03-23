@@ -599,9 +599,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Proof verification failed" });
       }
       
-      // Update user's ZKP verification status
+      // Update user's ZKP verification status and KYC status
       const updatedUser = await storage.updateUser(req.user!.id, {
         zkpVerified: true,
+        kycStatus: "verified"
       });
       
       // Create a notification
