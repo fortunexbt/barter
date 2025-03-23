@@ -598,7 +598,7 @@ export default function SettingsPage() {
                         </div>
                         
                         <Button variant="outline" className="gap-2 w-full sm:w-auto">
-                          <span className="material-icons text-sm">logout</span>
+                          <LogOut className="h-4 w-4" />
                           Logout from All Other Devices
                         </Button>
                       </div>
