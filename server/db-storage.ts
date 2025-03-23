@@ -1,4 +1,4 @@
-import { eq, or } from 'drizzle-orm';
+import { eq, or, ilike } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 
@@ -57,6 +57,25 @@ export class PostgresStorage implements IStorage {
     const results = await db.select().from(users).where(eq(users.email, email));
     return results[0];
   }
+  
+  async searchUsers(searchTerm: string, limit?: number): Promise<User[]> {
+    // Create the search pattern for SQL LIKE operations
+    const searchPattern = `%${searchTerm}%`;
+    
+    // Due to limitations with ilike in our version of drizzle-orm, 
+    // we'll use a raw SQL query for search functionality
+    const query = `
+      SELECT * FROM users 
+      WHERE username ILIKE $1 
+      OR "fullName" ILIKE $1 
+      OR email ILIKE $1
+      ${limit ? `LIMIT ${limit}` : ''}
+    `;
+    
+    // Execute the query with the searchPattern parameter
+    const results = await queryClient.unsafe(query, [searchPattern]);
+    return results as User[];
+  }
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const results = await db.insert(users).values(insertUser).returning();
@@ -87,6 +106,26 @@ export class PostgresStorage implements IStorage {
 
   async getCommoditiesByOwner(ownerId: number): Promise<Commodity[]> {
     return await db.select().from(commodities).where(eq(commodities.ownerId, ownerId));
+  }
+  
+  async searchCommodities(searchTerm: string, limit?: number): Promise<Commodity[]> {
+    // Create the search pattern for SQL LIKE operations
+    const searchPattern = `%${searchTerm}%`;
+    
+    // Due to limitations with ilike in our version of drizzle-orm,
+    // we'll use a raw SQL query for search functionality
+    const query = `
+      SELECT * FROM commodities 
+      WHERE name ILIKE $1 
+      OR grade ILIKE $1 
+      OR status ILIKE $1
+      OR icon ILIKE $1
+      ${limit ? `LIMIT ${limit}` : ''}
+    `;
+    
+    // Execute the query with the searchPattern parameter
+    const results = await queryClient.unsafe(query, [searchPattern]);
+    return results as Commodity[];
   }
 
   async createCommodity(insertCommodity: InsertCommodity): Promise<Commodity> {
