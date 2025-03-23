@@ -20,6 +20,7 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
+  searchUsers(searchTerm: string, limit?: number): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, userData: Partial<User>): Promise<User | undefined>;
   
@@ -27,6 +28,7 @@ export interface IStorage {
   getCommodity(id: number): Promise<Commodity | undefined>;
   getCommodities(limit?: number): Promise<Commodity[]>;
   getCommoditiesByOwner(ownerId: number): Promise<Commodity[]>;
+  searchCommodities(searchTerm: string, limit?: number): Promise<Commodity[]>;
   createCommodity(commodity: InsertCommodity): Promise<Commodity>;
   updateCommodity(id: number, commodityData: Partial<Commodity>): Promise<Commodity | undefined>;
   deleteCommodity(id: number): Promise<boolean>;
