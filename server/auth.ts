@@ -47,6 +47,27 @@ export function setupAuth(app: Express) {
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
+        // Quick admin login for testing
+        if (username === "admin" && password === "admin") {
+          // Create an admin user object for the quick login
+          const adminUser = {
+            id: 9999, // Special ID for quick admin login
+            username: "admin",
+            password: "admin_hash", // Not actually used for verification
+            fullName: "Admin User",
+            email: "admin@example.com",
+            role: "admin",
+            kycStatus: "verified",
+            accountLevel: "premium",
+            tradingSince: new Date(),
+            profileImage: "https://randomuser.me/api/portraits/men/99.jpg",
+            walletAddress: "0x0000000000000000000000000000000000000000",
+            zkpVerified: true
+          };
+          return done(null, adminUser);
+        }
+        
+        // Regular user authentication
         const user = await storage.getUserByUsername(username);
         if (!user || !(await comparePasswords(password, user.password))) {
           return done(null, false);
