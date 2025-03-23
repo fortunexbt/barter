@@ -20,7 +20,14 @@ import {
   ArrowUp, 
   ArrowDown, 
   Clock, 
-  Eye
+  Eye,
+  Wheat,
+  Droplets,
+  Fuel,
+  Banana,
+  Gem,
+  Tractor,
+  Leaf
 } from "lucide-react";
 import { Commodity } from "@shared/schema";
 import { formatNumber, formatDate } from "@/lib/utils";
