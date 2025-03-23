@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -112,6 +112,26 @@ export function KycVerificationForm({ onComplete, onShowZkpModal, onShowKycModal
       onShowKycModal();
     }, 500);
   };
+  
+  // Listen for KYC verification completion event from ZKP modal
+  useEffect(() => {
+    const handleKycVerificationComplete = () => {
+      setStep(3);
+      
+      // Update user data
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      
+      if (onComplete) {
+        onComplete("verified");
+      }
+    };
+    
+    window.addEventListener('kycVerificationComplete', handleKycVerificationComplete);
+    
+    return () => {
+      window.removeEventListener('kycVerificationComplete', handleKycVerificationComplete);
+    };
+  }, [onComplete]);
   
   // Handle KYC approval completion
   const handleKycApproved = () => {
