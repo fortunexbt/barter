@@ -5,7 +5,7 @@ import AppShell from "@/components/layout/app-shell";
 import { BarterOffer, Commodity, User } from "@shared/schema";
 import { formatDate, formatCurrency, formatNumber } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Loader2, Check, X, ArrowRight, User as UserIcon, Package, DollarSign } from "lucide-react";
+import { Loader2, Check, X, ArrowRight, User as UserIcon, Package, DollarSign, Shield } from "lucide-react";
 import { 
   Card, 
   CardContent, 
@@ -32,6 +32,9 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import ZkpVerificationModal from "@/components/modals/zkp-verification-modal";
+import SmartContractCreationModal from "@/components/modals/smart-contract-creation-modal";
+import EscrowDepositModal from "@/components/modals/escrow-deposit-modal";
+import EscrowReleaseModal from "@/components/modals/escrow-release-modal";
 
 // Extended type for the enhanced barter offer from the API
 interface EnhancedBarterOffer extends BarterOffer {
@@ -59,6 +62,11 @@ export default function BarterDetailPage() {
   const { toast } = useToast();
   const { user } = useAuth();
   const [isZkpModalOpen, setIsZkpModalOpen] = useState(false);
+  const [isSmartContractModalOpen, setIsSmartContractModalOpen] = useState(false);
+  const [isEscrowDepositModalOpen, setIsEscrowDepositModalOpen] = useState(false);
+  const [isEscrowReleaseModalOpen, setIsEscrowReleaseModalOpen] = useState(false);
+  const [contractAddress, setContractAddress] = useState("");
+  const [escrowAmount, setEscrowAmount] = useState("");
   
   // Fetch barter offer details
   const { data: barterOffer, isLoading, error } = useQuery<EnhancedBarterOffer>({
@@ -154,13 +162,53 @@ export default function BarterDetailPage() {
     return Math.abs(((offeringValue - requestingValue) / requestingValue) * 100).toFixed(1);
   };
 
-  // Simplified smart contract integration function
-  const createSmartContract = async () => {
-    // Create a simulated smart contract for this barter
+  // Smart contract integration functions
+  const handleCreateSmartContract = () => {
+    // Open smart contract creation modal
+    if (!barterOffer?.offeringCommodity || !barterOffer?.requestingCommodity) {
+      toast({
+        title: "Missing Commodity Data",
+        description: "Cannot create smart contract: commodity data is missing",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Calculate the total value for escrow
+    const offeringValue = barterOffer.offeringCommodity.price * barterOffer.offeringCommodity.volume;
+    const requestingValue = barterOffer.requestingCommodity.price * barterOffer.requestingCommodity.volume;
+    
+    // Use the higher value for the escrow amount as a safety measure
+    const escrowAmount = Math.max(offeringValue, requestingValue).toString();
+    setEscrowAmount(escrowAmount);
+    
+    // Open the modal with the appropriate buyer/seller data
+    setIsSmartContractModalOpen(true);
+  };
+  
+  const handleSmartContractCreated = (data: any) => {
+    // Store the contract address for deposit and release operations
+    setContractAddress(data.contractAddress);
+    queryClient.invalidateQueries({ queryKey: [`/api/barter/${id}`] });
+    
+    // Open the deposit modal after contract creation
+    setIsEscrowDepositModalOpen(true);
+  };
+  
+  const handleEscrowDeposited = () => {
     toast({
-      title: "Smart Contract Created",
-      description: "A blockchain smart contract has been created for this barter exchange.",
+      title: "Escrow Deposit Complete",
+      description: "Funds have been deposited to the escrow smart contract.",
     });
+    queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
+  };
+  
+  const handleEscrowReleased = () => {
+    toast({
+      title: "Escrow Released",
+      description: "Funds have been released to the seller. Transaction complete.",
+    });
+    queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
   };
 
   if (isLoading) {
@@ -204,11 +252,11 @@ export default function BarterDetailPage() {
             </Button>
             {barterOffer.status === "accepted" && (
               <Button 
-                onClick={createSmartContract} 
+                onClick={handleCreateSmartContract} 
                 className="bg-secondary text-white"
               >
-                <DollarSign className="mr-2 h-4 w-4" />
-                View Smart Contract
+                <Shield className="mr-2 h-4 w-4" />
+                Create Smart Contract
               </Button>
             )}
           </div>
@@ -549,7 +597,7 @@ export default function BarterDetailPage() {
                     variant="outline" 
                     size="sm" 
                     className="mt-2"
-                    onClick={createSmartContract}
+                    onClick={handleCreateSmartContract}
                   >
                     Generate Smart Contract
                   </Button>
@@ -573,6 +621,31 @@ export default function BarterDetailPage() {
         isOpen={isZkpModalOpen} 
         onOpenChange={setIsZkpModalOpen}
         counterpartyName={isOfferingUser ? barterOffer.requestingUser?.fullName : barterOffer.offeringUser?.fullName}
+      />
+      
+      {/* Smart Contract Modals */}
+      <SmartContractCreationModal
+        isOpen={isSmartContractModalOpen}
+        onOpenChange={setIsSmartContractModalOpen}
+        buyerId={isOfferingUser ? barterOffer.requestingUserId?.toString() : user?.id.toString()}
+        commodityId={barterOffer.offeringCommodityId?.toString()}
+        onSuccess={handleSmartContractCreated}
+      />
+      
+      <EscrowDepositModal
+        isOpen={isEscrowDepositModalOpen}
+        onOpenChange={setIsEscrowDepositModalOpen}
+        contractAddress={contractAddress}
+        defaultAmount={escrowAmount}
+        onSuccess={handleEscrowDeposited}
+      />
+      
+      <EscrowReleaseModal
+        isOpen={isEscrowReleaseModalOpen}
+        onOpenChange={setIsEscrowReleaseModalOpen}
+        contractAddress={contractAddress}
+        sellerId={isOfferingUser ? user?.id.toString() : barterOffer.offeringUserId?.toString()}
+        onSuccess={handleEscrowReleased}
       />
     </AppShell>
   );
