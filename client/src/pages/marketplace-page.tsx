@@ -112,7 +112,7 @@ export default function MarketplacePage() {
 
   return (
     <AppShell>
-      <div className="py-6 px-4 sm:px-6 lg:px-8">
+      <div className="py-6 px-4 sm:px-6 lg:px-8" data-tour="marketplace">
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-2xl font-semibold text-neutral-600">Marketplace</h2>
@@ -175,9 +175,12 @@ export default function MarketplacePage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredCommodities.map((commodity) => (
+            {filteredCommodities.map((commodity, index) => (
               <Link key={commodity.id} href={`/marketplace/${commodity.id}`}>
-                <Card className="cursor-pointer hover:shadow-md transition-shadow">
+                <Card 
+                  className="cursor-pointer hover:shadow-md transition-shadow"
+                  data-tour={index === 0 ? "marketplace-commodity" : undefined}
+                >
                   <CardContent className="p-6">
                     <div className="flex items-start">
                       <div className={`flex-shrink-0 w-10 h-10 bg-${commodity.iconBg || "neutral"}-100 rounded-full flex items-center justify-center text-${commodity.iconBg || "neutral"}-600`}>
