@@ -4,7 +4,7 @@ import AppShell from "@/components/layout/app-shell";
 import { BarterOffer, Commodity, InsertBarterOffer } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Plus, Filter, ArrowRight } from "lucide-react";
+import { Loader2, Plus, Filter, ArrowRight, Search } from "lucide-react";
 import { 
   Card,
   CardContent
@@ -352,7 +352,7 @@ export default function BarterPage() {
               className="pl-10"
             />
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <span className="material-icons text-neutral-400 text-sm">search</span>
+              <Search className="h-4 w-4 text-neutral-400" />
             </div>
           </div>
           
@@ -397,7 +397,7 @@ export default function BarterPage() {
                     <div className="flex-1">
                       <div className="flex items-center">
                         <div className="bg-secondary bg-opacity-10 p-2 rounded-full">
-                          <span className="material-icons text-secondary">swap_horiz</span>
+                          <ArrowRight className="h-4 w-4 text-secondary" />
                         </div>
                         <div>
                           <h4 className="ml-3 text-sm font-medium text-neutral-600">{offer.title}</h4>
