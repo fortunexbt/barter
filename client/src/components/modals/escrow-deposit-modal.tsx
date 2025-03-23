@@ -69,14 +69,14 @@ export default function EscrowDepositModal({
   const depositMutation = useMutation({
     mutationFn: async (data: DepositFormValues) => {
       setStep("processing");
-      return apiRequest({
-        method: "POST",
-        url: "/api/smart-contracts/escrow/deposit",
-        data: {
+      return apiRequest(
+        "POST",
+        "/api/smart-contracts/escrow/deposit",
+        {
           contractAddress: data.contractAddress,
           amount: parseFloat(data.amount),
-        },
-      });
+        }
+      );
     },
     onSuccess: (data) => {
       setDepositData(data);

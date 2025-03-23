@@ -71,15 +71,15 @@ export default function SmartContractCreationModal({
   const createContractMutation = useMutation({
     mutationFn: async (data: SmartContractFormValues) => {
       setStep("processing");
-      return apiRequest({
-        method: "POST",
-        url: "/api/smart-contracts/escrow",
-        data: {
+      return apiRequest(
+        "POST",
+        "/api/smart-contracts/escrow",
+        {
           buyerId: parseInt(data.buyerId),
           commodityId: parseInt(data.commodityId),
           amount: parseFloat(data.amount),
-        },
-      });
+        }
+      );
     },
     onSuccess: (data) => {
       setContractData(data);
