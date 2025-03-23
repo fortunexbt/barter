@@ -66,19 +66,35 @@ export default function SmartContractCreationModal({
   const [contractData, setContractData] = useState<any>(null);
   const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
 
-  // Fetch commodity data to auto-populate the price
+  // Fetch commodity data to auto-populate the amount based on price × volume
   const { data: commodityData } = useQuery({
     queryKey: ['/api/commodities', commodityId],
     queryFn: getQueryFn<any>({ on401: "throw" }),
     enabled: !!commodityId && commodityId !== "",
   });
 
+  // Calculate the total commodity value (price × volume)
+  const calculateTotalValue = () => {
+    if (commodityData && commodityData.price && commodityData.volume) {
+      return (commodityData.price * commodityData.volume).toString();
+    }
+    return "";
+  };
+
+  // Effect to update form values when commodity data changes
+  useEffect(() => {
+    if (commodityData) {
+      const totalValue = calculateTotalValue();
+      form.setValue("amount", totalValue);
+    }
+  }, [commodityData]);
+
   const form = useForm<SmartContractFormValues>({
     resolver: zodResolver(smartContractSchema),
     defaultValues: {
       buyerId,
       commodityId,
-      amount: commodityData?.price ? commodityData.price.toString() : "",
+      amount: "",
     },
   });
 
@@ -256,16 +272,29 @@ export default function SmartContractCreationModal({
                         <p className="font-medium">{commodityData.name}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground">Price</p>
-                        <p className="font-medium">${commodityData.price}</p>
+                        <p className="text-xs text-muted-foreground">Grade</p>
+                        <p className="font-medium">{commodityData.grade}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Unit Price</p>
+                        <p className="font-medium">${commodityData.price}/{commodityData.priceUnit}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Volume</p>
+                        <p className="font-medium">{commodityData.volume} {commodityData.volumeUnit}</p>
+                      </div>
+                      <div className="col-span-2">
+                        <p className="text-xs text-muted-foreground">Total Value (Price × Volume)</p>
+                        <p className="font-medium text-lg">${(commodityData.price * commodityData.volume).toFixed(2)}</p>
                       </div>
                     </div>
                   </div>
                   
                   <Button 
                     onClick={() => {
-                      // Auto-set the amount from commodity price and submit
-                      form.setValue("amount", commodityData.price.toString());
+                      // Auto-set the amount as total value (price × volume) and submit
+                      const totalValue = (commodityData.price * commodityData.volume).toString();
+                      form.setValue("amount", totalValue);
                       onSubmit(form.getValues() as SmartContractFormValues);
                     }}
                     className="w-full flex items-center justify-center gap-2"
