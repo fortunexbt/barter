@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
-import { Confetti, ShieldCheck, ArrowRight } from "lucide-react";
+import { PartyPopper, ShieldCheck, ArrowRight } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -48,7 +48,7 @@ export function WelcomeModal() {
         <DialogHeader>
           <DialogTitle className="text-xl flex items-center gap-2">
             <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-              <Confetti className="h-5 w-5 text-primary" />
+              <PartyPopper className="h-5 w-5 text-primary" />
             </div>
             <span>Welcome to BarterTrade!</span>
           </DialogTitle>

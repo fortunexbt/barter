@@ -84,7 +84,7 @@ export function KycVerificationForm({ onComplete, onShowZkpModal, onShowKycModal
         formData.append("document", uploadedFile);
       }
       
-      const res = await apiRequest("POST", "/api/kyc/submit", formData, true);
+      const res = await apiRequest("POST", "/api/kyc/submit", formData);
       return await res.json();
     },
     onSuccess: () => {
