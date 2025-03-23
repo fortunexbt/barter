@@ -79,10 +79,24 @@ export default {
             height: "0",
           },
         },
+        "fall": {
+          "0%": {
+            transform: "translateY(-200px) rotate(0deg)",
+            opacity: "0"
+          },
+          "50%": {
+            opacity: "1"
+          },
+          "100%": {
+            transform: "translateY(calc(100vh - 100px)) rotate(180deg)",
+            opacity: "0"
+          }
+        }
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "fall-slow": "fall 3s ease-in-out forwards"
       },
     },
   },

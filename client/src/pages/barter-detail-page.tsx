@@ -162,9 +162,18 @@ export default function BarterDetailPage() {
     return Math.abs(((offeringValue - requestingValue) / requestingValue) * 100).toFixed(1);
   };
 
+  // Contract state tracking
+  const [contractCreated, setContractCreated] = useState(false);
+  const [contractCreating, setContractCreating] = useState(false);
+  const [depositCompleted, setDepositCompleted] = useState(false);
+  const [depositStep, setDepositStep] = useState(false);
+  
+  // Confetti effect
+  const [showConfetti, setShowConfetti] = useState(false);
+  
   // Smart contract integration functions
-  const handleCreateSmartContract = () => {
-    // Open smart contract creation modal
+  const handleCreateSmartContract = async () => {
+    // Validate data first
     if (!barterOffer?.offeringCommodity || !barterOffer?.requestingCommodity) {
       toast({
         title: "Missing Commodity Data",
@@ -182,20 +191,81 @@ export default function BarterDetailPage() {
     const escrowAmount = Math.max(offeringValue, requestingValue).toString();
     setEscrowAmount(escrowAmount);
     
-    // Open the modal with the appropriate buyer/seller data
-    setIsSmartContractModalOpen(true);
+    // Show loading state
+    setContractCreating(true);
+    
+    try {
+      // Create contract directly through API
+      const response = await fetch("/api/smart-contracts/escrow", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          buyerId: barterOffer.requestingUser?.id,
+          commodityId: barterOffer.offeringCommodity.id,
+          amount: parseFloat(escrowAmount),
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Error response:", errorText);
+        throw new Error(`API Error: ${response.status} ${errorText}`);
+      }
+      
+      // Parse the response to get the data
+      const responseData = await response.json();
+      console.log("Contract created API response data:", responseData);
+      
+      // Store the contract address for deposit and release operations
+      setContractAddress(responseData.contractAddress);
+      queryClient.invalidateQueries({ queryKey: [`/api/barter/${id}`] });
+      
+      // Show success state
+      setContractCreated(true);
+      setContractCreating(false);
+      
+      // Trigger confetti effect
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 3000);
+      
+      // Success notification
+      toast({
+        title: "Smart Contract Created!",
+        description: "Your contract has been generated successfully. You can now proceed to deposit funds to escrow.",
+      });
+      
+      return responseData;
+    } catch (error) {
+      console.error("Contract creation error:", error);
+      setContractCreating(false);
+      
+      toast({
+        title: "Error Creating Contract",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
+        variant: "destructive",
+      });
+    }
   };
   
-  const handleSmartContractCreated = (data: any) => {
-    // Store the contract address for deposit and release operations
-    setContractAddress(data.contractAddress);
-    queryClient.invalidateQueries({ queryKey: [`/api/barter/${id}`] });
-    
-    // Open the deposit modal after contract creation
+  const handleDepositToEscrow = () => {
+    // Enable deposit step
+    setDepositStep(true);
+    // Open the deposit modal
     setIsEscrowDepositModalOpen(true);
   };
   
+  const handleSmartContractCreated = (data: any) => {
+    // This function is no longer used for the actual contract creation
+    // but keeping it for compatibility with the existing components
+    console.log("Contract created callback with data:", data);
+  };
+  
   const handleEscrowDeposited = () => {
+    // Mark deposit as completed
+    setDepositCompleted(true);
+    
     toast({
       title: "Escrow Deposit Complete",
       description: "Funds have been deposited to the escrow smart contract.",
@@ -586,68 +656,130 @@ export default function BarterDetailPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-6">
+              {/* Show confetti if contract was just created */}
+              {showConfetti && (
+                <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                  {/* Simple confetti effect using tailwind animations */}
+                  <div className="absolute left-1/4 top-0 w-3 h-3 bg-green-500 animate-fall-slow" style={{animationDelay: '0.2s'}} />
+                  <div className="absolute left-1/3 top-0 w-2 h-2 bg-blue-500 animate-fall-slow" style={{animationDelay: '0.5s'}} />
+                  <div className="absolute left-1/2 top-0 w-4 h-4 bg-yellow-500 animate-fall-slow" style={{animationDelay: '0.3s'}} />
+                  <div className="absolute left-2/3 top-0 w-2 h-2 bg-red-500 animate-fall-slow" style={{animationDelay: '0.7s'}} />
+                  <div className="absolute left-3/4 top-0 w-3 h-3 bg-purple-500 animate-fall-slow" style={{animationDelay: '0.1s'}} />
+                </div>
+              )}
+              
+              <div className="space-y-6 relative">
+                {/* Step 1: Create Smart Contract */}
                 <div className="flex">
                   <div className="mr-4 flex flex-col items-center">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-white">
-                      1
+                    <div className={`flex h-8 w-8 items-center justify-center rounded-full ${contractCreated ? 'bg-green-500 text-white' : 'bg-secondary text-white'}`}>
+                      {contractCreated ? <Check className="h-4 w-4" /> : 1}
                     </div>
                     <div className="h-full w-px bg-secondary/20" />
                   </div>
                   <div>
-                    <h4 className="font-medium">Create Smart Contract</h4>
+                    <h4 className={`font-medium ${contractCreated ? 'text-green-700' : ''}`}>
+                      Create Smart Contract
+                    </h4>
                     <p className="text-neutral-500 text-sm mb-2">
-                      Initialize a secure escrow contract for this barter
+                      {contractCreated 
+                        ? `Contract created with address ${contractAddress.substring(0, 8)}...` 
+                        : "Initialize a secure escrow contract for this barter"}
                     </p>
-                    <Button 
-                      onClick={handleCreateSmartContract}
-                      size="sm"
-                      className="bg-secondary text-white"
-                    >
-                      Create Contract
-                    </Button>
+                    {contractCreating ? (
+                      <Button 
+                        size="sm"
+                        className="bg-secondary text-white"
+                        disabled
+                      >
+                        <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                        Creating...
+                      </Button>
+                    ) : contractCreated ? (
+                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                        <Check className="mr-1 h-3 w-3" /> Contract Created
+                      </Badge>
+                    ) : (
+                      <Button 
+                        onClick={handleCreateSmartContract}
+                        size="sm"
+                        className="bg-secondary text-white"
+                      >
+                        Create Contract
+                      </Button>
+                    )}
                   </div>
                 </div>
                 
+                {/* Step 2: Deposit Funds to Escrow */}
                 <div className="flex">
                   <div className="mr-4 flex flex-col items-center">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-neutral-200">
-                      2
+                    <div className={`flex h-8 w-8 items-center justify-center rounded-full ${
+                      depositCompleted 
+                        ? 'bg-green-500 text-white' 
+                        : contractCreated 
+                          ? 'bg-blue-500 text-white' 
+                          : 'bg-neutral-200'
+                    }`}>
+                      {depositCompleted ? <Check className="h-4 w-4" /> : 2}
                     </div>
                     <div className="h-full w-px bg-neutral-200" />
                   </div>
                   <div>
-                    <h4 className="font-medium text-neutral-500">Deposit Funds to Escrow</h4>
+                    <h4 className={`font-medium ${
+                      depositCompleted 
+                        ? 'text-green-700' 
+                        : contractCreated 
+                          ? 'text-blue-700' 
+                          : 'text-neutral-500'
+                    }`}>
+                      Deposit Funds to Escrow
+                    </h4>
                     <p className="text-neutral-500 text-sm mb-2">
-                      Lock funds in the escrow contract to secure the transaction
+                      {depositCompleted 
+                        ? "Funds successfully deposited to escrow" 
+                        : "Lock funds in the escrow contract to secure the transaction"}
                     </p>
-                    <Button 
-                      onClick={() => setIsEscrowDepositModalOpen(true)}
-                      size="sm"
-                      variant="outline"
-                      disabled={!contractAddress}
-                    >
-                      Deposit to Escrow
-                    </Button>
+                    {depositCompleted ? (
+                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                        <Check className="mr-1 h-3 w-3" /> Deposit Complete
+                      </Badge>
+                    ) : (
+                      <Button 
+                        onClick={handleDepositToEscrow}
+                        size="sm"
+                        variant={contractCreated ? "default" : "outline"}
+                        className={contractCreated ? "bg-blue-500 hover:bg-blue-600" : ""}
+                        disabled={!contractCreated}
+                      >
+                        Deposit to Escrow
+                      </Button>
+                    )}
                   </div>
                 </div>
                 
+                {/* Step 3: Release Funds to Seller */}
                 <div className="flex">
                   <div className="mr-4 flex flex-col items-center">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-neutral-200">
+                    <div className={`flex h-8 w-8 items-center justify-center rounded-full ${
+                      depositCompleted ? 'bg-blue-500 text-white' : 'bg-neutral-200'
+                    }`}>
                       3
                     </div>
                   </div>
                   <div>
-                    <h4 className="font-medium text-neutral-500">Release Funds to Seller</h4>
+                    <h4 className={`font-medium ${depositCompleted ? 'text-blue-700' : 'text-neutral-500'}`}>
+                      Release Funds to Seller
+                    </h4>
                     <p className="text-neutral-500 text-sm mb-2">
                       Release escrow funds after confirming delivery
                     </p>
                     <Button 
                       onClick={() => setIsEscrowReleaseModalOpen(true)}
                       size="sm"
-                      variant="outline"
-                      disabled={!contractAddress}
+                      variant={depositCompleted ? "default" : "outline"}
+                      className={depositCompleted ? "bg-blue-500 hover:bg-blue-600" : ""}
+                      disabled={!depositCompleted}
                     >
                       Release Escrow
                     </Button>
