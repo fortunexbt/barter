@@ -22,7 +22,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, AlertTriangle } from "lucide-react";
+import { Loader2, AlertTriangle, User, Bell, Shield, LogOut } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -187,21 +187,21 @@ export default function SettingsPage() {
                   value="account" 
                   className="justify-start px-3 py-2 h-9 data-[state=active]:bg-neutral-100"
                 >
-                  <span className="material-icons mr-2 text-sm">account_circle</span>
+                  <User className="h-4 w-4 mr-2" />
                   Account
                 </TabsTrigger>
                 <TabsTrigger 
                   value="notifications" 
                   className="justify-start px-3 py-2 h-9 data-[state=active]:bg-neutral-100"
                 >
-                  <span className="material-icons mr-2 text-sm">notifications</span>
+                  <Bell className="h-4 w-4 mr-2" />
                   Notifications
                 </TabsTrigger>
                 <TabsTrigger 
                   value="security" 
                   className="justify-start px-3 py-2 h-9 data-[state=active]:bg-neutral-100"
                 >
-                  <span className="material-icons mr-2 text-sm">security</span>
+                  <Shield className="h-4 w-4 mr-2" />
                   Security
                 </TabsTrigger>
                 <Separator className="my-4" />
@@ -211,7 +211,7 @@ export default function SettingsPage() {
                     onClick={handleLogout}
                     className="w-full justify-start"
                   >
-                    <span className="material-icons mr-2 text-sm">logout</span>
+                    <LogOut className="h-4 w-4 mr-2" />
                     Logout
                   </Button>
                 </div>
