@@ -338,7 +338,8 @@ export default function MarketplacePage() {
           title: "New Listing Added",
           description: notification,
           duration: 3000, // shorter duration
-          variant: "soft" // less visible variant
+          // Use a default variant but with reduced opacity
+          className: "bg-opacity-80"
         });
       }
     },

@@ -88,8 +88,19 @@ export default function AuthPage() {
     const { confirmPassword, ...registerData } = data;
     registerMutation.mutate(registerData, {
       onSuccess: () => {
-        // This will delay navigation slightly to allow React Query to update properly
-        setTimeout(() => navigate("/"), 50);
+        // Set flags in localStorage to trigger welcome modal and tour on first login
+        localStorage.setItem("hasSeenWelcome", "false");
+        localStorage.setItem("showTour", "true");
+        
+        // Show welcome message
+        toast({
+          title: "Registration Successful!",
+          description: "Welcome to BarterTrade. Complete your KYC verification to start trading.",
+          duration: 5000,
+        });
+        
+        // Navigate to homepage where welcome modal will appear
+        setTimeout(() => navigate("/"), 100);
       }
     });
   };
