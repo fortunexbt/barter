@@ -86,13 +86,25 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
+    // Create an AbortController with timeout to prevent hanging requests
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15-second timeout
+    
     try {
       const url = queryKey[0] as string;
       console.log(`API GET request to ${url}`);
       
       const res = await fetch(url, {
         credentials: "include",
+        signal: controller.signal,
+        headers: {
+          'Cache-Control': 'no-cache', // Ensure fresh data
+          'Pragma': 'no-cache'
+        }
       });
+      
+      // Clear the timeout as request completed
+      clearTimeout(timeoutId);
 
       if (res.status === 401) {
         console.log(`Unauthorized request to ${url}`);
@@ -129,9 +141,22 @@ export const getQueryFn: <T>(options: {
         throw new Error("Invalid response format");
       }
     } catch (error) {
+      // Clear the timeout in case of error
+      clearTimeout(timeoutId);
+      
+      // Enhance error message with timestamp and more details
+      const timestamp = new Date().toISOString();
+      let errorMessage = error instanceof Error ? error.message : "Unknown error";
+      
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        errorMessage = `Request timed out after 15 seconds`;
+      }
+      
+      const enhancedError = new Error(`[${timestamp}] ${errorMessage}`);
+      
       // Log error with query details for debugging
-      console.error(`Query failed for ${queryKey[0]}:`, error);
-      throw error;
+      console.error(`Query failed for ${queryKey[0]}:`, enhancedError);
+      throw enhancedError;
     }
   };
 
@@ -140,12 +165,20 @@ export const queryClient = new QueryClient({
     queries: {
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
-      refetchOnWindowFocus: false,
-      staleTime: Infinity,
-      retry: false,
+      refetchOnWindowFocus: import.meta.env.PROD ? true : false, // Only in production to prevent development interruptions
+      staleTime: 60 * 1000, // 1 minute to optimize performance
+      gcTime: 5 * 60 * 1000, // 5 minutes - replaces cacheTime in React Query v5
+      retry: (failureCount, error) => {
+        // Don't retry 401 errors, but retry others up to twice
+        if (error instanceof Error && error.message.includes('Not authenticated')) {
+          return false;
+        }
+        return failureCount < 2;
+      },
+      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 10000), // Exponential backoff with max 10s
     },
     mutations: {
-      retry: false,
+      retry: false, // Mutations usually need explicit user action to retry
     },
   },
 });

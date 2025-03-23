@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, ReactNode } from "react";
+import React, { useState, useEffect, useCallback, ReactNode, memo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import AppShell from "@/components/layout/app-shell";
 import { Commodity } from "@shared/schema";
@@ -36,6 +36,89 @@ import {
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
+
+// Memoized Commodity Card component to prevent unnecessary re-renders
+interface CommodityCardProps {
+  commodity: Commodity;
+  isNew: boolean;
+  index: number;
+  getStatusColor: (status: string) => string;
+  getCommodityIcon: (iconName: string | null) => ReactNode;
+}
+
+const CommodityCard = memo(({
+  commodity,
+  isNew,
+  index,
+  getStatusColor,
+  getCommodityIcon
+}: CommodityCardProps) => {
+  return (
+    <Link href={`/marketplace/${commodity.id}`}>
+      <motion.div
+        layout
+        initial={isNew ? { scale: 0.8, opacity: 0 } : false}
+        animate={{ 
+          scale: 1, 
+          opacity: 1,
+          boxShadow: isNew ? "0 0 15px rgba(79, 70, 229, 0.6)" : "none"
+        }}
+        transition={{ 
+          type: "spring",
+          stiffness: 300,
+          damping: 30,
+          duration: 0.5
+        }}
+      >
+        <Card 
+          className={`cursor-pointer hover:shadow-md transition-all ${isNew ? 'border-primary' : ''}`}
+          data-tour={index === 0 ? "marketplace-commodity" : undefined}
+        >
+          <CardContent className="p-6">
+            <div className="flex items-start">
+              <div className={`flex-shrink-0 w-10 h-10 bg-${commodity.iconBg || "neutral"}-100 rounded-full flex items-center justify-center text-${commodity.iconBg || "neutral"}-600`}>
+                {getCommodityIcon(commodity.icon)}
+              </div>
+              <div className="ml-4 flex-1">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-medium text-neutral-800">
+                    {commodity.name}
+                    {isNew && (
+                      <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary text-white animate-pulse">
+                        New
+                      </span>
+                    )}
+                  </h3>
+                  <Badge variant="outline" className={getStatusColor(commodity.status || "unknown")}>
+                    {commodity.status 
+                      ? commodity.status.charAt(0).toUpperCase() + commodity.status.slice(1) 
+                      : "Unknown"
+                    }
+                  </Badge>
+                </div>
+                <p className="text-sm text-neutral-500">{commodity.grade}</p>
+                <div className="mt-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-neutral-500">Price</p>
+                    <p className="text-lg font-semibold text-neutral-700">
+                      ${commodity.price.toLocaleString()}/{commodity.priceUnit}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-neutral-500">Volume</p>
+                    <p className="text-base font-medium text-neutral-700">
+                      {commodity.volume} {commodity.volumeUnit}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+    </Link>
+  );
+});
 
 const getCommodityIcon = (iconName: string | null): ReactNode => {
   if (!iconName) return <Package size={20} />;
@@ -100,8 +183,8 @@ const sellerNames = [
   "NaturalReserves"
 ];
 
-// Notification component for new commodity listings
-const NewListingNotification = ({ commodity, onClose }: { commodity: string, onClose: () => void }) => {
+// Notification component for new commodity listings - memoized to prevent unnecessary re-renders
+const NewListingNotification = React.memo(({ commodity, onClose }: { commodity: string, onClose: () => void }) => {
   return (
     <motion.div
       initial={{ x: 300, opacity: 0 }}
@@ -134,7 +217,7 @@ const NewListingNotification = ({ commodity, onClose }: { commodity: string, onC
       </div>
     </motion.div>
   );
-};
+});
 
 export default function MarketplacePage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -160,32 +243,39 @@ export default function MarketplacePage() {
     // Don't run if commodities haven't loaded yet
     if (!commodities || isLoading) return;
     
+    // Store all timeouts to properly clean up
+    const timeouts: NodeJS.Timeout[] = [];
+    
     // Function to generate a random listing notification
-    const generateRandomListing = () => {
+    const generateRandomListing = useCallback(() => {
       const commodityName = commodityNames[Math.floor(Math.random() * commodityNames.length)];
       const sellerName = sellerNames[Math.floor(Math.random() * sellerNames.length)];
       const grade = ["Grade A", "Premium", "Standard", "Industrial"][Math.floor(Math.random() * 4)];
       
       return `New ${grade} ${commodityName} from ${sellerName}`;
-    };
+    }, []);
     
     // Function to update highlighted commodities
-    const highlightRandomCommodity = () => {
+    const highlightRandomCommodity = useCallback(() => {
       if (commodities && commodities.length > 0) {
         // Get a random existing commodity to highlight
         const randomId = commodities[Math.floor(Math.random() * commodities.length)].id;
         setNewCommodities(prev => [...prev, randomId]);
         
         // Remove the highlight after 5 seconds
-        setTimeout(() => {
+        const highlightTimeout = setTimeout(() => {
           setNewCommodities(prev => prev.filter(id => id !== randomId));
         }, 5000);
+        
+        timeouts.push(highlightTimeout);
       }
-    };
+    }, [commodities]);
     
     // Display a toast notification with new listing
-    const showNewListingNotification = () => {
+    const showNewListingNotification = useCallback(() => {
       const notification = generateRandomListing();
+      
+      // Limit to 3 notifications to prevent memory buildup
       setNotifications(prev => [notification, ...prev].slice(0, 3));
       
       // Also show a toast
@@ -197,21 +287,27 @@ export default function MarketplacePage() {
       
       // Highlight a random commodity
       highlightRandomCommodity();
-    };
+    }, [generateRandomListing, highlightRandomCommodity, toast]);
     
-    // Set up the interval for new listings (every 20-30 seconds)
-    const interval = setInterval(() => {
-      showNewListingNotification();
-    }, Math.random() * 10000 + 20000); // Random interval between 20-30 seconds
-    
-    // Show one immediately on first load
+    // Show one immediately on first load - but not too early
     const initialTimeout = setTimeout(() => {
-      showNewListingNotification();
+      // Only proceed if component is still mounted
+      if (commodities && commodities.length > 0) {
+        showNewListingNotification();
+      }
     }, 3000);
     
+    timeouts.push(initialTimeout);
+    
+    // Set up the interval for new listings (every 25-35 seconds to prevent too many notifications)
+    const interval = setInterval(() => {
+      showNewListingNotification();
+    }, Math.random() * 10000 + 25000); // Random interval between 25-35 seconds
+    
+    // Clean up all timeouts and intervals to prevent memory leaks
     return () => {
       clearInterval(interval);
-      clearTimeout(initialTimeout);
+      timeouts.forEach(timeout => clearTimeout(timeout));
     };
   }, [commodities, isLoading, toast]);
   
@@ -324,75 +420,16 @@ export default function MarketplacePage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredCommodities.map((commodity, index) => {
-              const isNew = newCommodities.includes(commodity.id);
-              
-              return (
-                <Link key={commodity.id} href={`/marketplace/${commodity.id}`}>
-                  <motion.div
-                    layout
-                    initial={isNew ? { scale: 0.8, opacity: 0 } : false}
-                    animate={{ 
-                      scale: 1, 
-                      opacity: 1,
-                      boxShadow: isNew ? "0 0 15px rgba(79, 70, 229, 0.6)" : "none"
-                    }}
-                    transition={{ 
-                      type: "spring",
-                      stiffness: 300,
-                      damping: 30,
-                      duration: 0.5
-                    }}
-                  >
-                    <Card 
-                      className={`cursor-pointer hover:shadow-md transition-all ${isNew ? 'border-primary' : ''}`}
-                      data-tour={index === 0 ? "marketplace-commodity" : undefined}
-                    >
-                      <CardContent className="p-6">
-                        <div className="flex items-start">
-                          <div className={`flex-shrink-0 w-10 h-10 bg-${commodity.iconBg || "neutral"}-100 rounded-full flex items-center justify-center text-${commodity.iconBg || "neutral"}-600`}>
-                            {getCommodityIcon(commodity.icon)}
-                          </div>
-                          <div className="ml-4 flex-1">
-                            <div className="flex items-center justify-between">
-                              <h3 className="text-lg font-medium text-neutral-800">
-                                {commodity.name}
-                                {isNew && (
-                                  <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary text-white animate-pulse">
-                                    New
-                                  </span>
-                                )}
-                              </h3>
-                              <Badge variant="outline" className={getStatusColor(commodity.status || "unknown")}>
-                                {commodity.status 
-                                  ? commodity.status.charAt(0).toUpperCase() + commodity.status.slice(1) 
-                                  : "Unknown"
-                                }
-                              </Badge>
-                            </div>
-                            <p className="text-sm text-neutral-500">{commodity.grade}</p>
-                            <div className="mt-4 flex items-center justify-between">
-                              <div>
-                                <p className="text-sm text-neutral-500">Price</p>
-                                <p className="text-lg font-semibold text-neutral-700">
-                                  ${commodity.price.toLocaleString()}/{commodity.priceUnit}
-                                </p>
-                              </div>
-                              <div className="text-right">
-                                <p className="text-sm text-neutral-500">Volume</p>
-                                <p className="text-base font-medium text-neutral-700">
-                                  {commodity.volume} {commodity.volumeUnit}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                </Link>
-              );
-            })}
+            {filteredCommodities.map((commodity, index) => (
+              <CommodityCard
+                key={commodity.id}
+                commodity={commodity}
+                isNew={newCommodities.includes(commodity.id)}
+                index={index}
+                getStatusColor={getStatusColor}
+                getCommodityIcon={getCommodityIcon}
+              />
+            ))}
           </div>
         )}
       </div>
