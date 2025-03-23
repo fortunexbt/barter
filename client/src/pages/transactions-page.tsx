@@ -4,7 +4,7 @@ import AppShell from "@/components/layout/app-shell";
 import { Transaction } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Filter, FileDown } from "lucide-react";
+import { Loader2, Filter, FileDown, Search, ArrowUpDown, DollarSign } from "lucide-react";
 import { 
   Card,
   CardContent
@@ -84,16 +84,7 @@ export default function TransactionsPage() {
     }
   };
   
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case "trade":
-        return "attach_money";
-      case "barter":
-        return "swap_horiz";
-      default:
-        return "receipt";
-    }
-  };
+  // No longer needed as we're using Lucide icons directly
   
   const getTypeColor = (type: string) => {
     switch (type) {
@@ -143,7 +134,7 @@ export default function TransactionsPage() {
               className="pl-10"
             />
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <span className="material-icons text-neutral-400 text-sm">search</span>
+              <Search className="h-4 w-4 text-neutral-400" />
             </div>
           </div>
           
@@ -188,9 +179,11 @@ export default function TransactionsPage() {
                     <div className={`flex-shrink-0 w-10 h-10 bg-${
                       transaction.type === 'trade' ? 'primary' : 'secondary'
                     } bg-opacity-10 rounded-full flex items-center justify-center`}>
-                      <span className={`material-icons ${getTypeColor(transaction.type)}`}>
-                        {getTypeIcon(transaction.type)}
-                      </span>
+                      {transaction.type === 'trade' ? (
+                        <DollarSign className={`h-5 w-5 ${getTypeColor(transaction.type)}`} />
+                      ) : (
+                        <ArrowUpDown className={`h-5 w-5 ${getTypeColor(transaction.type)}`} />
+                      )}
                     </div>
                     <div className="ml-4 flex-1">
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
