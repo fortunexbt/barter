@@ -26,7 +26,19 @@ import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
+import { 
+  AlertCircle, 
+  CheckCircle2, 
+  Loader2, 
+  CreditCard, 
+  Copy, 
+  Banknote, 
+  ArrowRightCircle,
+  KeyRound,
+  ShieldCheck
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 
 // Form validation schema
 const releaseFormSchema = z.object({
@@ -117,71 +129,120 @@ export default function EscrowReleaseModal({
     }
   };
 
+  // Add clipboard functionality for easy copying of contract address
+  const [copied, setCopied] = useState(false);
+  
+  const copyToClipboard = () => {
+    if (contractAddress) {
+      navigator.clipboard.writeText(contractAddress);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-md md:max-w-lg">
         <DialogHeader>
-          <DialogTitle>
-            {step === "confirm" && "Release Escrow Funds"}
-            {step === "processing" && "Processing Release..."}
-            {step === "complete" && "Funds Released"}
+          <DialogTitle className="flex items-center gap-2">
+            {step === "confirm" && <><ShieldCheck className="h-5 w-5 text-amber-500" /> Release Escrow Funds</>}
+            {step === "processing" && <><Loader2 className="h-5 w-5 animate-spin text-primary" /> Processing Release...</>}
+            {step === "complete" && <><CheckCircle2 className="h-5 w-5 text-green-600" /> Funds Successfully Released</>}
           </DialogTitle>
           <DialogDescription>
             {step === "confirm" && "Confirm that you want to release funds from the escrow contract to the seller."}
-            {step === "processing" && "Please wait while your request is being processed."}
-            {step === "complete" && "The funds have been released to the seller."}
+            {step === "processing" && "Please wait while your request is being processed through the blockchain."}
+            {step === "complete" && "The funds have been securely released to the seller."}
           </DialogDescription>
         </DialogHeader>
 
         {step === "confirm" && (
           <>
-            <Alert variant="warning" className="mb-4">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Important</AlertTitle>
-              <AlertDescription>
+            <Alert variant="warning" className="border-amber-200 bg-amber-50">
+              <AlertCircle className="h-4 w-4 text-amber-500" />
+              <AlertTitle className="text-amber-700">Important - Confirm Delivery</AlertTitle>
+              <AlertDescription className="text-amber-700/80">
                 This action will release the escrowed funds to the seller.
-                Only confirm if you have received the commodity as agreed.
-                This action cannot be reversed.
+                Only proceed if you have received the commodity as agreed.
+                This action cannot be reversed once completed.
               </AlertDescription>
             </Alert>
 
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="contractAddress"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Contract Address</FormLabel>
-                      <FormControl>
-                        <Input {...field} disabled={!!contractAddress} />
-                      </FormControl>
-                      <FormDescription>
-                        The blockchain address of the escrow contract.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mt-4">
+                <div className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="contractAddress"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-2">
+                          Contract Address
+                          <Badge variant="outline" className="text-xs bg-muted/50">
+                            Verified
+                          </Badge>
+                        </FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Input 
+                              {...field} 
+                              disabled={!!contractAddress} 
+                              className="pr-10 font-mono text-sm"
+                            />
+                            <button
+                              type="button"
+                              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                              onClick={copyToClipboard}
+                              title="Copy to clipboard"
+                            >
+                              {copied ? <CheckCircle2 className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                            </button>
+                          </div>
+                        </FormControl>
+                        <FormDescription className="text-xs">
+                          The blockchain address of the escrow smart contract.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="sellerId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Seller ID</FormLabel>
-                      <FormControl>
-                        <Input {...field} disabled={!!sellerId} />
-                      </FormControl>
-                      <FormDescription>
-                        The ID of the seller who will receive the funds.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                    control={form.control}
+                    name="sellerId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Seller ID</FormLabel>
+                        <FormControl>
+                          <Input {...field} disabled={!!sellerId} />
+                        </FormControl>
+                        <FormDescription className="text-xs">
+                          The ID of the seller who will receive the funds.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
-                <DialogFooter>
+                <Separator />
+
+                <div className="bg-muted/50 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="rounded-full bg-green-100 p-1.5 mt-0.5">
+                      <ShieldCheck className="h-5 w-5 text-green-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium">Delivery Confirmation</h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        By confirming this release, you certify that you have received the commodity
+                        as described, and authorize the release of the escrowed funds to the seller.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <DialogFooter className="flex gap-2 pt-2">
                   <Button
                     type="button"
                     variant="outline"
@@ -189,7 +250,13 @@ export default function EscrowReleaseModal({
                   >
                     Cancel
                   </Button>
-                  <Button type="submit" variant="default">Confirm Release</Button>
+                  <Button 
+                    type="submit" 
+                    className="bg-amber-500 hover:bg-amber-600 flex items-center gap-1"
+                  >
+                    <Banknote className="h-4 w-4" />
+                    Confirm & Release Funds
+                  </Button>
                 </DialogFooter>
               </form>
             </Form>
@@ -197,46 +264,65 @@ export default function EscrowReleaseModal({
         )}
 
         {step === "processing" && (
-          <div className="flex flex-col items-center justify-center py-8">
-            <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            <p className="mt-4 text-center text-sm text-muted-foreground">
-              Processing your release transaction...
+          <div className="flex flex-col items-center justify-center py-12">
+            <Loader2 className="h-16 w-16 animate-spin text-primary" />
+            <p className="mt-6 text-center text-muted-foreground">
+              Processing your release transaction on the blockchain...
               <br />
-              This may take a few moments.
+              <span className="text-xs">This may take a few moments to confirm.</span>
             </p>
           </div>
         )}
 
         {step === "complete" && releaseData && (
-          <div className="space-y-4">
-            <div className="flex flex-col items-center justify-center py-4">
-              <CheckCircle2 className="h-16 w-16 text-green-500" />
-              <h3 className="mt-4 text-lg font-medium">Transaction Complete</h3>
+          <div className="space-y-6">
+            <div className="flex items-center justify-center py-6">
+              <div className="rounded-full bg-green-100 p-3">
+                <CheckCircle2 className="h-12 w-12 text-green-600" />
+              </div>
             </div>
-
-            <div className="rounded-md bg-muted p-4">
-              <dl className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <dt className="font-medium">Transaction Status:</dt>
-                  <dd className="text-right font-medium text-green-600">{releaseData.success ? "Success" : "Failed"}</dd>
-                </div>
-                {releaseData.transactionHash && (
-                  <div className="flex justify-between">
-                    <dt className="font-medium">Transaction Hash:</dt>
-                    <dd className="text-right font-mono">{`${releaseData.transactionHash.substring(0, 6)}...${releaseData.transactionHash.substring(releaseData.transactionHash.length - 4)}`}</dd>
+            
+            <div className="rounded-md bg-muted p-4 space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium">Transaction Status:</span>
+                <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
+                  {releaseData.success ? "Confirmed" : "Failed"}
+                </Badge>
+              </div>
+              
+              {releaseData.transactionHash && (
+                <div className="space-y-1">
+                  <div className="text-xs text-muted-foreground">Transaction Hash</div>
+                  <div className="font-mono text-xs bg-muted-foreground/10 px-2 py-1 rounded-sm overflow-hidden text-ellipsis whitespace-nowrap">
+                    {releaseData.transactionHash}
                   </div>
-                )}
-              </dl>
+                </div>
+              )}
             </div>
 
-            <p className="text-sm text-muted-foreground">
-              {releaseData.success 
-                ? "The funds have been successfully released from escrow to the seller. This completes the transaction."
-                : "There was an issue releasing the funds. Please try again or contact support for assistance."}
-            </p>
+            <div className="bg-green-50 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <div className="rounded-full bg-green-100 p-1.5 mt-0.5">
+                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-green-800">Transaction Complete</h3>
+                  <p className="text-sm text-green-700/80 mt-1">
+                    {releaseData.success 
+                      ? "The funds have been successfully released from escrow to the seller. This completes the transaction."
+                      : "There was an issue releasing the funds. Please try again or contact support for assistance."}
+                  </p>
+                </div>
+              </div>
+            </div>
 
             <DialogFooter>
-              <Button onClick={() => onOpenChange(false)}>Close</Button>
+              <Button 
+                onClick={() => onOpenChange(false)} 
+                className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
+              >
+                Close
+              </Button>
             </DialogFooter>
           </div>
         )}
