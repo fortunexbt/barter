@@ -36,8 +36,8 @@ const getIcon = (iconName: string) => {
 const SidebarLink = ({ to, icon, label, active }: SidebarLinkProps) => {
   return (
     <Link href={to}>
-      <a className={cn(
-        "sidebar-link flex items-center px-3 py-2 text-sm font-medium rounded-md",
+      <div className={cn(
+        "sidebar-link flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer",
         active 
           ? "bg-primary/10 border-l-2 border-primary text-primary" 
           : "text-neutral-500 hover:bg-neutral-100"
@@ -49,7 +49,7 @@ const SidebarLink = ({ to, icon, label, active }: SidebarLinkProps) => {
           {getIcon(icon)}
         </span>
         {label}
-      </a>
+      </div>
     </Link>
   );
 };

@@ -36,11 +36,43 @@ export async function apiRequest(
       credentials: "include",
     });
 
+    if (res.status === 401) {
+      console.error(`Unauthorized ${method} request to ${url}`);
+      throw new Error("Not authenticated");
+    }
+
     if (!res.ok) {
       console.error(`API ${method} request failed with status ${res.status}`);
+      
+      // Extract detailed error message
+      let errorMessage;
+      const contentType = res.headers.get("content-type");
+      
+      if (contentType && contentType.includes("application/json")) {
+        try {
+          // Clone the response to avoid consuming it
+          const clonedRes = res.clone();
+          const errorData = await clonedRes.json();
+          errorMessage = errorData.message || errorData.error || JSON.stringify(errorData);
+        } catch (e) {
+          console.error("Error parsing JSON error response:", e);
+        }
+      }
+      
+      if (!errorMessage) {
+        try {
+          // Try to get as text if JSON parsing failed
+          const clonedRes = res.clone();
+          errorMessage = await clonedRes.text();
+        } catch (e) {
+          console.error("Error getting error text:", e);
+          errorMessage = res.statusText || `Error ${res.status}`;
+        }
+      }
+      
+      throw new Error(errorMessage || `Request failed with status ${res.status}`);
     }
     
-    await throwIfResNotOk(res);
     return res;
   } catch (error) {
     console.error(`API ${method} request to ${url} failed:`, error);
@@ -55,21 +87,45 @@ export const getQueryFn: <T>(options: {
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
     try {
-      const res = await fetch(queryKey[0] as string, {
+      const url = queryKey[0] as string;
+      console.log(`API GET request to ${url}`);
+      
+      const res = await fetch(url, {
         credentials: "include",
       });
 
-      if (unauthorizedBehavior === "returnNull" && res.status === 401) {
-        return null;
+      if (res.status === 401) {
+        console.log(`Unauthorized request to ${url}`);
+        if (unauthorizedBehavior === "returnNull") {
+          return null;
+        }
+        throw new Error("Not authenticated");
       }
 
-      await throwIfResNotOk(res);
+      if (!res.ok) {
+        let errorMessage;
+        try {
+          // Try to parse as JSON first
+          const errorData = await res.json();
+          errorMessage = errorData.message || errorData.error || JSON.stringify(errorData);
+        } catch (e) {
+          // If not JSON, get as text
+          try {
+            errorMessage = await res.text();
+          } catch (e2) {
+            errorMessage = res.statusText;
+          }
+        }
+        
+        console.error(`API Error: ${res.status} - ${errorMessage} for ${url}`);
+        throw new Error(errorMessage || `Error ${res.status}`);
+      }
       
       // Parse JSON safely
       try {
         return await res.json();
       } catch (error) {
-        console.error("Failed to parse JSON response:", error);
+        console.error(`Failed to parse JSON response from ${url}:`, error);
         throw new Error("Invalid response format");
       }
     } catch (error) {
