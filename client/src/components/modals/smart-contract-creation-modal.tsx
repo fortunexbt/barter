@@ -153,21 +153,21 @@ export default function SmartContractCreationModal({
     enabled: !!commodityId && buyerId !== "",
   });
 
-  // Auto-submit contract creation when data is available
+  // Auto-fill default values when commodity data is available
   useEffect(() => {
     if (isOpen && buyerId && commodityId && commodityData && step === "create") {
       // Auto fill the amount based on commodity price if available
       const suggestedPrice = commodityData?.price || 0;
       if (suggestedPrice > 0) {
         form.setValue("amount", suggestedPrice.toString());
-      }
-      
-      // Automatically submit the form when all data is ready
-      if (form.getValues().amount && form.formState.isValid) {
-        onSubmit(form.getValues() as SmartContractFormValues);
+        // Trigger form validation after setting the value
+        form.trigger("amount");
       }
     }
   }, [isOpen, buyerId, commodityId, commodityData, step]);
+  
+  // Add a manual start button instead of auto-submitting
+  const [showManualForm, setShowManualForm] = useState(false);
 
   return (
     <>
@@ -186,6 +186,41 @@ export default function SmartContractCreationModal({
             </DialogDescription>
           </DialogHeader>
 
+          {/* Create contract form */}
+          {step === "create" && (
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
+                <FormField
+                  control={form.control}
+                  name="amount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Transaction Amount ($)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter amount" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Enter the amount for this transaction.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <Button 
+                  type="submit" 
+                  className="w-full flex items-center justify-center gap-2"
+                  disabled={form.formState.isSubmitting}>
+                  {form.formState.isSubmitting ? (
+                    <><Loader2 className="h-4 w-4 animate-spin" /> Creating Contract...</>
+                  ) : (
+                    <><KeyRound className="h-4 w-4" /> Generate Smart Contract</>
+                  )}
+                </Button>
+              </form>
+            </Form>
+          )}
+          
           {/* Processing animation */}
           {step === "processing" && (
             <div className="flex flex-col items-center justify-center py-12">
