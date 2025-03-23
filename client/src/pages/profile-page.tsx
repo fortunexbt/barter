@@ -441,127 +441,148 @@ export default function ProfilePage() {
           </TabsContent>
           
           <TabsContent value="kyc">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <Card>
-                  <CardHeader>
+            <Card>
+              <CardHeader className="border-b pb-3">
+                <div className="flex justify-between items-center">
+                  <div>
                     <CardTitle>Identity Verification</CardTitle>
                     <CardDescription>
-                      Verify your identity to unlock full platform features.
+                      Verify your identity to unlock full platform features
                     </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {user?.kycStatus === "verified" ? (
-                      <div className="text-center py-8 space-y-3">
-                        <div className="mx-auto h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
-                          <ShieldCheck className="h-6 w-6 text-green-600" />
+                  </div>
+                  <div className={`py-1 px-3 rounded-full text-xs font-medium ${
+                    user?.kycStatus === "verified" 
+                      ? "bg-green-100 text-green-800" 
+                      : "bg-amber-100 text-amber-800"
+                  }`}>
+                    {user?.kycStatus === "verified" ? "Verified" : "Verification Needed"}
+                  </div>
+                </div>
+              </CardHeader>
+              
+              <CardContent className="pt-6">
+                {user?.kycStatus === "verified" ? (
+                  <div className="text-center py-8 space-y-5">
+                    <div className="mx-auto h-16 w-16 rounded-full bg-green-100 flex items-center justify-center">
+                      <ShieldCheck className="h-8 w-8 text-green-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-medium text-green-600">Verification Complete</h3>
+                      <p className="text-sm text-neutral-600 max-w-md mx-auto mt-2">
+                        Your identity has been verified successfully. You have full access to all platform features including smart contracts and premium listings.
+                      </p>
+                    </div>
+                    
+                    <div className="flex items-center justify-center gap-6 mt-4">
+                      <div className="text-center">
+                        <div className="text-xs text-neutral-500">VERIFICATION DATE</div>
+                        <div className="font-medium">
+                          {formatDate(new Date(), {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric'
+                          })}
                         </div>
-                        <h3 className="text-lg font-medium text-green-600">Verification Complete</h3>
-                        <p className="text-sm text-neutral-600">
-                          Your identity has been verified successfully. You have access to all platform features.
-                        </p>
                       </div>
-                    ) : (
+                      <div className="h-10 border-r"></div>
+                      <div className="text-center">
+                        <div className="text-xs text-neutral-500">ACCESS LEVEL</div>
+                        <div className="font-medium">Premium</div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid md:grid-cols-3 gap-6">
+                    <div className="md:col-span-2">
                       <KycVerificationForm 
                         onComplete={handleKycComplete}
                         onShowZkpModal={handleShowZkpModal}
                         onShowKycModal={handleShowKycModal}
                       />
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-              
-              <div>
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Verification Status</CardTitle>
-                    <CardDescription>
-                      Documents submitted for verification
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className={`p-3 rounded-md mb-4 ${
-                      user?.kycStatus === "verified" 
-                        ? "bg-success bg-opacity-10" 
-                        : "bg-warning bg-opacity-10"
-                    }`}>
-                      <div className="flex items-center">
-                        {user?.kycStatus === "verified" ? 
-                          <ShieldCheck className="h-4 w-4 mr-2 text-success" /> : 
-                          <Key className="h-4 w-4 mr-2 text-warning" />
-                        }
-                        <div>
-                          <h4 className="text-xs font-medium text-neutral-500">Overall KYC STATUS</h4>
-                          <p className={`text-sm font-medium ${
-                            user?.kycStatus === "verified" ? "text-success" : "text-warning"
-                          }`}>
-                            {user?.kycStatus === "verified" ? "Verified" : "Pending Verification"}
-                          </p>
-                        </div>
-                      </div>
                     </div>
                     
-                    {loadingKycDocuments ? (
-                      <div className="flex justify-center items-center py-8">
-                        <Loader2 className="h-6 w-6 animate-spin text-neutral-300" />
+                    <div className="space-y-6">
+                      <div className="rounded-lg border p-4">
+                        <h4 className="text-sm font-medium mb-2">Verification Benefits</h4>
+                        <ul className="space-y-2 text-sm">
+                          <li className="flex items-start gap-2">
+                            <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                            <span>Smart contract escrow services</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                            <span>Higher trading limits and volumes</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                            <span>Zero-knowledge verification with counterparties</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                            <span>Access to premium marketplace listings</span>
+                          </li>
+                        </ul>
                       </div>
-                    ) : !kycDocuments || kycDocuments.length === 0 ? (
-                      <div className="text-center py-8 text-neutral-500">
-                        No documents submitted yet
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {kycDocuments.map((document) => (
-                          <div key={document.id} className="border border-neutral-200 rounded-md p-3">
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <p className="font-medium text-sm">
-                                  {document.documentType.charAt(0).toUpperCase() + document.documentType.slice(1).replace('_', ' ')}
-                                </p>
-                                <p className="text-xs text-neutral-500">
-                                  ID: {document.documentNumber}
-                                </p>
-                                <p className="text-xs text-neutral-400">
-                                  Submitted: {document.uploadedAt ? new Date(document.uploadedAt).toLocaleDateString() : 'N/A'}
-                                </p>
-                              </div>
-                              <Badge variant="outline" className={`${
-                                document.verified 
-                                  ? "bg-success bg-opacity-10 text-success" 
-                                  : "bg-warning bg-opacity-10 text-warning"
-                              }`}>
-                                {document.verified ? "Verified" : "Pending"}
-                              </Badge>
-                            </div>
-                            
-                            {/* Demo purpose only: button to simulate verification */}
-                            {!document.verified && (
-                              <Button 
-                                variant="outline"
-                                size="sm"
-                                className="mt-2"
-                                onClick={() => verifyKycMutation.mutate(document.id)}
-                                disabled={verifyKycMutation.isPending}
-                              >
-                                {verifyKycMutation.isPending ? (
-                                  <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                                ) : (
-                                  <>
-                                    <Check className="h-3 w-3 mr-1" />
-                                    Simulate Verification
-                                  </>
-                                )}
-                              </Button>
-                            )}
+                      
+                      {/* KYC Documents List */}
+                      <div className="rounded-lg border p-4">
+                        <h4 className="text-sm font-medium mb-3">Documents History</h4>
+                        
+                        {loadingKycDocuments ? (
+                          <div className="flex items-center justify-center py-4">
+                            <Loader2 className="h-5 w-5 text-primary animate-spin" />
                           </div>
-                        ))}
+                        ) : kycDocuments && kycDocuments.length > 0 ? (
+                          <div className="space-y-3">
+                            {kycDocuments.map((document) => (
+                              <div key={document.id} className="border rounded-md p-2">
+                                <div className="flex justify-between items-start">
+                                  <div>
+                                    <div className="text-xs font-medium">
+                                      {document.documentType.charAt(0).toUpperCase() + document.documentType.slice(1).replace('_', ' ')}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground">
+                                      {document.uploadedAt ? new Date(document.uploadedAt).toLocaleDateString() : 'N/A'}
+                                    </div>
+                                  </div>
+                                  <Badge variant={document.verified ? "success" : "outline"} className="text-xs">
+                                    {document.verified ? "Verified" : "Pending"}
+                                  </Badge>
+                                </div>
+                                
+                                {/* Demo purpose only: button to simulate verification */}
+                                {!document.verified && (
+                                  <Button 
+                                    variant="outline"
+                                    size="sm"
+                                    className="mt-2 text-xs h-7"
+                                    onClick={() => verifyKycMutation.mutate(document.id)}
+                                    disabled={verifyKycMutation.isPending}
+                                  >
+                                    {verifyKycMutation.isPending ? (
+                                      <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                                    ) : (
+                                      <>
+                                        <Check className="h-3 w-3 mr-1" />
+                                        Simulate Verification
+                                      </>
+                                    )}
+                                  </Button>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-center py-3 text-muted-foreground text-xs">
+                            No documents submitted yet
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
