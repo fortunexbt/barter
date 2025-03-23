@@ -20,6 +20,7 @@ import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { WebSocketServer } from 'ws';
 import { ZKPService } from './services/zkp-service';
+import { SmartContractService } from './services/smart-contract-service';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup auth routes (/api/register, /api/login, /api/logout, /api/user)
@@ -513,6 +514,211 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       res.json(verifiedDocument);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Smart Contract Routes
+  
+  // Create an escrow smart contract
+  app.post('/api/smart-contracts/escrow', isAuthenticated, async (req, res, next) => {
+    try {
+      const { buyerId, commodityId, amount } = req.body;
+      
+      if (!buyerId || !commodityId || !amount) {
+        return res.status(400).json({ message: 'Missing required fields' });
+      }
+      
+      // The authenticated user is the seller
+      const sellerId = req.user!.id;
+      
+      // Create escrow contract
+      const result = await SmartContractService.createEscrow(
+        buyerId,
+        sellerId,
+        commodityId,
+        amount
+      );
+      
+      // Create notification for the buyer
+      const notification: InsertNotification = {
+        userId: buyerId,
+        message: `New escrow contract created for your commodity purchase`,
+        type: 'smart_contract',
+        icon: 'shield',
+        iconBg: 'info',
+        read: false,
+      };
+      const createdNotification = await storage.createNotification(notification);
+      
+      // Send real-time notification
+      sendNotification(buyerId, {
+        type: 'notification',
+        data: createdNotification,
+      });
+      
+      res.status(201).json(result);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  // Deposit funds to escrow
+  app.post('/api/smart-contracts/escrow/deposit', isAuthenticated, async (req, res, next) => {
+    try {
+      const { contractAddress, amount } = req.body;
+      
+      if (!contractAddress || !amount) {
+        return res.status(400).json({ message: 'Missing required fields' });
+      }
+      
+      // The authenticated user is the buyer
+      const buyerId = req.user!.id;
+      
+      // Deposit to escrow
+      const result = await SmartContractService.depositToEscrow(
+        contractAddress,
+        buyerId,
+        amount
+      );
+      
+      if (result.success) {
+        // Find the contract details to get the seller ID
+        // In a real app, this would query the blockchain or database
+        const transactions = await storage.getTransactionsByUser(buyerId);
+        const transaction = transactions.find(t => 
+          t.type === 'escrow_creation' && 
+          t.senderId === buyerId
+        );
+        
+        if (transaction && transaction.receiverId) {
+          // Create notification for the seller
+          const notification: InsertNotification = {
+            userId: transaction.receiverId,
+            message: `Buyer has deposited funds to escrow for your commodity`,
+            type: 'smart_contract',
+            icon: 'payments',
+            iconBg: 'success',
+            read: false,
+          };
+          const createdNotification = await storage.createNotification(notification);
+          
+          // Send real-time notification
+          sendNotification(transaction.receiverId, {
+            type: 'notification',
+            data: createdNotification,
+          });
+        }
+      }
+      
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  // Release funds from escrow
+  app.post('/api/smart-contracts/escrow/release', isAuthenticated, async (req, res, next) => {
+    try {
+      const { contractAddress } = req.body;
+      
+      if (!contractAddress) {
+        return res.status(400).json({ message: 'Missing contract address' });
+      }
+      
+      // The authenticated user is the buyer who confirms delivery
+      const buyerId = req.user!.id;
+      
+      // Find the transaction to get the seller ID
+      const transactions = await storage.getTransactionsByUser(buyerId);
+      const transaction = transactions.find(t => 
+        t.type === 'escrow_creation' && 
+        t.senderId === buyerId
+      );
+      
+      if (!transaction || !transaction.receiverId) {
+        return res.status(404).json({ message: 'Escrow contract not found' });
+      }
+      
+      // Release funds to seller
+      const result = await SmartContractService.releaseFromEscrow(
+        contractAddress,
+        transaction.receiverId
+      );
+      
+      if (result.success) {
+        // Create notification for the seller
+        const notification: InsertNotification = {
+          userId: transaction.receiverId,
+          message: `Buyer has released escrow funds to you`,
+          type: 'smart_contract',
+          icon: 'task_alt',
+          iconBg: 'success',
+          read: false,
+        };
+        const createdNotification = await storage.createNotification(notification);
+        
+        // Send real-time notification
+        sendNotification(transaction.receiverId, {
+          type: 'notification',
+          data: createdNotification,
+        });
+        
+        // Create a success notification for the buyer as well
+        const buyerNotification: InsertNotification = {
+          userId: buyerId,
+          message: `You have successfully released funds to the seller`,
+          type: 'smart_contract',
+          icon: 'task_alt',
+          iconBg: 'success',
+          read: false,
+        };
+        const createdBuyerNotification = await storage.createNotification(buyerNotification);
+        
+        // Send real-time notification to buyer
+        sendNotification(buyerId, {
+          type: 'notification',
+          data: createdBuyerNotification,
+        });
+      }
+      
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  // Verify transaction status
+  app.get('/api/smart-contracts/transaction/:hash', isAuthenticated, async (req, res, next) => {
+    try {
+      const { hash } = req.params;
+      
+      if (!hash) {
+        return res.status(400).json({ message: 'Missing transaction hash' });
+      }
+      
+      const result = await SmartContractService.verifyTransaction(hash);
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  // Get token balances for a user
+  app.get('/api/smart-contracts/tokens/:address', isAuthenticated, async (req, res, next) => {
+    try {
+      const { address } = req.params;
+      
+      if (!address) {
+        return res.status(400).json({ message: 'Missing token address' });
+      }
+      
+      const result = await SmartContractService.getTokenBalance(
+        req.user!.id,
+        address
+      );
+      res.json(result);
     } catch (error) {
       next(error);
     }

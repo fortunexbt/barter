@@ -68,7 +68,7 @@ export const contracts = pgTable("contracts", {
 // Transactions table
 export const transactions = pgTable("transactions", {
   id: serial("id").primaryKey(),
-  type: text("type").notNull(), // trade, barter
+  type: text("type").notNull(), // trade, barter, escrow_creation
   senderId: integer("sender_id").notNull(),
   receiverId: integer("receiver_id").notNull(),
   commodityId: integer("commodity_id"),
@@ -77,6 +77,7 @@ export const transactions = pgTable("transactions", {
   amount: doublePrecision("amount"),
   status: text("status").notNull(), // pending, completed, failed
   createdAt: timestamp("created_at").defaultNow(),
+  metadata: text("metadata"),  // JSON string for blockchain transaction details
 });
 
 // Notifications table
