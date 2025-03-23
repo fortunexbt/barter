@@ -327,10 +327,19 @@ export default function MarketplacePage() {
         setNewCommodities(prev => prev.filter(id => id !== newCommodity.id));
       }, 5000);
       
-      const notification = `New ${newCommodity.grade} ${newCommodity.name.replace(newCommodity.grade, '')} from ${sellerNames[Math.floor(Math.random() * sellerNames.length)]}`;
+      const sellerName = sellerNames[Math.floor(Math.random() * sellerNames.length)];
+      const notification = `New ${newCommodity.grade} ${newCommodity.name.replace(newCommodity.grade, '')} from ${sellerName}`;
+      const timestamp = Date.now(); // Add timestamp to make notifications unique
+      const notificationWithId = `${notification}_${timestamp}`;
       
-      // Add to notifications
-      setNotifications(prev => [notification, ...prev].slice(0, 3));
+      // Add to notifications with uniqueness check
+      setNotifications(prev => {
+        // Check if this exact notification already exists
+        if (prev.some(n => n.startsWith(notification))) {
+          return prev; // Don't add duplicate
+        }
+        return [notificationWithId, ...prev].slice(0, 3);
+      });
       
       // Show less intrusive toast (only during active use)
       if (document.hasFocus()) {
@@ -347,7 +356,18 @@ export default function MarketplacePage() {
       console.error("Failed to create commodity:", error);
       // Fall back to just showing a notification without creating a real commodity
       const notification = generateRandomListing();
-      setNotifications(prev => [notification, ...prev].slice(0, 3));
+      const timestamp = Date.now();
+      const notificationWithId = `${notification}_${timestamp}`;
+      
+      // Add to notifications with uniqueness check
+      setNotifications(prev => {
+        // Check if this exact notification already exists
+        if (prev.some(n => n.startsWith(notification))) {
+          return prev; // Don't add duplicate
+        }
+        return [notificationWithId, ...prev].slice(0, 3);
+      });
+      
       toast({
         title: "New Listing Alert (Simulated)",
         description: notification,
