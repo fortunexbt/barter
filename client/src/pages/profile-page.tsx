@@ -5,10 +5,22 @@ import { z } from "zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import AppShell from "@/components/layout/app-shell";
+import { Link } from "wouter";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Separator } from "@/components/ui/separator";
+import { Progress } from "@/components/ui/progress";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { 
   Form, 
   FormControl, 
@@ -18,9 +30,14 @@ import {
   FormLabel, 
   FormMessage 
 } from "@/components/ui/form";
-import { Loader2, Upload, Check, Image as ImageIcon, ShieldCheck, Key, CheckCircle, AlertTriangle } from "lucide-react";
+import { 
+  Loader2, Upload, Check, Image as ImageIcon, ShieldCheck, Key, 
+  CheckCircle, AlertTriangle, Briefcase, MapPin, Calendar, 
+  Award, CreditCard, Settings, Bell, Lock, PieChart,
+  UserCircle, Clock, Truck, Box, BarChart2, FileText, Share2
+} from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatRelativeTime } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { KycDocument } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
@@ -30,9 +47,14 @@ import ZkpVerificationModal from "@/components/modals/zkp-verification-modal";
 import KycApprovalModal from "@/components/modals/kyc-approval-modal";
 import { KycSuccessModal } from "@/components/modals/kyc-success-modal";
 
+// Define form schemas
 const profileFormSchema = z.object({
-  fullName: z.string().min(1, "Full name is required"),
+  fullName: z.string().min(2, "Full name must be at least 2 characters"),
   email: z.string().email("Invalid email format"),
+  bio: z.string().max(250, "Bio should be less than 250 characters").optional(),
+  location: z.string().optional(),
+  company: z.string().optional(),
+  website: z.string().url("Must be a valid URL").optional().or(z.literal("")),
   role: z.string().min(1, "Role is required"),
   profileImage: z.string().optional(),
 });
