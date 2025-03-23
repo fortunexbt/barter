@@ -443,9 +443,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Add the identity commitment to the group
       ZKPService.addMember(identityCommitment);
       
-      // Update the user's record with the serialized identity
+      // Update the user's record with the serialized identity and set the identity commitment
       const updatedUser = await storage.updateUser(req.user!.id, {
-        zkpIdentity: serializedIdentity
+        identityCommitment,
+        zkpIdentity: serializedIdentity,
+        zkpVerified: true
       });
       
       // Return the updated user data
