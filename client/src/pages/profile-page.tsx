@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -24,6 +24,10 @@ import { useToast } from "@/hooks/use-toast";
 import { KycDocument } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { KycVerificationForm } from "@/components/kyc/kyc-verification-form"; 
+import { ZkpVerificationModal } from "@/components/modals/zkp-verification-modal";
+import { KycApprovalModal } from "@/components/modals/kyc-approval-modal";
+import { KycSuccessModal } from "@/components/modals/kyc-success-modal";
 
 const profileFormSchema = z.object({
   fullName: z.string().min(1, "Full name is required"),
@@ -45,6 +49,11 @@ export default function ProfilePage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("profile");
+  
+  // State for modals
+  const [isZkpModalOpen, setIsZkpModalOpen] = useState(false);
+  const [isKycModalOpen, setIsKycModalOpen] = useState(false);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   
   // Profile form setup
   const profileForm = useForm<ProfileFormValues>({
