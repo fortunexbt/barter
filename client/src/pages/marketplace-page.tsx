@@ -276,7 +276,8 @@ export default function MarketplacePage() {
       const icons = ["fuel", "wheat", "gems", "droplet", "package", "equipment"];
       const iconBgs = ["blue", "green", "amber", "red", "slate", "neutral"];
       
-      // Create a commodity based on the actual required schema fields
+      // Using field names that exactly match the schema in server/schema.ts
+      // We must include all required fields: name, grade, price, priceUnit, volume, volumeUnit
       const randomCommodity = {
         name: `${grade} ${commodityName}`,
         grade: grade,
@@ -284,6 +285,7 @@ export default function MarketplacePage() {
         priceUnit: priceUnits[Math.floor(Math.random() * priceUnits.length)],
         volume: Math.floor(Math.random() * 100) + 1,
         volumeUnit: volumeUnits[Math.floor(Math.random() * volumeUnits.length)],
+        // Optional fields below
         status: "available",
         icon: icons[Math.floor(Math.random() * icons.length)],
         iconBg: iconBgs[Math.floor(Math.random() * iconBgs.length)]
