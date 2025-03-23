@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -68,13 +68,25 @@ export default function EscrowReleaseModal({
   const [step, setStep] = useState<"confirm" | "processing" | "complete">("confirm");
   const [releaseData, setReleaseData] = useState<any>(null);
 
+  // Force update default values when props change
   const form = useForm<ReleaseFormValues>({
     resolver: zodResolver(releaseFormSchema),
     defaultValues: {
-      contractAddress,
-      sellerId,
+      contractAddress: contractAddress || "",
+      sellerId: sellerId || "",
     },
   });
+  
+  // Important: Update form values when props change
+  useEffect(() => {
+    if (contractAddress) {
+      form.setValue("contractAddress", contractAddress);
+      console.log("Contract address updated in form:", contractAddress);
+    }
+    if (sellerId) {
+      form.setValue("sellerId", sellerId);
+    }
+  }, [contractAddress, sellerId, form]);
 
   const releaseMutation = useMutation({
     mutationFn: async (data: ReleaseFormValues) => {
