@@ -6,14 +6,14 @@ import { useAuth } from "@/hooks/use-auth";
 import { Redirect, useLocation } from "wouter";
 import { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Form, 
-  FormControl, 
-  FormDescription, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
 } from "@/components/ui/form";
 import {
   Select,
@@ -25,7 +25,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { Loader2, Wallet } from "lucide-react";
 
 const loginSchema = z.object({
   username: z.string().min(3, { message: "Username must be at least 3 characters" }),
@@ -68,7 +68,7 @@ export default function AuthPage() {
       profileImage: "",
     },
   });
-  
+
   // Redirect if user is already logged in
   if (user) {
     return <Redirect to="/" />;
@@ -111,7 +111,7 @@ export default function AuthPage() {
               <TabsTrigger value="login">Login</TabsTrigger>
               <TabsTrigger value="register">Register</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="login">
               <Card>
                 <CardHeader>
@@ -147,9 +147,9 @@ export default function AuthPage() {
                           </FormItem>
                         )}
                       />
-                      <Button 
-                        type="submit" 
-                        className="w-full" 
+                      <Button
+                        type="submit"
+                        className="w-full"
                         disabled={loginMutation.isPending}
                       >
                         {loginMutation.isPending ? (
@@ -175,26 +175,26 @@ export default function AuthPage() {
                         <span className="bg-white px-2 text-neutral-500">Or connect with wallet</span>
                       </div>
                     </div>
-                    
+
                     <div className="mt-4 grid grid-cols-2 gap-3">
                       <Button variant="outline" type="button" className="flex items-center justify-center">
-                        <img src="https://metamask.io/images/metamask-fox.svg" alt="MetaMask" className="h-5 w-5 mr-2" />
+                        <Wallet className="h-5 w-5 mr-2 text-orange-500" />
                         MetaMask
                       </Button>
                       <Button variant="outline" type="button" className="flex items-center justify-center">
-                        <img src="https://rabby.io/assets/logo.svg" alt="Rabby" className="h-5 w-5 mr-2" />
+                        <Wallet className="h-5 w-5 mr-2 text-blue-500" />
                         Rabby
                       </Button>
                       <Button variant="outline" type="button" className="flex items-center justify-center col-span-2">
-                        <img src="https://walletconnect.com/images/logo.svg" alt="WalletConnect" className="h-5 w-5 mr-2" />
+                        <Wallet className="h-5 w-5 mr-2 text-blue-600" />
                         WalletConnect
                       </Button>
                     </div>
                   </div>
-                  
+
                   <div className="text-sm text-neutral-500 mt-2">
                     Don't have an account?{" "}
-                    <button 
+                    <button
                       onClick={() => setActiveTab("register")}
                       className="text-primary hover:underline"
                     >
@@ -204,7 +204,7 @@ export default function AuthPage() {
                 </CardFooter>
               </Card>
             </TabsContent>
-            
+
             <TabsContent value="register">
               <Card>
                 <CardHeader>
@@ -288,8 +288,8 @@ export default function AuthPage() {
                           <FormItem>
                             <FormLabel>Role</FormLabel>
                             <FormControl>
-                              <Select 
-                                onValueChange={field.onChange} 
+                              <Select
+                                onValueChange={field.onChange}
                                 defaultValue={field.value as string}
                               >
                                 <SelectTrigger>
@@ -310,9 +310,9 @@ export default function AuthPage() {
                           </FormItem>
                         )}
                       />
-                      <Button 
-                        type="submit" 
-                        className="w-full" 
+                      <Button
+                        type="submit"
+                        className="w-full"
                         disabled={registerMutation.isPending}
                       >
                         {registerMutation.isPending ? (
@@ -338,26 +338,26 @@ export default function AuthPage() {
                         <span className="bg-white px-2 text-neutral-500">Or register with wallet</span>
                       </div>
                     </div>
-                    
+
                     <div className="mt-4 grid grid-cols-2 gap-3">
                       <Button variant="outline" type="button" className="flex items-center justify-center">
-                        <img src="https://metamask.io/images/metamask-fox.svg" alt="MetaMask" className="h-5 w-5 mr-2" />
+                        <Wallet className="h-5 w-5 mr-2 text-orange-500" />
                         MetaMask
                       </Button>
                       <Button variant="outline" type="button" className="flex items-center justify-center">
-                        <img src="https://rabby.io/assets/logo.svg" alt="Rabby" className="h-5 w-5 mr-2" />
+                        <Wallet className="h-5 w-5 mr-2 text-blue-500" />
                         Rabby
                       </Button>
                       <Button variant="outline" type="button" className="flex items-center justify-center col-span-2">
-                        <img src="https://walletconnect.com/images/logo.svg" alt="WalletConnect" className="h-5 w-5 mr-2" />
+                        <Wallet className="h-5 w-5 mr-2 text-blue-600" />
                         WalletConnect
                       </Button>
                     </div>
                   </div>
-                  
+
                   <div className="text-sm text-neutral-500 mt-2">
                     Already have an account?{" "}
-                    <button 
+                    <button
                       onClick={() => setActiveTab("login")}
                       className="text-primary hover:underline"
                     >
@@ -370,7 +370,7 @@ export default function AuthPage() {
           </Tabs>
         </div>
       </div>
-      
+
       {/* Right side - Hero section */}
       <div className="hidden lg:flex lg:flex-1 bg-primary p-8 items-center justify-center">
         <div className="max-w-lg text-white">
