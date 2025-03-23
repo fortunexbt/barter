@@ -227,7 +227,7 @@ export class SmartContractService {
             status: 'completed'
           });
           
-          // Create a release transaction record
+          // Create a release transaction record with barter tracking
           const transactionData: InsertTransaction = {
             type: 'escrow_release',
             senderId: contract.buyerId, // From the buyer's escrow
@@ -236,11 +236,14 @@ export class SmartContractService {
             amount: contract.price,
             status: 'completed',
             contractId: contract.id,
+            // Preserve barter relationship through the whole transaction flow
+            barterId: relatedTransaction.barterId,
             metadata: JSON.stringify({
               contractAddress,
               transactionHash,
               blockNumber: Math.floor(Math.random() * 10000000) + 1,
-              timestamp: new Date().toISOString()
+              timestamp: new Date().toISOString(),
+              barterId: relatedTransaction.barterId // Include barter ID in metadata
             })
           };
           
