@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import AppShell from "@/components/layout/app-shell";
 import { BarterOffer, Commodity, InsertBarterOffer } from "@shared/schema";
+import { formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, Plus, Filter, ArrowRight, Search } from "lucide-react";
@@ -415,7 +416,7 @@ export default function BarterPage() {
                             <div className="flex items-center">
                               <span className="text-xs text-neutral-500">Created:</span>
                               <span className="ml-1 text-xs font-medium text-neutral-600">
-                                {new Date(offer.createdAt).toLocaleDateString()}
+                                {formatDate(offer.createdAt)}
                               </span>
                             </div>
                           </div>
