@@ -44,6 +44,8 @@ interface EscrowDepositModalProps {
   contractAddress?: string;
   defaultAmount?: string;
   onSuccess?: (depositData: any) => void;
+  // Added fixed amount and contract display mode
+  isContractCreationResponse?: boolean;
 }
 
 export default function EscrowDepositModal({
@@ -52,6 +54,7 @@ export default function EscrowDepositModal({
   contractAddress = "",
   defaultAmount = "",
   onSuccess,
+  isContractCreationResponse = false,
 }: EscrowDepositModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -145,10 +148,23 @@ export default function EscrowDepositModal({
                   <FormItem>
                     <FormLabel>Contract Address</FormLabel>
                     <FormControl>
-                      <Input {...field} disabled={!!contractAddress} />
+                      <div className="flex items-center space-x-2">
+                        <Input 
+                          {...field} 
+                          disabled={true} 
+                          className={isContractCreationResponse ? "font-mono bg-accent text-accent-foreground" : ""}
+                        />
+                        {isContractCreationResponse && (
+                          <div className="text-xs text-green-600 font-medium p-1 rounded">
+                            Generated
+                          </div>
+                        )}
+                      </div>
                     </FormControl>
                     <FormDescription>
-                      The blockchain address of the escrow contract.
+                      {isContractCreationResponse 
+                        ? "This is your newly created escrow contract address." 
+                        : "The blockchain address of the escrow contract."}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -162,10 +178,19 @@ export default function EscrowDepositModal({
                   <FormItem>
                     <FormLabel>Deposit Amount</FormLabel>
                     <FormControl>
-                      <Input {...field} type="number" min="0" step="0.01" />
+                      <Input 
+                        {...field} 
+                        type="number" 
+                        min="0" 
+                        step="0.01" 
+                        disabled={isContractCreationResponse && !!defaultAmount}
+                        className={isContractCreationResponse && !!defaultAmount ? "bg-accent text-accent-foreground" : ""}
+                      />
                     </FormControl>
                     <FormDescription>
-                      The amount to deposit into the escrow contract.
+                      {isContractCreationResponse && !!defaultAmount 
+                        ? "Required deposit amount for this contract." 
+                        : "The amount to deposit into the escrow contract."}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -180,7 +205,9 @@ export default function EscrowDepositModal({
                 >
                   Cancel
                 </Button>
-                <Button type="submit">Deposit Funds</Button>
+                <Button type="submit" className={isContractCreationResponse ? "bg-green-600 hover:bg-green-700" : ""}>
+                  {isContractCreationResponse ? "Proceed with Deposit" : "Deposit Funds"}
+                </Button>
               </DialogFooter>
             </form>
           </Form>
