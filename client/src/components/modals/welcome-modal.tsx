@@ -20,8 +20,9 @@ export function WelcomeModal() {
   const [hasSeenWelcome, setHasSeenWelcome] = useLocalStorage("hasSeenWelcome", false);
   
   useEffect(() => {
-    // Show the welcome modal for new users who haven't seen it regardless of KYC status
-    if (user && !hasSeenWelcome) {
+    // Show the welcome modal only for new users who haven't seen it
+    // and only if they're not already KYC verified
+    if (user && !hasSeenWelcome && user.kycStatus !== "verified") {
       const timer = setTimeout(() => {
         setIsOpen(true);
       }, 1000);

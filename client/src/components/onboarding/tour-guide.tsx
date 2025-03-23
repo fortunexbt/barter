@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { useLocalStorage } from '@/hooks/use-local-storage';
-import { useAuth } from '@/hooks/use-auth';
 import {
   ChevronRight,
   X,
@@ -99,12 +98,9 @@ export default function TourGuide() {
     }
   ];
 
-  // Import useAuth hook from the context
-  const { user } = useAuth();
-  
-  // Start tour after a delay, but only if KYC is completed
+  // Start tour after a delay
   useEffect(() => {
-    if (showTour && user?.kycStatus === "verified") {
+    if (showTour) {
       const timer = setTimeout(() => {
         setIsVisible(true);
         setCurrentStep(0);
@@ -113,7 +109,7 @@ export default function TourGuide() {
       
       return () => clearTimeout(timer);
     }
-  }, [showTour, user?.kycStatus, navigate]);
+  }, [showTour]);
 
   // Find target element and position tooltip when step changes
   useEffect(() => {
