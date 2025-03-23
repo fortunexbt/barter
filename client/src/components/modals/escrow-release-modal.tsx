@@ -67,14 +67,14 @@ export default function EscrowReleaseModal({
   const releaseMutation = useMutation({
     mutationFn: async (data: ReleaseFormValues) => {
       setStep("processing");
-      return apiRequest({
-        method: "POST",
-        url: "/api/smart-contracts/escrow/release",
-        data: {
+      return apiRequest(
+        "POST",
+        "/api/smart-contracts/escrow/release",
+        {
           contractAddress: data.contractAddress,
           sellerId: parseInt(data.sellerId),
-        },
-      });
+        }
+      );
     },
     onSuccess: (data) => {
       setReleaseData(data);
