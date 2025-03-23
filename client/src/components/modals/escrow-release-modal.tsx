@@ -78,15 +78,36 @@ export default function EscrowReleaseModal({
 
   const releaseMutation = useMutation({
     mutationFn: async (data: ReleaseFormValues) => {
+      console.log("Submitting release with data:", data);
       setStep("processing");
-      return apiRequest(
-        "POST",
-        "/api/smart-contracts/escrow/release",
-        {
-          contractAddress: data.contractAddress,
-          sellerId: parseInt(data.sellerId),
+      
+      try {
+        // Make API request directly to ensure proper handling
+        const response = await fetch("/api/smart-contracts/escrow/release", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            contractAddress: data.contractAddress,
+            sellerId: parseInt(data.sellerId),
+          }),
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("Error response:", errorText);
+          throw new Error(`API Error: ${response.status} ${errorText}`);
         }
-      );
+        
+        // Parse the response to get the data
+        const responseData = await response.json();
+        console.log("Release response data:", responseData);
+        return responseData;
+      } catch (error) {
+        console.error("Release error:", error);
+        throw error;
+      }
     },
     onSuccess: (data) => {
       setReleaseData(data);
@@ -298,23 +319,47 @@ export default function EscrowReleaseModal({
                   </div>
                 </div>
               )}
+              
+              {releaseData.transactionId && (
+                <div className="space-y-1 mt-2">
+                  <div className="text-xs text-muted-foreground">Transaction ID</div>
+                  <div className="font-mono text-xs bg-muted-foreground/10 px-2 py-1 rounded-sm">
+                    {releaseData.transactionId}
+                  </div>
+                </div>
+              )}
             </div>
 
-            <div className="bg-green-50 rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <div className="rounded-full bg-green-100 p-1.5 mt-0.5">
-                  <CheckCircle2 className="h-5 w-5 text-green-600" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-green-800">Transaction Complete</h3>
-                  <p className="text-sm text-green-700/80 mt-1">
-                    {releaseData.success 
-                      ? "The funds have been successfully released from escrow to the seller. This completes the transaction."
-                      : "There was an issue releasing the funds. Please try again or contact support for assistance."}
-                  </p>
+            {releaseData.success ? (
+              <div className="bg-green-50 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <div className="rounded-full bg-green-100 p-1.5 mt-0.5">
+                    <CheckCircle2 className="h-5 w-5 text-green-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-green-800">Transaction Complete</h3>
+                    <p className="text-sm text-green-700/80 mt-1">
+                      The funds have been successfully released from escrow to the seller. This completes the transaction.
+                      {releaseData.transactionId && " The transaction is now recorded in your transaction history."}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="bg-amber-50 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <div className="rounded-full bg-amber-100 p-1.5 mt-0.5">
+                    <AlertCircle className="h-5 w-5 text-amber-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-amber-800">Transaction Issue</h3>
+                    <p className="text-sm text-amber-700/80 mt-1">
+                      There was an issue releasing the funds. Please try again or contact support for assistance.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <DialogFooter>
               <Button 

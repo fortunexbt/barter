@@ -1027,8 +1027,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
           type: 'notification',
           data: createdBuyerNotification,
         });
+        
+        // If there's a transaction record created, fetch additional information about it
+        if (result.transactionId) {
+          const transactionRecord = await storage.getTransaction(result.transactionId);
+          if (transactionRecord) {
+            // Enhance the result with more detailed transaction data
+            const enhancedResult = {
+              ...result,
+              transactionDetails: {
+                id: transactionRecord.id,
+                type: transactionRecord.type,
+                senderId: transactionRecord.senderId,
+                receiverId: transactionRecord.receiverId,
+                amount: transactionRecord.amount,
+                status: transactionRecord.status,
+                timestamp: transactionRecord.createdAt
+              }
+            };
+            return res.json(enhancedResult);
+          }
+        }
       }
       
+      // Default response if no enhanced data is available
       res.json(result);
     } catch (error) {
       next(error);
