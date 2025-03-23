@@ -1,13 +1,13 @@
 import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { 
-  Confetti,
   ShieldCheck, 
   Lock, 
   FileCheck, 
   ArrowRightLeft,
   ChevronRight,
-  Check
+  Check,
+  PartyPopper
 } from "lucide-react";
 import { 
   Dialog,
@@ -168,7 +168,7 @@ export function KycSuccessModal({ isOpen, onOpenChange }: KycSuccessModalProps) 
               
               <div className="bg-primary/5 p-3 rounded-lg border border-primary/10">
                 <div className="flex items-center gap-2 mb-2">
-                  <Confetti className="h-4 w-4 text-primary/80" />
+                  <PartyPopper className="h-4 w-4 text-primary/80" />
                   <h4 className="text-sm font-medium">Premium Access</h4>
                 </div>
                 <p className="text-xs text-muted-foreground">

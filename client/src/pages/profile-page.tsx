@@ -25,8 +25,8 @@ import { KycDocument } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { KycVerificationForm } from "@/components/kyc/kyc-verification-form"; 
-import { ZkpVerificationModal } from "@/components/modals/zkp-verification-modal";
-import { KycApprovalModal } from "@/components/modals/kyc-approval-modal";
+import ZkpVerificationModal from "@/components/modals/zkp-verification-modal";
+import KycApprovalModal from "@/components/modals/kyc-approval-modal";
 import { KycSuccessModal } from "@/components/modals/kyc-success-modal";
 
 const profileFormSchema = z.object({
@@ -184,6 +184,25 @@ export default function ProfilePage() {
   
   const onKycSubmit = (data: KycFormValues) => {
     submitKycMutation.mutate(data);
+  };
+  
+  // Handlers for modal show/hide
+  const handleShowZkpModal = () => {
+    setIsZkpModalOpen(true);
+  };
+  
+  const handleShowKycModal = () => {
+    setIsKycModalOpen(true);
+  };
+  
+  const handleKycComplete = (status: string) => {
+    if (status === "verified") {
+      // Show success modal
+      setIsSuccessModalOpen(true);
+      
+      // Update user data
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+    }
   };
 
   return (
@@ -364,68 +383,22 @@ export default function ProfilePage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="mb-6 p-4 bg-neutral-50 border border-neutral-200 rounded-md">
-                      <h4 className="font-medium mb-2 flex items-center">
-                        <span className="material-icons mr-2 text-info">info</span>
-                        Why KYC is Required
-                      </h4>
-                      <p className="text-sm text-neutral-600">
-                        Know Your Customer (KYC) verification is required for regulatory compliance and to ensure 
-                        secure trading. Verified accounts have access to higher transaction limits and additional features.
-                      </p>
-                    </div>
-                    
-                    <Alert className="mb-6 border-primary/20 bg-primary/5">
-                      <ShieldCheck className="h-4 w-4 text-primary" />
-                      <AlertTitle className="text-primary font-medium">Enhanced Privacy with Zero-Knowledge Proofs</AlertTitle>
-                      <AlertDescription className="text-sm text-neutral-600">
-                        Our platform uses zero-knowledge proof technology to verify your identity without exposing your personal data.
-                        This cryptographic approach ensures your privacy while maintaining regulatory compliance.
-                      </AlertDescription>
-                    </Alert>
-
-                    {user?.zkpVerified ? (
-                      <div className="mb-6 p-4 bg-success/10 border border-success/30 rounded-md flex items-center">
+                    {user?.kycStatus === "verified" ? (
+                      <div className="p-4 bg-success/10 border border-success/30 rounded-md flex items-center">
                         <Check className="h-5 w-5 text-success mr-3 flex-shrink-0" />
                         <div>
-                          <h4 className="font-medium text-success mb-1">Zero-Knowledge Verification Complete</h4>
+                          <h4 className="font-medium text-success mb-1">Verification Complete</h4>
                           <p className="text-sm text-neutral-600">
                             Your identity has been verified using zero-knowledge proofs. You have full access to all platform features.
                           </p>
                         </div>
                       </div>
                     ) : (
-                      <div className="mb-6 border rounded-md overflow-hidden">
-                        <div className="bg-neutral-50 p-4 border-b">
-                          <h4 className="font-medium mb-1 flex items-center">
-                            <Key className="h-4 w-4 mr-2 text-primary" />
-                            Zero-Knowledge Verification
-                          </h4>
-                          <p className="text-sm text-neutral-600">
-                            Complete this step to verify your identity with enhanced privacy protection
-                          </p>
-                        </div>
-                        <div className="p-4">
-                          <Button 
-                            type="button"
-                            className="bg-primary text-white"
-                            onClick={() => generateZkpIdentityMutation.mutate()}
-                            disabled={generateZkpIdentityMutation.isPending}
-                          >
-                            {generateZkpIdentityMutation.isPending ? (
-                              <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Generating...
-                              </>
-                            ) : (
-                              "Generate Private Identity"
-                            )}
-                          </Button>
-                          <p className="text-xs text-neutral-500 mt-2">
-                            This creates a cryptographic identity that protects your personal information
-                          </p>
-                        </div>
-                      </div>
+                      <KycVerificationForm 
+                        onComplete={handleKycComplete}
+                        onShowZkpModal={handleShowZkpModal}
+                        onShowKycModal={handleShowKycModal}
+                      />
                     )}
                     
                     <Form {...kycForm}>
@@ -595,6 +568,22 @@ export default function ProfilePage() {
           </TabsContent>
         </Tabs>
       </div>
+      
+      {/* Modals */}
+      <ZkpVerificationModal 
+        isOpen={isZkpModalOpen}
+        onOpenChange={setIsZkpModalOpen}
+      />
+      
+      <KycApprovalModal 
+        isOpen={isKycModalOpen}
+        onOpenChange={setIsKycModalOpen}
+      />
+      
+      <KycSuccessModal 
+        isOpen={isSuccessModalOpen}
+        onOpenChange={setIsSuccessModalOpen}
+      />
     </AppShell>
   );
 }
