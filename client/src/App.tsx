@@ -14,6 +14,7 @@ import ProfilePage from "@/pages/profile-page";
 import SettingsPage from "@/pages/settings-page";
 import DealsPage from "@/pages/deals-page";
 import NotificationsPage from "@/pages/notifications-page";
+import AdminPage from "@/pages/admin-page";
 import { WelcomeModal } from "@/components/modals/welcome-modal";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./hooks/use-auth";
@@ -35,6 +36,7 @@ function Router() {
       <ProtectedRoute path="/profile/funds" component={ProfilePage} />
       <ProtectedRoute path="/settings" component={SettingsPage} />
       <ProtectedRoute path="/notifications" component={NotificationsPage} />
+      <ProtectedRoute path="/admin" component={AdminPage} />
       <Route component={NotFound} />
     </Switch>
   );

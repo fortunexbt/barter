@@ -162,6 +162,20 @@ export default function AuthPage() {
                           "Login"
                         )}
                       </Button>
+                      
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full mt-2 flex items-center justify-center"
+                        onClick={() => {
+                          loginForm.setValue("username", "admin");
+                          loginForm.setValue("password", "admin123");
+                          setTimeout(() => loginForm.handleSubmit(onLoginSubmit)(), 100);
+                        }}
+                      >
+                        <ShieldCheck className="mr-2 h-4 w-4" />
+                        Admin Quick Login
+                      </Button>
                     </form>
                   </Form>
                 </CardContent>
@@ -377,8 +391,8 @@ export default function AuthPage() {
       <div className="hidden lg:block flex-1 bg-primary/10 p-12">
         <div className="h-full flex flex-col justify-center max-w-md mx-auto">
           <div className="space-y-6">
-            <div className="rounded-lg bg-white p-2 w-12 h-12 flex items-center justify-center shadow-sm">
-              <img src="/logo.svg" alt="BarterTrade Logo" className="w-8 h-8" />
+            <div className="rounded-lg bg-white p-2 w-16 h-16 flex items-center justify-center shadow-sm">
+              <Logo variant="large" showText={false} />
             </div>
             <h2 className="text-3xl font-bold">AI-Powered Commodity Trading</h2>
             <p className="text-gray-600">
@@ -405,6 +419,36 @@ export default function AuthPage() {
                   <span>Real-time market insights</span>
                 </li>
               </ul>
+            </div>
+            
+            <div className="border-t border-gray-200 pt-6 mt-8">
+              <h3 className="font-medium mb-4 text-sm text-gray-500">Powered By</h3>
+              <div className="flex flex-wrap gap-4">
+                <div className="flex items-center space-x-1 text-sm text-gray-500">
+                  <GitMerge className="h-4 w-4" />
+                  <span>Semaphore</span>
+                </div>
+                <div className="flex items-center space-x-1 text-sm text-gray-500">
+                  <SiEthereum className="h-4 w-4" />
+                  <span>Ethers.js</span>
+                </div>
+                <div className="flex items-center space-x-1 text-sm text-gray-500">
+                  <Wallet className="h-4 w-4" />
+                  <span>WalletConnect</span>
+                </div>
+                <div className="flex items-center space-x-1 text-sm text-gray-500">
+                  <SiPostgresql className="h-4 w-4" />
+                  <span>PostgreSQL</span>
+                </div>
+                <div className="flex items-center space-x-1 text-sm text-gray-500">
+                  <SiVite className="h-4 w-4" />
+                  <span>Vite</span>
+                </div>
+                <div className="flex items-center space-x-1 text-sm text-gray-500">
+                  <Code className="h-4 w-4" />
+                  <span>Lucide</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
