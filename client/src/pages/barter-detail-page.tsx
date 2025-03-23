@@ -190,9 +190,71 @@ export default function BarterDetailPage() {
   const [contractCreating, setContractCreating] = useState(false);
   const [depositCompleted, setDepositCompleted] = useState(false);
   const [depositStep, setDepositStep] = useState(false);
+  const [tradeProgress, setTradeProgress] = useState(0);
+  const [transactionStatus, setTransactionStatus] = useState("pending");
+  
+  // Track current contract data
+  const [currentContract, setCurrentContract] = useState<Contract | null>(null);
+  const [currentTransactions, setCurrentTransactions] = useState<Transaction[]>([]);
   
   // Confetti effect
   const [showConfetti, setShowConfetti] = useState(false);
+  
+  // Effect to find related contract and transactions for this barter
+  useEffect(() => {
+    if (barterOffer && relatedContracts && relatedTransactions) {
+      // Find contract related to this barter
+      const contractForBarter = relatedContracts.find(
+        contract => contract.buyerId === barterOffer.requestingUserId && 
+                    contract.sellerId === barterOffer.offeringUserId && 
+                    contract.commodityId === barterOffer.offeringCommodityId
+      );
+      
+      if (contractForBarter) {
+        setCurrentContract(contractForBarter);
+        setContractCreated(true);
+        
+        // If we have a contract address from metadata, use it
+        const contractTransactions = relatedTransactions.filter(t => t.contractId === contractForBarter.id);
+        if (contractTransactions.length > 0) {
+          setCurrentTransactions(contractTransactions);
+          
+          // Check for deposit transaction
+          const depositTx = contractTransactions.find(t => t.type === 'escrow_deposit');
+          if (depositTx) {
+            setDepositCompleted(true);
+            setDepositStep(true);
+          }
+          
+          // Update progress based on transaction status
+          if (contractForBarter.status === 'completed') {
+            setTransactionStatus('completed');
+            setTradeProgress(100);
+          } else if (contractForBarter.status === 'funded') {
+            setTransactionStatus('funded');
+            setTradeProgress(66);
+          } else if (contractForBarter.status === 'pending' && depositTx) {
+            setTradeProgress(33);
+          } else if (contractForBarter.status === 'pending') {
+            setTradeProgress(10);
+          }
+          
+          // Extract contract address from transaction metadata if available
+          const creationTx = contractTransactions.find(t => t.type === 'escrow_creation');
+          if (creationTx && creationTx.metadata) {
+            try {
+              const metadata = JSON.parse(creationTx.metadata);
+              if (metadata.contractAddress) {
+                setContractAddress(metadata.contractAddress);
+              }
+            } catch (e) {
+              console.error("Error parsing transaction metadata:", e);
+            }
+          }
+        }
+      }
+    }
+  }, [barterOffer, relatedContracts, relatedTransactions]);
   
   // Smart contract integration functions
   const handleCreateSmartContract = async () => {
@@ -731,6 +793,69 @@ export default function BarterDetailPage() {
                   <div className="absolute left-1/2 top-0 w-4 h-4 bg-yellow-500 animate-fall-slow" style={{animationDelay: '0.3s'}} />
                   <div className="absolute left-2/3 top-0 w-2 h-2 bg-red-500 animate-fall-slow" style={{animationDelay: '0.7s'}} />
                   <div className="absolute left-3/4 top-0 w-3 h-3 bg-purple-500 animate-fall-slow" style={{animationDelay: '0.1s'}} />
+                </div>
+              )}
+              
+              {/* Overall Progress Indicator */}
+              <div className="mb-6">
+                <div className="flex justify-between mb-2">
+                  <h4 className="text-sm font-medium">Transaction Progress</h4>
+                  <span className="text-sm text-neutral-500">{tradeProgress}%</span>
+                </div>
+                <Progress value={tradeProgress} className="h-2" />
+              </div>
+              
+              {/* Contract Details if available */}
+              {currentContract && (
+                <div className="mb-6 bg-slate-50 p-3 rounded-md">
+                  <h4 className="text-sm font-medium mb-2">Contract Information</h4>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <span className="text-neutral-500">Contract ID:</span>
+                      <p>{currentContract.contractNumber}</p>
+                    </div>
+                    <div>
+                      <span className="text-neutral-500">Status:</span>
+                      <p className={currentContract.status === 'completed' ? 'text-green-600' : 'text-orange-500'}>
+                        {currentContract.status?.charAt(0).toUpperCase() + currentContract.status?.slice(1) || 'Pending'}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-neutral-500">Created:</span>
+                      <p>{formatRelativeTime(currentContract.createdAt)}</p>
+                    </div>
+                    <div>
+                      <span className="text-neutral-500">Price:</span>
+                      <p>{formatCurrency(currentContract.price, 'USD')}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Transaction History if available */}
+              {currentTransactions.length > 0 && (
+                <div className="mb-6">
+                  <h4 className="text-sm font-medium mb-2">Transaction History</h4>
+                  <div className="space-y-2">
+                    {currentTransactions.map((tx) => (
+                      <div key={tx.id} className="text-sm bg-slate-50 p-2 rounded-md flex justify-between">
+                        <div>
+                          <span className="font-medium">
+                            {tx.type === 'escrow_creation' && 'Contract Created'}
+                            {tx.type === 'escrow_deposit' && 'Funds Deposited'}
+                            {tx.type === 'escrow_release' && 'Funds Released'}
+                          </span>
+                          <p className="text-neutral-500">{formatRelativeTime(tx.createdAt)}</p>
+                        </div>
+                        <div className="text-right">
+                          <Badge variant={tx.status === 'completed' ? 'default' : 'outline'}>
+                            {tx.status}
+                          </Badge>
+                          {tx.amount && <p>{formatCurrency(tx.amount, 'USD')}</p>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
               
