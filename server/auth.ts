@@ -22,10 +22,26 @@ async function hashPassword(password: string) {
 }
 
 async function comparePasswords(supplied: string, stored: string) {
+  // Check if stored password has the correct format (hash.salt)
+  if (!stored || !stored.includes(".")) {
+    console.error("Invalid stored password format for comparison");
+    return false;
+  }
+  
   const [hashed, salt] = stored.split(".");
-  const hashedBuf = Buffer.from(hashed, "hex");
-  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-  return timingSafeEqual(hashedBuf, suppliedBuf);
+  if (!hashed || !salt) {
+    console.error("Invalid stored password components");
+    return false;
+  }
+  
+  try {
+    const hashedBuf = Buffer.from(hashed, "hex");
+    const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+    return timingSafeEqual(hashedBuf, suppliedBuf);
+  } catch (error) {
+    console.error("Password comparison error:", error);
+    return false;
+  }
 }
 
 export function setupAuth(app: Express) {
@@ -48,7 +64,7 @@ export function setupAuth(app: Express) {
     new LocalStrategy(async (username, password, done) => {
       try {
         // Quick admin login for testing
-        if (username === "admin" && password === "admin") {
+        if (username === "admin" && password === "admin123") {
           // Create an admin user object for the quick login
           const adminUser = {
             id: 9999, // Special ID for quick admin login
@@ -61,7 +77,8 @@ export function setupAuth(app: Express) {
             accountLevel: "premium",
             tradingSince: new Date(),
             profileImage: "https://randomuser.me/api/portraits/men/99.jpg",
-            walletAddress: "0x0000000000000000000000000000000000000000",
+            identityCommitment: null,
+            zkpIdentity: null,
             zkpVerified: true
           };
           return done(null, adminUser);
