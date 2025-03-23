@@ -98,6 +98,10 @@ export const kycDocuments = pgTable("kyc_documents", {
   documentNumber: text("document_number").notNull(),
   verified: boolean("verified").default(false),
   uploadedAt: timestamp("uploaded_at").defaultNow(),
+  // ZKP verification data
+  zkpVerified: boolean("zkp_verified").default(false),
+  verificationProofId: text("verification_proof_id"),
+  identityCommitment: text("identity_commitment"),
 });
 
 // Define insert schemas
