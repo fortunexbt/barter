@@ -2,12 +2,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
   Menu, 
-  Bell, 
   Search, 
   ChevronDown, 
   User, 
   Settings, 
-  LogOut 
+  LogOut,
+  FileText
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useState } from "react";
@@ -20,6 +20,7 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { useLocation } from "wouter";
+import NotificationDropdown from "@/components/layout/notification-dropdown";
 
 interface HeaderProps {
   toggleMobileSidebar: () => void;
@@ -72,10 +73,7 @@ export default function Header({ toggleMobileSidebar }: HeaderProps) {
         </div>
         
         <div className="flex items-center space-x-4">
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="h-5 w-5 text-neutral-500" />
-            <span className="absolute top-0 right-0 block w-2 h-2 bg-accent rounded-full"></span>
-          </Button>
+          <NotificationDropdown />
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

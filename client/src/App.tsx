@@ -12,6 +12,7 @@ import TransactionsPage from "@/pages/transactions-page";
 import ContractsPage from "@/pages/contracts-page";
 import ProfilePage from "@/pages/profile-page";
 import SettingsPage from "@/pages/settings-page";
+import DealsPage from "@/pages/deals-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./hooks/use-auth";
 
@@ -25,6 +26,7 @@ function Router() {
       <ProtectedRoute path="/barter" component={BarterPage} />
       <ProtectedRoute path="/transactions" component={TransactionsPage} />
       <ProtectedRoute path="/contracts" component={ContractsPage} />
+      <ProtectedRoute path="/deals" component={DealsPage} />
       <ProtectedRoute path="/profile" component={ProfilePage} />
       <ProtectedRoute path="/settings" component={SettingsPage} />
       <Route component={NotFound} />

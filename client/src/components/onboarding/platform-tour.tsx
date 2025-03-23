@@ -1,24 +1,26 @@
 import { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "wouter";
+import { useLocation } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
+import { useLocalStorage } from "@/hooks/use-local-storage";
+import { 
+  ShoppingBag, 
+  ArrowRightLeft, 
+  FileText, 
+  Wallet,
+  BookUser,
+  Home,
+  BarChart
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { 
-  ArrowRight, 
-  HelpCircle, 
-  Home, 
-  ShoppingCart, 
-  RefreshCcw, 
-  FileText, 
-  User,
-  X
-} from "lucide-react";
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 
 type TourStep = {
   title: string;
@@ -28,197 +30,132 @@ type TourStep = {
   icon: React.ReactNode;
 };
 
-const tourSteps: TourStep[] = [
-  {
-    title: "Welcome to BarterTrade",
-    description: "Let's take a quick tour of the platform to help you get started with commodity trading and bartering.",
-    action: "Start Tour",
-    targetPath: "/",
-    icon: <Home className="h-6 w-6 text-blue-500" />,
-  },
-  {
-    title: "Dashboard Overview",
-    description: "Your dashboard shows your trading stats, recent activity, and quick access to platform features.",
-    action: "Next",
-    targetPath: "/",
-    icon: <Home className="h-6 w-6 text-blue-500" />,
-  },
-  {
-    title: "Explore the Marketplace",
-    description: "Browse available commodities, filter by type, and find trading opportunities.",
-    action: "Go to Marketplace",
-    targetPath: "/marketplace",
-    icon: <ShoppingCart className="h-6 w-6 text-orange-500" />,
-  },
-  {
-    title: "Create Barter Offers",
-    description: "Propose trades with other users by offering your commodities in exchange for theirs.",
-    action: "Go to Barter",
-    targetPath: "/barter",
-    icon: <RefreshCcw className="h-6 w-6 text-green-500" />,
-  },
-  {
-    title: "Manage Your Contracts",
-    description: "View all your active contracts, track deliveries, and manage payments.",
-    action: "Go to Contracts",
-    targetPath: "/contracts",
-    icon: <FileText className="h-6 w-6 text-purple-500" />,
-  },
-  {
-    title: "Complete Your Profile",
-    description: "Update your profile information, verify your identity with KYC, and generate your ZKP identity.",
-    action: "Go to Profile",
-    targetPath: "/profile",
-    icon: <User className="h-6 w-6 text-indigo-500" />,
-  },
-  {
-    title: "You're All Set!",
-    description: "You've completed the tour! Explore the platform and start trading with confidence.",
-    action: "Start Trading",
-    targetPath: "/marketplace",
-    icon: <ShoppingCart className="h-6 w-6 text-blue-500" />,
-  },
-];
-
 interface PlatformTourProps {
   forceTour?: boolean;
 }
 
 export default function PlatformTour({ forceTour = false }: PlatformTourProps) {
-  const [isTourOpen, setIsTourOpen] = useState(false);
+  const { user } = useAuth();
+  const [_, navigate] = useLocation();
   const [currentStep, setCurrentStep] = useState(0);
-  const [location, setLocation] = useLocation();
+  const [showTour, setShowTour] = useLocalStorage("showTour", true);
+  const [isVisible, setIsVisible] = useState(false);
   
-  // Initialize tour based on localStorage or forceTour prop
   useEffect(() => {
-    const hasSeenTour = localStorage.getItem("hasSeenTour");
-    if (forceTour || (!hasSeenTour && location === "/")) {
-      setIsTourOpen(true);
+    // Only show the tour if the user hasn't seen it before, or if forced
+    if ((showTour || forceTour) && user) {
+      const timer = setTimeout(() => {
+        setIsVisible(true);
+      }, 1000);
+      
+      return () => clearTimeout(timer);
     }
-  }, [forceTour, location]);
+  }, [showTour, forceTour, user]);
   
-  const handleNext = () => {
-    const nextStep = currentStep + 1;
-    
-    // If we need to navigate to a different page
-    if (tourSteps[currentStep].targetPath !== location) {
-      setLocation(tourSteps[currentStep].targetPath);
+  const tourSteps: TourStep[] = [
+    {
+      title: "Welcome to BarterTrade",
+      description: "This platform helps you trade commodities without traditional currency. Let's take a quick tour of the main features.",
+      action: "Start Tour",
+      targetPath: "/",
+      icon: <Home className="h-8 w-8 text-primary" />
+    },
+    {
+      title: "Browse the Marketplace",
+      description: "Explore available commodities from traders around the world. Find exactly what you need with advanced filtering options.",
+      action: "View Marketplace",
+      targetPath: "/marketplace",
+      icon: <ShoppingBag className="h-8 w-8 text-emerald-500" />
+    },
+    {
+      title: "Make Barter Offers",
+      description: "Propose trades directly with other users. Our AI matching algorithm helps find optimal trades based on value equivalence.",
+      action: "See Barter System",
+      targetPath: "/barter",
+      icon: <ArrowRightLeft className="h-8 w-8 text-amber-500" />
+    },
+    {
+      title: "Create Smart Contracts",
+      description: "Secure your trades with blockchain-backed smart contracts. Our escrow system ensures safe commodity transfers.",
+      action: "Explore Contracts",
+      targetPath: "/contracts",
+      icon: <FileText className="h-8 w-8 text-blue-500" />
+    },
+    {
+      title: "Track Your Deals",
+      description: "Monitor all your commodity trades and barter exchanges in one place with detailed performance analytics.",
+      action: "View Deals",
+      targetPath: "/deals",
+      icon: <BarChart className="h-8 w-8 text-indigo-500" />
+    },
+    {
+      title: "Complete Your Profile",
+      description: "Update your trading profile and verify your identity with our secure zero-knowledge proof system for enhanced trust.",
+      action: "Update Profile",
+      targetPath: "/profile",
+      icon: <BookUser className="h-8 w-8 text-violet-500" />
     }
-    
-    // If there are more steps
-    if (nextStep < tourSteps.length) {
-      setCurrentStep(nextStep);
+  ];
+  
+  const handleNextStep = () => {
+    if (currentStep < tourSteps.length - 1) {
+      setCurrentStep(prevStep => prevStep + 1);
+      navigate(tourSteps[currentStep + 1].targetPath);
     } else {
       completeTour();
     }
   };
   
-  const handlePrevious = () => {
-    const prevStep = currentStep - 1;
-    if (prevStep >= 0) {
-      setCurrentStep(prevStep);
-      if (tourSteps[prevStep].targetPath !== location) {
-        setLocation(tourSteps[prevStep].targetPath);
-      }
-    }
-  };
-  
-  const handleSkip = () => {
+  const handleSkipTour = () => {
     completeTour();
   };
   
   const completeTour = () => {
-    localStorage.setItem("hasSeenTour", "true");
-    setIsTourOpen(false);
-    setCurrentStep(0);
+    setShowTour(false);
+    setIsVisible(false);
   };
   
-  // Reset the tour so it can be started again
-  const resetTour = () => {
-    localStorage.removeItem("hasSeenTour");
-    setCurrentStep(0);
-    setIsTourOpen(true);
-    setLocation("/");
-  };
+  if (!isVisible) return null;
   
   const currentTourStep = tourSteps[currentStep];
-  const isFirstStep = currentStep === 0;
-  const isLastStep = currentStep === tourSteps.length - 1;
+  const progress = ((currentStep + 1) / tourSteps.length) * 100;
   
   return (
-    <>
-      <Button 
-        variant="outline" 
-        size="icon" 
-        className="fixed bottom-4 right-4 rounded-full z-50 shadow-md bg-white"
-        onClick={resetTour}
-      >
-        <HelpCircle className="h-5 w-5 text-blue-500" />
-      </Button>
-      
-      <Dialog open={isTourOpen} onOpenChange={setIsTourOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <div className="flex justify-between items-center">
-              <div className="flex items-center">
+    <div className="fixed bottom-6 right-6 z-50 max-w-sm w-full shadow-lg animate-in slide-in-from-bottom-10 duration-300">
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex justify-between items-start">
+            <div className="flex-1">
+              <CardTitle className="text-lg flex items-center gap-2">
                 {currentTourStep.icon}
-                <DialogTitle className="ml-2">
-                  {currentTourStep.title}
-                </DialogTitle>
-              </div>
-              <Button variant="ghost" size="icon" onClick={handleSkip}>
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-            <DialogDescription className="pt-2">
-              {currentTourStep.description}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="relative py-2">
-            <div className="flex justify-center items-center">
-              {tourSteps.map((_, index) => (
-                <div
-                  key={index}
-                  className={`w-2 h-2 mx-1 rounded-full ${
-                    index === currentStep
-                      ? "bg-blue-500"
-                      : "bg-gray-200"
-                  }`}
-                />
-              ))}
+                <span>{currentTourStep.title}</span>
+              </CardTitle>
+              <CardDescription>Step {currentStep + 1} of {tourSteps.length}</CardDescription>
             </div>
           </div>
-          
-          <DialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-between sm:space-x-2">
-            <div className="flex space-x-2 mt-2 sm:mt-0">
-              {!isFirstStep && (
-                <Button 
-                  variant="outline" 
-                  onClick={handlePrevious}
-                >
-                  Back
-                </Button>
-              )}
-              
-              <Button 
-                variant="ghost" 
-                onClick={handleSkip}
-              >
-                {isLastStep ? "Close" : "Skip Tour"}
-              </Button>
-            </div>
-            
-            <Button 
-              onClick={handleNext}
-              className="bg-gradient-to-r from-blue-600 to-blue-800"
-            >
-              {currentTourStep.action}
-              {!isLastStep && <ArrowRight className="ml-2 h-4 w-4" />}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+        </CardHeader>
+        <CardContent className="pb-3">
+          <p className="text-sm text-muted-foreground mb-3">
+            {currentTourStep.description}
+          </p>
+          <Progress value={progress} className="h-1" />
+        </CardContent>
+        <CardFooter className="pt-1 flex justify-between">
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={handleSkipTour}
+          >
+            {currentStep < tourSteps.length - 1 ? 'Skip Tour' : 'Close'}
+          </Button>
+          <Button
+            size="sm"
+            onClick={handleNextStep}
+          >
+            {currentTourStep.action}
+          </Button>
+        </CardFooter>
+      </Card>
+    </div>
   );
 }
