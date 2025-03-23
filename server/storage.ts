@@ -449,54 +449,34 @@ export class MemStorage implements IStorage {
     const id = this.userIdCounter++;
     const now = new Date();
     
-    // For demo purposes - automatically set all users as KYC verified
+    // Set users with kycStatus pending by default
     const user: User = { 
       ...insertUser, 
       id, 
       tradingSince: now,
-      kycStatus: "verified", // Auto-approve KYC for demo
-      verificationLevel: "full",
-      creditScore: 85,
-      walletAddress: `0x${Math.random().toString(16).substring(2, 38)}`, // Demo wallet address
+      kycStatus: "pending", // Default to pending KYC status
+      accountLevel: "basic",
+      role: "trader",
+      profileImage: null,
+      identityCommitment: null,
+      zkpIdentity: null,
+      zkpVerified: null,
     };
     
     this.usersMap.set(id, user);
     
-    // Create automatic KYC verification document
-    const kycDocId = this.kycDocumentIdCounter++;
-    this.kycDocumentsMap.set(kycDocId, {
-      id: kycDocId,
-      userId: id,
-      documentType: "identity_card",
-      documentNumber: `ID${Math.floor(Math.random() * 10000000)}`,
-      status: "verified",
-      uploadedAt: now,
-      verifiedAt: now,
-      verifiedBy: "system",
-      fileUrl: "/demo/kyc/id_demo.jpg",
-    });
+    // No longer auto-create KYC documents
     
-    // Create welcome and KYC approved notifications
+    // Create welcome notification only
     const welcomeNotifId = this.notificationIdCounter++;
     this.notificationsMap.set(welcomeNotifId, {
       id: welcomeNotifId,
       userId: id,
       type: "system",
       title: "Welcome to BarterTrade",
-      message: "Thank you for joining BarterTrade! Your account is now active and ready for trading.",
+      message: "Thank you for joining BarterTrade! Please complete KYC verification to unlock all features.",
       isRead: false,
       createdAt: now,
-    });
-    
-    const kycNotifId = this.notificationIdCounter++;
-    this.notificationsMap.set(kycNotifId, {
-      id: kycNotifId,
-      userId: id,
-      type: "kyc",
-      title: "KYC Verification Complete",
-      message: "Your KYC verification has been approved. You now have full access to all trading features.",
-      isRead: false,
-      createdAt: new Date(now.getTime() + 1000), // 1 second later
     });
     
     return user;
@@ -723,6 +703,18 @@ export class MemStorage implements IStorage {
       const user = await this.getUser(kycDocument.userId);
       if (user) {
         await this.updateUser(user.id, { kycStatus: "verified" });
+        
+        // Create KYC success notification
+        const kycNotifId = this.notificationIdCounter++;
+        this.notificationsMap.set(kycNotifId, {
+          id: kycNotifId,
+          userId: user.id,
+          type: "kyc",
+          title: "KYC Verification Complete",
+          message: "Your KYC verification has been approved. You now have full access to all trading features.",
+          isRead: false,
+          createdAt: new Date(),
+        });
       }
     }
     
