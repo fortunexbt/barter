@@ -16,6 +16,7 @@ export const users = pgTable("users", {
   profileImage: text("profile_image").default(""),
   // ZKP identity fields
   identityCommitment: text("identity_commitment"),
+  zkpIdentity: text("zkp_identity"),
   zkpVerified: boolean("zkp_verified").default(false),
 });
 
