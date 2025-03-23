@@ -535,8 +535,8 @@ export default function MarketplacePage() {
       <div className="py-6 px-4 sm:px-6 lg:px-8" data-tour="marketplace">
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-2xl font-semibold text-neutral-600">Marketplace</h2>
-            <p className="text-neutral-500">Browse and trade commodities</p>
+            <h2 className="text-2xl font-semibold text-neutral-600">Commodities Marketplace</h2>
+            <p className="text-neutral-500">Browse, trade, and manage commodity assets</p>
           </div>
           <div className="mt-4 sm:mt-0 flex space-x-3">
             <Link href="/marketplace/manage">
@@ -554,78 +554,249 @@ export default function MarketplacePage() {
           </div>
         </div>
         
-        <div className="mb-6 flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <Input
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search commodities..."
-              className="pl-10"
-            />
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-4 w-4 text-neutral-400" />
-            </div>
-          </div>
+        {/* Marketplace summary cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <BarChart3 className="h-4 w-4 text-blue-500" />
+                Market Overview
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <p className="text-xs text-neutral-500">Total Volume</p>
+                  <p className="text-lg font-semibold">
+                    {commodities ? formatNumber(commodities.reduce((sum, c) => sum + c.volume, 0)) : "—"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-neutral-500">Available Listings</p>
+                  <p className="text-lg font-semibold">
+                    {commodities ? commodities.filter(c => c.status === 'available').length : "—"}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
           
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                <Filter className="h-4 w-4" />
-                <span>Filter</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Status</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuRadioGroup value={statusFilter} onValueChange={setStatusFilter}>
-                <DropdownMenuRadioItem value="all">All</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="available">Available</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="bidding">Bidding</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="sold">Sold</DropdownMenuRadioItem>
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Truck className="h-4 w-4 text-green-500" />
+                Supply Chain Status
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-1">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-neutral-500">Agricultural</span>
+                  <span className="text-xs font-medium text-neutral-600">
+                    {commodities ? commodities.filter(c => c.icon === 'wheat' || c.icon === 'agriculture').length : "—"} units
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-neutral-500">Energy</span>
+                  <span className="text-xs font-medium text-neutral-600">
+                    {commodities ? commodities.filter(c => c.icon === 'fuel' || c.icon === 'energy').length : "—"} units
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-neutral-500">Minerals</span>
+                  <span className="text-xs font-medium text-neutral-600">
+                    {commodities ? commodities.filter(c => c.icon === 'gems' || c.icon === 'minerals').length : "—"} units
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <RefreshCw className="h-4 w-4 text-amber-500" />
+                Market Activity
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-1.5">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-neutral-500">Recent Trades</span>
+                  <span className="text-xs font-medium text-neutral-600">
+                    {commodities ? Math.floor(commodities.length * 0.2) : "—"}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-neutral-500">Pending Contracts</span>
+                  <span className="text-xs font-medium text-neutral-600">
+                    {commodities ? Math.floor(commodities.length * 0.1) : "—"}
+                  </span>
+                </div>
+                <Button variant="link" className="h-6 text-xs px-0 ml-auto" asChild>
+                  <Link href="/marketplace/analytics">View detailed metrics</Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
+        
+        {/* Tabs for different marketplace views */}
+        <Tabs defaultValue="browse" className="mb-6">
+          <TabsList className="mb-4">
+            <TabsTrigger value="browse">Browse Marketplace</TabsTrigger>
+            <TabsTrigger value="favorites">Your Favorites</TabsTrigger>
+            <TabsTrigger value="trending">Trending</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="browse" className="space-y-6">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div className="col-span-2">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
+                  <Input
+                    className="pl-10"
+                    placeholder="Search commodities by name, grade, or other attributes..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="sm:text-right">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="w-full sm:w-auto justify-between">
+                      <Filter className="mr-2 h-4 w-4" />
+                      Status: {statusFilter === "all" ? "All" : statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)}
+                      <svg
+                        className="ml-2 h-4 w-4"
+                        fill="none"
+                        height="24"
+                        stroke="currentColor"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        viewBox="0 0 24 24"
+                        width="24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <polyline points="6 9 12 15 18 9" />
+                      </svg>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuLabel>Status</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuRadioGroup value={statusFilter} onValueChange={setStatusFilter}>
+                      <DropdownMenuRadioItem value="all">All</DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="available">Available</DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="bidding">Bidding</DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="sold">Sold</DropdownMenuRadioItem>
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
+            
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-neutral-500" />
+              </div>
+            ) : error ? (
+              <div className="bg-red-50 border border-red-200 rounded-md p-4 text-center">
+                <p className="text-red-600">Error loading commodities. Please try again later.</p>
+                <Button variant="outline" className="mt-2" onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/commodities"] })}>
+                  <RefreshCw className="h-4 w-4 mr-2" /> Retry
+                </Button>
+              </div>
+            ) : filteredCommodities.length === 0 ? (
+              <div className="bg-amber-50 border border-amber-200 rounded-md p-8 text-center">
+                <p className="text-amber-600 mb-2">No commodities found matching your search criteria.</p>
+                {searchTerm && (
+                  <Button variant="outline" size="sm" onClick={() => setSearchTerm("")}>
+                    Clear Search
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-neutral-500">
+                    Showing <span className="font-medium">{filteredCommodities.length}</span> {filteredCommodities.length === 1 ? 'listing' : 'listings'}
+                  </p>
+                  
+                  {/* Demo button for new listing notification */}
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-xs" 
+                    onClick={showNewListingNotification}
+                    disabled={createRandomCommodityMutation.isPending}
+                  >
+                    {createRandomCommodityMutation.isPending ? (
+                      <>
+                        <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                        Adding...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="h-3 w-3 mr-1" />
+                        Add Random Listing
+                      </>
+                    )}
+                  </Button>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredCommodities.map((commodity, index) => (
+                    <CommodityCard
+                      key={commodity.id}
+                      commodity={commodity}
+                      isNew={newCommodities.includes(commodity.id)}
+                      index={index}
+                      getStatusColor={getStatusColor}
+                      getCommodityIcon={getCommodityIcon}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="favorites">
+            <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-8 text-center">
+              <PieChart className="h-10 w-10 mx-auto mb-2 text-neutral-400" />
+              <p className="text-neutral-600 mb-2">You haven't saved any favorites yet.</p>
+              <p className="text-sm text-neutral-500 mb-4">
+                Browse commodities and save your favorites for quick access.
+              </p>
+              <Button variant="outline">
+                Explore Commodities
+              </Button>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="trending">
+            <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-8 text-center">
+              <BarChart3 className="h-10 w-10 mx-auto mb-2 text-neutral-400" />
+              <p className="text-neutral-600 mb-2">Trending data will be available soon.</p>
+              <p className="text-sm text-neutral-500 mb-4">
+                We're collecting market trend data to provide insights on popular commodities.
+              </p>
+            </div>
+          </TabsContent>
+        </Tabs>
         
         {/* Display notification popups */}
         <AnimatePresence>
           {notifications.map((notification, index) => (
             <NewListingNotification 
-              key={`notification-${index}`}
+              key={notification}
               commodity={notification}
-              onClose={() => {
-                setNotifications(notifications.filter((_, i) => i !== index));
-              }}
+              onClose={() => setNotifications(prev => prev.filter(n => n !== notification))}
             />
           ))}
         </AnimatePresence>
-
-        {isLoading ? (
-          <div className="flex justify-center items-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-neutral-300" />
-          </div>
-        ) : error ? (
-          <div className="text-center py-12 text-red-500">
-            Failed to load commodities
-          </div>
-        ) : filteredCommodities.length === 0 ? (
-          <div className="text-center py-12 text-neutral-500">
-            No commodities found matching your criteria
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredCommodities.map((commodity, index) => (
-              <CommodityCard
-                key={commodity.id}
-                commodity={commodity}
-                isNew={newCommodities.includes(commodity.id)}
-                index={index}
-                getStatusColor={getStatusColor}
-                getCommodityIcon={getCommodityIcon}
-              />
-            ))}
-          </div>
-        )}
       </div>
     </AppShell>
   );
