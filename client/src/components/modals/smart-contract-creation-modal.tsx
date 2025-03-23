@@ -89,7 +89,13 @@ export default function SmartContractCreationModal({
       );
     },
     onSuccess: (data) => {
-      setContractData(data);
+      console.log("Contract created response:", data);
+      // Set contract data with all necessary fields
+      setContractData({
+        contractAddress: data.contractAddress || "",
+        transactionHash: data.transactionHash || "",
+        transactionId: data.transactionId || "",
+      });
       setStep("complete");
       queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
       queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
