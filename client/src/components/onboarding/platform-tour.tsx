@@ -36,7 +36,7 @@ interface PlatformTourProps {
 
 export default function PlatformTour({ forceTour = false }: PlatformTourProps) {
   const { user } = useAuth();
-  const [_, navigate] = useLocation();
+  const [_, setLocation] = useLocation();
   const [currentStep, setCurrentStep] = useState(0);
   const [showTour, setShowTour] = useLocalStorage("showTour", true);
   const [isVisible, setIsVisible] = useState(false);
@@ -100,7 +100,7 @@ export default function PlatformTour({ forceTour = false }: PlatformTourProps) {
   const handleNextStep = () => {
     if (currentStep < tourSteps.length - 1) {
       setCurrentStep(prevStep => prevStep + 1);
-      navigate(tourSteps[currentStep + 1].targetPath);
+      setLocation(tourSteps[currentStep + 1].targetPath);
     } else {
       completeTour();
     }

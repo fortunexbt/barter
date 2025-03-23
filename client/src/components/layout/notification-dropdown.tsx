@@ -1,17 +1,19 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
-import { Notification } from "@shared/schema";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/use-auth";
 import { 
   Bell, 
   Check, 
-  Info, 
-  AlertCircle, 
-  Award, 
-  FileCheck, 
-  Handshake
+  Loader2, 
+  X, 
+  CheckCircle,
+  MessageSquare,
+  TruckIcon,
+  FileCheck,
+  CircleDollarSign,
+  AlertCircle,
+  BellOff
 } from "lucide-react";
 import { 
   DropdownMenu, 
@@ -20,195 +22,287 @@ import {
   DropdownMenuItem, 
   DropdownMenuLabel, 
   DropdownMenuSeparator, 
-  DropdownMenuTrigger
+  DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { 
+  apiRequest,
+  getQueryFn,
+  queryClient
+} from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import type { Notification } from "@shared/schema";
 
 export default function NotificationDropdown() {
   const { user } = useAuth();
-  const [_, navigate] = useLocation();
   const { toast } = useToast();
-  const [open, setOpen] = useState(false);
-
-  const { data: notifications = [] } = useQuery<Notification[]>({
-    queryKey: ['/api/notifications'],
+  const [_, navigate] = useLocation();
+  const [isOpen, setIsOpen] = useState(false);
+  
+  // Fetch notifications for the current user
+  const { 
+    data: notifications = [], 
+    isLoading, 
+    error,
+    refetch
+  } = useQuery<Notification[]>({
+    queryKey: ["/api/notifications", user?.id],
+    queryFn: getQueryFn({ on401: "returnNull" }),
     enabled: !!user,
   });
-
+  
+  // Poll for new notifications every 30 seconds
+  useEffect(() => {
+    if (!user) return;
+    
+    const intervalId = setInterval(() => {
+      refetch();
+    }, 30000);
+    
+    return () => clearInterval(intervalId);
+  }, [user, refetch]);
+  
+  // Mark a notification as read
   const markAsReadMutation = useMutation({
     mutationFn: async (notificationId: number) => {
-      await apiRequest("PATCH", `/api/notifications/${notificationId}/read`);
+      const res = await apiRequest("POST", `/api/notifications/${notificationId}/read`);
+      return await res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications", user?.id] });
     },
     onError: (error: Error) => {
       toast({
         title: "Error",
-        description: "Could not mark notification as read",
+        description: "Failed to mark notification as read",
         variant: "destructive",
       });
     },
   });
-
-  const unreadCount = notifications.filter(n => !n.read).length;
   
-  const getNotificationIcon = (type: string) => {
-    switch (type) {
-      case "info":
-        return <Info className="h-4 w-4 text-blue-500" />;
-      case "warning":
-        return <AlertCircle className="h-4 w-4 text-amber-500" />;
-      case "success":
-        return <Check className="h-4 w-4 text-green-500" />;
-      case "contract":
-        return <FileCheck className="h-4 w-4 text-violet-500" />;
-      case "award":
-        return <Award className="h-4 w-4 text-yellow-500" />;
-      case "barter":
-        return <Handshake className="h-4 w-4 text-teal-500" />;
-      default:
-        return <Bell className="h-4 w-4 text-neutral-500" />;
-    }
-  };
-
+  // Mark all notifications as read
+  const markAllAsReadMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/notifications/read-all", { userId: user?.id });
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications", user?.id] });
+      toast({
+        title: "Success",
+        description: "All notifications marked as read",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: "Failed to mark all notifications as read",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Handle clicking on a notification
   const handleNotificationClick = (notification: Notification) => {
-    if (!notification.read) {
-      markAsReadMutation.mutate(notification.id);
-    }
+    // Mark as read
+    markAsReadMutation.mutate(notification.id);
     
     // Navigate based on notification type
-    switch (notification.type) {
+    switch(notification.type) {
       case "contract":
         navigate("/contracts");
-        break;
-      case "barter":
-        navigate("/barter");
         break;
       case "transaction":
         navigate("/transactions");
         break;
-      case "profile":
-        navigate("/profile");
+      case "barter":
+        navigate("/barter");
         break;
+      case "commodity":
+        navigate("/marketplace");
+        break;
+      case "message":
+        // Could navigate to a messaging section if implemented
+        navigate("/");
+        break;
+      case "alert":
       default:
-        // Default action is to close the dropdown and do nothing
+        // Generic notifications just close the dropdown
         break;
     }
     
-    setOpen(false);
+    setIsOpen(false);
   };
   
-  const formatDate = (date: Date | null) => {
-    if (!date) return '';
+  // Get icon for notification type
+  const getNotificationIcon = (type: string, iconName?: string | null) => {
+    const iconSize = "h-5 w-5";
     
-    const now = new Date();
-    const notificationDate = new Date(date);
-    const diffMs = now.getTime() - notificationDate.getTime();
-    const diffSecs = Math.floor(diffMs / 1000);
-    const diffMins = Math.floor(diffSecs / 60);
-    const diffHours = Math.floor(diffMins / 60);
-    const diffDays = Math.floor(diffHours / 24);
+    if (iconName) {
+      // If icon is specified in the notification data, could render a custom icon
+      // For this implementation we'll use the default icon system
+    }
     
-    if (diffSecs < 60) return 'just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
-    
-    return notificationDate.toLocaleDateString();
+    switch(type) {
+      case "contract":
+        return <FileCheck className={iconSize} />;
+      case "transaction":
+        return <CircleDollarSign className={iconSize} />;
+      case "barter":
+        return <TruckIcon className={iconSize} />;
+      case "commodity":
+        return <Check className={iconSize} />;
+      case "message":
+        return <MessageSquare className={iconSize} />;
+      case "success":
+        return <CheckCircle className={iconSize} />;
+      case "alert":
+      default:
+        return <AlertCircle className={iconSize} />;
+    }
   };
-
+  
+  // Get color style for notification type
+  const getNotificationStyle = (type: string, iconBg?: string | null) => {
+    if (iconBg) {
+      return iconBg;
+    }
+    
+    switch(type) {
+      case "contract":
+        return "bg-blue-50 text-blue-500 border-blue-200";
+      case "transaction":
+        return "bg-green-50 text-green-500 border-green-200";
+      case "barter":
+        return "bg-amber-50 text-amber-500 border-amber-200";
+      case "commodity":
+        return "bg-purple-50 text-purple-500 border-purple-200";
+      case "message":
+        return "bg-indigo-50 text-indigo-500 border-indigo-200";
+      case "success":
+        return "bg-emerald-50 text-emerald-500 border-emerald-200";
+      case "alert":
+      default:
+        return "bg-red-50 text-red-500 border-red-200";
+    }
+  };
+  
+  // Count unread notifications
+  const unreadCount = notifications.filter(n => !n.read).length;
+  
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
+    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5 text-neutral-500" />
+          <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
-            <Badge 
-              variant="destructive" 
-              className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-[10px]"
+            <Badge
+              variant="destructive"
+              className="absolute -top-1 -right-1 px-1.5 py-0.5 min-w-4 h-4 flex items-center justify-center text-[10px]"
             >
-              {unreadCount > 9 ? '9+' : unreadCount}
+              {unreadCount > 99 ? '99+' : unreadCount}
             </Badge>
           )}
         </Button>
       </DropdownMenuTrigger>
+      
       <DropdownMenuContent align="end" className="w-80">
-        <DropdownMenuLabel className="flex justify-between items-center">
-          <span>Notifications</span>
-          {unreadCount > 0 && (
-            <Badge variant="outline" className="text-xs font-normal">
-              {unreadCount} unread
-            </Badge>
-          )}
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <ScrollArea className="h-[300px]">
-          <DropdownMenuGroup>
-            {notifications.length === 0 ? (
-              <div className="py-4 px-2 text-center text-sm text-muted-foreground">
-                No notifications
-              </div>
-            ) : (
-              notifications
-                .sort((a, b) => {
-                  if (!a.createdAt || !b.createdAt) return 0;
-                  return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-                })
-                .map((notification) => (
-                  <DropdownMenuItem
-                    key={notification.id}
-                    onClick={() => handleNotificationClick(notification)}
-                    className={`flex flex-col items-start py-3 px-4 ${!notification.read ? 'bg-accent/20' : ''}`}
+        <div className="flex items-center justify-between p-2">
+          <DropdownMenuLabel className="text-base font-semibold">Notifications</DropdownMenuLabel>
+          {notifications.length > 0 && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-7 w-7" 
+                    onClick={() => markAllAsReadMutation.mutate()}
+                    disabled={markAllAsReadMutation.isPending || notifications.every(n => n.read)}
                   >
-                    <div className="flex w-full">
-                      <div className="mr-3 mt-0.5">
-                        {notification.icon ? 
-                          <div 
-                            className={`h-8 w-8 rounded-full flex items-center justify-center ${notification.iconBg || 'bg-neutral-100'}`}
-                          >
-                            {getNotificationIcon(notification.icon)}
-                          </div> : 
-                          getNotificationIcon(notification.type)
-                        }
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex justify-between items-start w-full mb-1">
-                          <span className="font-medium text-sm">
-                            {notification.type.charAt(0).toUpperCase() + notification.type.slice(1)}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {formatDate(notification.createdAt)}
-                          </span>
-                        </div>
-                        <p className="text-sm text-muted-foreground line-clamp-2">
-                          {notification.message}
-                        </p>
-                      </div>
-                    </div>
-                  </DropdownMenuItem>
-                ))
-            )}
-          </DropdownMenuGroup>
-        </ScrollArea>
-        {notifications.length > 0 && (
-          <>
-            <DropdownMenuSeparator />
-            <div className="p-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="w-full"
-                onClick={() => navigate("/notifications")}
-              >
-                View all
-              </Button>
+                    {markAllAsReadMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Check className="h-4 w-4" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Mark all as read</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+        </div>
+        
+        <DropdownMenuSeparator />
+        
+        <DropdownMenuGroup className="max-h-[350px] overflow-auto py-1">
+          {isLoading ? (
+            <div className="py-6 flex items-center justify-center">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
-          </>
-        )}
+          ) : error ? (
+            <div className="py-6 text-center text-muted-foreground text-sm px-4">
+              <AlertCircle className="h-6 w-6 mx-auto mb-2" />
+              <p>Failed to load notifications</p>
+            </div>
+          ) : notifications.length === 0 ? (
+            <div className="py-6 text-center text-muted-foreground text-sm px-4">
+              <BellOff className="h-6 w-6 mx-auto mb-2" />
+              <p>No notifications yet</p>
+            </div>
+          ) : (
+            notifications.map((notification) => (
+              <DropdownMenuItem
+                key={notification.id}
+                className={`flex items-start gap-3 p-3 cursor-pointer ${notification.read ? 'opacity-60' : ''}`}
+                onClick={() => handleNotificationClick(notification)}
+              >
+                <div className={`p-2 rounded-full ${getNotificationStyle(notification.type, notification.iconBg)}`}>
+                  {getNotificationIcon(notification.type, notification.icon)}
+                </div>
+                
+                <div className="flex-1 space-y-1">
+                  <p className="text-sm font-medium">
+                    {notification.message}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(notification.createdAt ?? '').toLocaleString(undefined, {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </p>
+                </div>
+                
+                {!notification.read && (
+                  <div className="h-2 w-2 rounded-full bg-blue-500" />
+                )}
+              </DropdownMenuItem>
+            ))
+          )}
+        </DropdownMenuGroup>
+        
+        <DropdownMenuSeparator />
+        
+        <div className="p-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="w-full"
+            onClick={() => {
+              navigate("/notifications");
+              setIsOpen(false);
+            }}
+          >
+            View All
+          </Button>
+        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   );

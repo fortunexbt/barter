@@ -1,17 +1,15 @@
-import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/use-auth";
-import { useLocation } from "wouter";
-import { KycDocument } from "@shared/schema";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useState, useEffect } from "react";
 import { 
-  Shield, 
   CheckCircle, 
-  Clock, 
-  AlertTriangle,
-  FileCheck,
-  LockKeyhole
+  ClipboardCheck, 
+  FileText, 
+  ShieldCheck, 
+  Shield,
+  User,
+  Loader2
 } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { useMutation } from "@tanstack/react-query";
 import { 
   Dialog,
   DialogContent,
@@ -21,7 +19,9 @@ import {
   DialogTitle
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 interface KycApprovalModalProps {
@@ -31,183 +31,231 @@ interface KycApprovalModalProps {
 
 export default function KycApprovalModal({ isOpen, onOpenChange }: KycApprovalModalProps) {
   const { user } = useAuth();
-  const [_, navigate] = useLocation();
   const { toast } = useToast();
-  const [verificationProgress, setVerificationProgress] = useState(0);
+  const [stage, setStage] = useState<"processing" | "approved" | "rejected">("processing");
+  const [progress, setProgress] = useState(0);
+  const [step, setStep] = useState(0);
   
-  const { data: kycDocuments = [] } = useQuery<KycDocument[]>({
-    queryKey: ['/api/kyc/documents'],
-    enabled: !!user && isOpen,
-  });
-  
-  // Most recent KYC document
-  const latestDocument = kycDocuments.length > 0 
-    ? kycDocuments.sort((a, b) => {
-        const dateA = a.uploadedAt ? new Date(a.uploadedAt).getTime() : 0;
-        const dateB = b.uploadedAt ? new Date(b.uploadedAt).getTime() : 0;
-        return dateB - dateA;
-      })[0]
-    : null;
-  
-  const verificationStatus = latestDocument?.verified 
-    ? "verified" 
-    : latestDocument?.zkpVerified 
-      ? "processing" 
-      : "pending";
-  
-  // Simulate verification progress when modal is open
-  useState(() => {
-    if (isOpen && verificationStatus === "processing" && verificationProgress < 100) {
+  useEffect(() => {
+    if (isOpen) {
+      // Reset the state when the modal opens
+      setStage("processing");
+      setProgress(0);
+      setStep(0);
+      
+      // Start the animation sequence
       const timer = setTimeout(() => {
-        if (verificationProgress < 95) {
-          setVerificationProgress(prev => prev + Math.random() * 10);
-        } else {
-          setVerificationProgress(100);
-          // Automatically mark as verified when progress reaches 100%
-          if (latestDocument && !latestDocument.verified) {
-            verifyDocumentMutation.mutate(latestDocument.id);
-          }
-        }
-      }, 800);
+        simulateKycVerification();
+      }, 500);
+      
       return () => clearTimeout(timer);
     }
-  });
+  }, [isOpen]);
   
-  const verifyDocumentMutation = useMutation({
-    mutationFn: async (documentId: number) => {
-      await apiRequest("PATCH", `/api/kyc/documents/${documentId}/verify`);
+  // Simulate KYC verification process with a timed sequence
+  const simulateKycVerification = () => {
+    const stepDuration = 2000;
+    const totalSteps = 4;
+    
+    // Animate through each step
+    for (let i = 0; i < totalSteps; i++) {
+      setTimeout(() => {
+        setStep(i + 1);
+        
+        // Set final state at the end
+        if (i === totalSteps - 1) {
+          setStage("approved");
+        }
+      }, i * stepDuration);
+      
+      // Update progress bar more smoothly
+      const progressUpdates = 40; // updates per step
+      const progressUpdateInterval = stepDuration / progressUpdates;
+      
+      for (let j = 0; j < progressUpdates; j++) {
+        setTimeout(() => {
+          setProgress(prev => {
+            const increment = ((i * 100 / totalSteps) + (j * (100 / totalSteps) / progressUpdates));
+            return Math.min(increment, 100);
+          });
+        }, i * stepDuration + j * progressUpdateInterval);
+      }
+    }
+  };
+  
+  // Update user KYC status in database
+  const updateKycStatusMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/kyc/verify", { userId: user?.id });
+      return await res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/kyc/documents'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       toast({
-        title: "Verification Complete",
-        description: "Your identity has been successfully verified.",
+        title: "KYC Verification Complete",
+        description: "Your identity has been verified successfully.",
         variant: "default",
       });
+      onOpenChange(false);
     },
     onError: (error: Error) => {
       toast({
-        title: "Verification Failed",
-        description: error.message,
+        title: "Verification Error",
+        description: error.message || "There was an error verifying your identity.",
         variant: "destructive",
       });
     },
   });
   
-  const handleContinue = () => {
-    onOpenChange(false);
-    if (verificationStatus === "verified") {
-      navigate("/marketplace");
+  const handleComplete = () => {
+    if (stage === "approved") {
+      updateKycStatusMutation.mutate();
+    } else {
+      onOpenChange(false);
     }
   };
   
-  // Render verification status content based on the current status
-  const renderVerificationStatusContent = () => {
-    switch (verificationStatus) {
-      case "verified":
-        return (
-          <div className="flex flex-col items-center justify-center py-6">
-            <div className="mb-6 h-24 w-24 rounded-full bg-green-100 flex items-center justify-center">
-              <CheckCircle className="h-12 w-12 text-green-600" />
-            </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Verification Successful</h3>
-            <p className="text-gray-500 text-center mb-6">
-              Your identity has been verified. You now have full access to the BarterTrade platform.
-            </p>
-            <div className="w-full max-w-xs flex flex-col gap-2">
-              <div className="flex items-center gap-2 text-sm">
-                <Shield className="h-4 w-4 text-green-600" />
-                <span className="text-gray-700">Identity Verified</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <FileCheck className="h-4 w-4 text-green-600" />
-                <span className="text-gray-700">Document Validated</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <LockKeyhole className="h-4 w-4 text-green-600" />
-                <span className="text-gray-700">Zero-Knowledge Proof Generated</span>
-              </div>
-            </div>
-          </div>
-        );
-        
-      case "processing":
-        return (
-          <div className="flex flex-col items-center justify-center py-6">
-            <div className="mb-6 h-24 w-24 rounded-full bg-blue-100 flex items-center justify-center">
-              <Clock className="h-12 w-12 text-blue-600" />
-            </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Verification in Progress</h3>
-            <p className="text-gray-500 text-center mb-6">
-              We're processing your verification using zero-knowledge proofs. This usually takes less than a minute.
-            </p>
-            <div className="w-full max-w-sm mb-4">
-              <div className="flex justify-between mb-1 text-sm">
-                <span>Verifying identity</span>
-                <span>{Math.round(verificationProgress)}%</span>
-              </div>
-              <Progress value={verificationProgress} className="h-2" />
-            </div>
-            <div className="w-full max-w-xs flex flex-col gap-2">
-              <div className="flex items-center gap-2 text-sm">
-                <Shield className={`h-4 w-4 ${verificationProgress > 30 ? 'text-green-600' : 'text-gray-400'}`} />
-                <span className="text-gray-700">Identity Check</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <FileCheck className={`h-4 w-4 ${verificationProgress > 60 ? 'text-green-600' : 'text-gray-400'}`} />
-                <span className="text-gray-700">Document Validation</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <LockKeyhole className={`h-4 w-4 ${verificationProgress > 90 ? 'text-green-600' : 'text-gray-400'}`} />
-                <span className="text-gray-700">ZKP Generation</span>
-              </div>
-            </div>
-          </div>
-        );
-        
-      case "pending":
-      default:
-        return (
-          <div className="flex flex-col items-center justify-center py-6">
-            <div className="mb-6 h-24 w-24 rounded-full bg-amber-100 flex items-center justify-center">
-              <AlertTriangle className="h-12 w-12 text-amber-600" />
-            </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Verification Required</h3>
-            <p className="text-gray-500 text-center mb-6">
-              To access all features, please complete the KYC verification process in your profile.
-            </p>
-            <Button 
-              onClick={() => {
-                onOpenChange(false);
-                navigate("/profile");
-              }}
-              className="w-full max-w-xs"
-            >
-              Complete Verification
-            </Button>
-          </div>
-        );
+  const verificationSteps = [
+    {
+      icon: <FileText className="h-8 w-8 text-blue-500" />,
+      title: "Document Analysis",
+      description: "Scanning and analyzing your submitted documents"
+    },
+    {
+      icon: <User className="h-8 w-8 text-indigo-500" />,
+      title: "Identity Verification",
+      description: "Verifying your personal information with secure data sources"
+    },
+    {
+      icon: <ClipboardCheck className="h-8 w-8 text-violet-500" />,
+      title: "Compliance Check",
+      description: "Ensuring compliance with regulatory requirements"
+    },
+    {
+      icon: <ShieldCheck className="h-8 w-8 text-green-500" />,
+      title: "Verification Complete",
+      description: "Your identity has been successfully verified"
     }
-  };
+  ];
   
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Identity Verification</DialogTitle>
+          <DialogTitle>KYC Verification</DialogTitle>
           <DialogDescription>
-            Secure access to trading with zero-knowledge proof verification
+            Verifying your identity for enhanced trust and security
           </DialogDescription>
         </DialogHeader>
         
-        {renderVerificationStatusContent()}
+        <div className="py-4">
+          <div className="flex items-center mb-6">
+            <div className="w-full">
+              <div className="flex justify-between mb-2 text-sm">
+                <span>Verification Progress</span>
+                <span>{Math.round(progress)}%</span>
+              </div>
+              <Progress value={progress} className="h-2" />
+            </div>
+          </div>
+          
+          {/* Verification animation */}
+          <div className="mb-6 flex justify-center">
+            <div className="relative h-28 w-28 rounded-full bg-muted/30 flex items-center justify-center">
+              <div className="h-20 w-20 rounded-full bg-muted/50 flex items-center justify-center">
+                {stage === "processing" ? (
+                  <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center">
+                    <Loader2 className="h-8 w-8 text-blue-500 animate-spin" />
+                  </div>
+                ) : stage === "approved" ? (
+                  <div className="h-16 w-16 rounded-full bg-green-100 flex items-center justify-center">
+                    <CheckCircle className="h-8 w-8 text-green-500" />
+                  </div>
+                ) : (
+                  <div className="h-16 w-16 rounded-full bg-red-100 flex items-center justify-center">
+                    <Shield className="h-8 w-8 text-red-500" />
+                  </div>
+                )}
+              </div>
+              
+              {/* Status badge */}
+              <div className="absolute -bottom-2 -right-1">
+                <Badge 
+                  variant={stage === "approved" ? "default" : stage === "rejected" ? "destructive" : "outline"}
+                  className="capitalize font-semibold"
+                >
+                  {stage}
+                </Badge>
+              </div>
+            </div>
+          </div>
+          
+          {/* Verification steps */}
+          <div className="space-y-3">
+            {verificationSteps.map((s, i) => (
+              <div 
+                key={i} 
+                className={`flex items-start p-2 rounded-md transition-all duration-300 ${
+                  i < step 
+                    ? 'bg-muted/20 opacity-100' 
+                    : i === step 
+                      ? 'bg-muted/10 opacity-100 animate-pulse' 
+                      : 'opacity-40'
+                }`}
+              >
+                <div className="mr-3 mt-0.5">
+                  <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
+                    i < step ? 'bg-primary/20' : 'bg-muted'
+                  }`}>
+                    {s.icon}
+                  </div>
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold">{s.title}</h4>
+                  <p className="text-xs text-muted-foreground">{s.description}</p>
+                </div>
+                {i < step && (
+                  <div className="ml-auto">
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+          
+          {stage === "approved" && (
+            <div className="mt-6 rounded-lg bg-green-50 p-3 border border-green-200">
+              <div className="flex items-start">
+                <ShieldCheck className="h-5 w-5 text-green-600 mr-2 mt-0.5" />
+                <div>
+                  <h4 className="text-sm font-semibold text-green-800">Verification Successful</h4>
+                  <p className="text-xs text-green-700">
+                    Your KYC verification is complete. You now have full access to all platform features, including advanced trading options and higher transaction limits.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
         
         <DialogFooter>
           <Button 
-            onClick={handleContinue}
-            variant={verificationStatus === "verified" ? "default" : "outline"}
+            onClick={handleComplete}
+            disabled={stage === "processing"}
+            variant={stage === "approved" ? "default" : "outline"}
           >
-            {verificationStatus === "verified" ? "Continue to Trading" : "Close"}
+            {updateKycStatusMutation.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Updating...
+              </>
+            ) : stage === "processing" ? (
+              "Processing..."
+            ) : stage === "approved" ? (
+              "Complete Verification"
+            ) : (
+              "Close"
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
