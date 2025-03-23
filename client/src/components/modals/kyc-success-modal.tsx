@@ -106,6 +106,11 @@ export function KycSuccessModal({ isOpen, onOpenChange }: KycSuccessModalProps) 
   
   const handleGoToMarketplace = () => {
     onOpenChange(false);
+    
+    // Store a flag in localStorage to trigger the platform tour
+    localStorage.setItem("startTour", "true");
+    
+    // Navigate to the marketplace 
     navigate('/marketplace');
   };
   
