@@ -14,7 +14,7 @@ import {
   type InsertKycDocument
 } from "@shared/schema";
 import session from "express-session";
-import pgStoreFactory from "connect-pg-simple";
+import memoryStore from "memorystore";
 import { IStorage } from "./storage";
 
 // Create a PostgreSQL client for the database
@@ -28,28 +28,17 @@ const queryClient = postgres(process.env.DATABASE_URL || '', {
 // Initialize Drizzle with the PostgreSQL client
 const db = drizzle(queryClient);
 
-// For session management, we need a pg Pool-compatible interface
-const sessionPool = {
-  query: (text: string, params?: any[]) => {
-    return queryClient.unsafe(text, params || []);
-  },
-  // Adding minimal Pool interface properties to satisfy connect-pg-simple
-  totalCount: 0,
-  idleCount: 0,
-  waitingCount: 0
-};
-
-// Create a PostgreSQL-backed session store
-const PgStore = pgStoreFactory(session);
+// Create a memory-based session store for development/testing
+const MemoryStore = memoryStore(session);
 
 export class PostgresStorage implements IStorage {
   sessionStore: any; // Using any type to avoid SessionStore type issues
 
   constructor() {
-    // Create a session store that uses PostgreSQL
-    this.sessionStore = new PgStore({
-      pool: sessionPool,
-      tableName: 'sessions',
+    // Use memory store for sessions as a temporary solution
+    // In production, you'd want to use a proper PostgreSQL-backed session store
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000 // prune expired entries every 24h
     });
   }
 
