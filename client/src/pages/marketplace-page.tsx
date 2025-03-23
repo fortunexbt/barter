@@ -273,24 +273,21 @@ export default function MarketplacePage() {
       const grade = ["Grade A", "Premium", "Standard", "Industrial"][Math.floor(Math.random() * 4)];
       const priceUnits = ["kg", "ton", "barrel", "oz"];
       const volumeUnits = ["kg", "ton", "barrel", "oz", "unit"];
-      const categories = ["energy", "agriculture", "metals", "minerals", "industrial"];
       const icons = ["fuel", "wheat", "gems", "droplet", "package", "equipment"];
       const iconBgs = ["blue", "green", "amber", "red", "slate", "neutral"];
       
+      // Create a commodity based on the actual required schema fields
       const randomCommodity = {
         name: `${grade} ${commodityName}`,
-        description: `High-quality ${commodityName.toLowerCase()} commodity available for trade or purchase.`,
+        grade: grade,
         price: Math.floor(Math.random() * 1000) + 10,
         priceUnit: priceUnits[Math.floor(Math.random() * priceUnits.length)],
         volume: Math.floor(Math.random() * 100) + 1,
         volumeUnit: volumeUnits[Math.floor(Math.random() * volumeUnits.length)],
-        category: categories[Math.floor(Math.random() * categories.length)],
-        subcategory: "general",
-        grade: grade,
-        origin: "Various",
         status: "available",
         icon: icons[Math.floor(Math.random() * icons.length)],
-        iconBg: iconBgs[Math.floor(Math.random() * iconBgs.length)],
+        iconBg: iconBgs[Math.floor(Math.random() * iconBgs.length)]
+        // ownerId will be added by the server
       };
       
       const response = await fetch("/api/commodities", {
@@ -300,7 +297,17 @@ export default function MarketplacePage() {
       });
       
       if (!response.ok) {
-        throw new Error("Failed to create new commodity");
+        const errorData = await response.json();
+        console.error("Failed to create commodity:", errorData);
+        
+        // Show more detailed error for debugging
+        toast({
+          title: "Failed to create listing",
+          description: errorData.message || "Unknown error",
+          variant: "destructive"
+        });
+        
+        throw new Error(`Failed to create new commodity: ${errorData.message}`);
       }
       
       return await response.json();

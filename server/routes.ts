@@ -107,12 +107,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Middleware for validating request body with Zod schema
   const validateBody = (schema) => (req, res, next) => {
     try {
+      // Log the request body for debugging purposes
+      console.log('Request body:', JSON.stringify(req.body));
+      console.log('Schema expected:', JSON.stringify(schema.shape));
+      
       schema.parse(req.body);
       next();
     } catch (error) {
       if (error instanceof ZodError) {
         const validationError = fromZodError(error);
-        res.status(400).json({ message: validationError.message });
+        console.log('Validation error details:', error.format());
+        res.status(400).json({ message: validationError.message, details: error.format() });
       } else {
         next(error);
       }
