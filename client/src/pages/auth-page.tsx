@@ -25,7 +25,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Wallet, ShieldCheck, Database, GitMerge, Code } from "lucide-react";
+import { Loader2, Wallet, ShieldCheck, ShieldAlert, Database, GitMerge, Code } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { SiEthereum, SiPostgresql, SiVite } from "react-icons/si";
 
