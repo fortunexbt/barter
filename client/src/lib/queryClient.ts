@@ -169,10 +169,30 @@ export const queryClient = new QueryClient({
       staleTime: 60 * 1000, // 1 minute to optimize performance
       gcTime: 5 * 60 * 1000, // 5 minutes - replaces cacheTime in React Query v5
       retry: (failureCount, error) => {
-        // Don't retry 401 errors, but retry others up to twice
-        if (error instanceof Error && error.message.includes('Not authenticated')) {
+        // Don't retry authentication errors
+        if (error instanceof Error && (
+          error.message.includes('Not authenticated') || 
+          error.message.includes('Unauthorized') || 
+          error.message.includes('Authentication failed')
+        )) {
           return false;
         }
+        
+        // Don't retry server errors (500+) too many times
+        if (error instanceof Error && 
+            error.message.includes('server error') && 
+            failureCount >= 1) {
+          return false;
+        }
+        
+        // Don't retry bad requests (400 range) at all
+        if (error instanceof Error && 
+            (error.message.includes('Bad Request') || 
+             error.message.includes('Not Found'))) {
+          return false;
+        }
+        
+        // For other errors, retry up to twice with exponential backoff
         return failureCount < 2;
       },
       retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 10000), // Exponential backoff with max 10s
