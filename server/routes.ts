@@ -142,8 +142,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 id: owner.id,
                 username: owner.username,
                 fullName: owner.fullName || owner.username,
-                avatarUrl: owner.avatarUrl,
-                verificationStatus: owner.verificationStatus
+                avatarUrl: owner.profileImage,
+                verificationStatus: owner.kycStatus
               } : null
             };
           })
@@ -174,8 +174,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: owner.id,
           username: owner.username,
           fullName: owner.fullName || owner.username,
-          avatarUrl: owner.avatarUrl,
-          verificationStatus: owner.verificationStatus
+          avatarUrl: owner.profileImage,
+          verificationStatus: owner.kycStatus
         } : null
       };
       
@@ -266,8 +266,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               id: owner.id,
               username: owner.username,
               fullName: owner.fullName || owner.username,
-              avatarUrl: owner.avatarUrl,
-              verificationStatus: owner.verificationStatus
+              avatarUrl: owner.profileImage,
+              verificationStatus: owner.kycStatus
             } : null
           };
         })
@@ -538,6 +538,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       res.json(publicUser);
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  // User search route
+  app.get('/api/users/search', async (req, res, next) => {
+    try {
+      const searchTerm = req.query.q as string || '';
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
+      
+      if (!searchTerm.trim()) {
+        return res.json([]);
+      }
+      
+      const results = await storage.searchUsers(searchTerm, limit);
+      
+      // Return only public user information
+      const publicUsers = results.map(user => ({
+        id: user.id,
+        username: user.username,
+        fullName: user.fullName,
+        role: user.role,
+        kycStatus: user.kycStatus,
+        accountLevel: user.accountLevel,
+        tradingSince: user.tradingSince,
+        profileImage: user.profileImage,
+        // Use profileImage as avatarUrl for compatibility with UI components
+        avatarUrl: user.profileImage,
+        verificationStatus: user.kycStatus,
+        zkpVerified: user.zkpVerified
+      }));
+      
+      res.json(publicUsers);
     } catch (error) {
       next(error);
     }
