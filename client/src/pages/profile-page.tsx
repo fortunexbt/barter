@@ -51,7 +51,18 @@ export default function ProfilePage() {
   // Get tab from URL if available
   const searchParams = new URLSearchParams(window.location.search);
   const tabParam = searchParams.get('tab');
-  const [activeTab, setActiveTab] = useState(tabParam || "profile");
+  
+  // Set the active tab based on URL parameter or KYC status for new users
+  const [activeTab, setActiveTab] = useState(() => {
+    // If tab is specified in URL, use that value
+    if (tabParam) return tabParam;
+    
+    // If user has pending KYC, default to KYC tab
+    if (user?.kycStatus === "pending" || !user?.kycStatus) return "kyc";
+    
+    // Otherwise default to profile tab
+    return "profile";
+  });
   
   // State for modals
   const [isZkpModalOpen, setIsZkpModalOpen] = useState(false);
