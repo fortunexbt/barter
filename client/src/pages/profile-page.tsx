@@ -147,6 +147,29 @@ export default function ProfilePage() {
     },
   });
   
+  // ZKP identity generation and verification
+  const generateZkpIdentityMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/kyc/zkp/generate", {});
+      return await res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      toast({
+        title: "Zero-Knowledge Identity Created",
+        description: "Your private identity has been generated and securely stored",
+      });
+      // In a real app, we would now redirect to a verification flow
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to create ZKP identity",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  
   const onProfileSubmit = (data: ProfileFormValues) => {
     updateProfileMutation.mutate(data);
   };
@@ -344,6 +367,59 @@ export default function ProfilePage() {
                       </p>
                     </div>
                     
+                    <Alert className="mb-6 border-primary/20 bg-primary/5">
+                      <ShieldCheck className="h-4 w-4 text-primary" />
+                      <AlertTitle className="text-primary font-medium">Enhanced Privacy with Zero-Knowledge Proofs</AlertTitle>
+                      <AlertDescription className="text-sm text-neutral-600">
+                        Our platform uses zero-knowledge proof technology to verify your identity without exposing your personal data.
+                        This cryptographic approach ensures your privacy while maintaining regulatory compliance.
+                      </AlertDescription>
+                    </Alert>
+
+                    {user?.zkpVerified ? (
+                      <div className="mb-6 p-4 bg-success/10 border border-success/30 rounded-md flex items-center">
+                        <Check className="h-5 w-5 text-success mr-3 flex-shrink-0" />
+                        <div>
+                          <h4 className="font-medium text-success mb-1">Zero-Knowledge Verification Complete</h4>
+                          <p className="text-sm text-neutral-600">
+                            Your identity has been verified using zero-knowledge proofs. You have full access to all platform features.
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mb-6 border rounded-md overflow-hidden">
+                        <div className="bg-neutral-50 p-4 border-b">
+                          <h4 className="font-medium mb-1 flex items-center">
+                            <Key className="h-4 w-4 mr-2 text-primary" />
+                            Zero-Knowledge Verification
+                          </h4>
+                          <p className="text-sm text-neutral-600">
+                            Complete this step to verify your identity with enhanced privacy protection
+                          </p>
+                        </div>
+                        <div className="p-4">
+                          <Button 
+                            type="button"
+                            className="bg-primary text-white"
+                            onClick={() => generateZkpIdentityMutation.mutate()}
+                            disabled={generateZkpIdentityMutation.isPending}
+                          >
+                            {generateZkpIdentityMutation.isPending ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Generating...
+                              </>
+                            ) : (
+                              "Generate Private Identity"
+                            )}
+                          </Button>
+                          <p className="text-xs text-neutral-500 mt-2">
+                            This creates a cryptographic identity that protects your personal information
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    
                     <Form {...kycForm}>
                       <form onSubmit={kycForm.handleSubmit(onKycSubmit)} className="space-y-4">
                         <FormField
@@ -469,7 +545,7 @@ export default function ProfilePage() {
                                   ID: {document.documentNumber}
                                 </p>
                                 <p className="text-xs text-neutral-400">
-                                  Submitted: {new Date(document.uploadedAt).toLocaleDateString()}
+                                  Submitted: {document.uploadedAt ? new Date(document.uploadedAt).toLocaleDateString() : 'N/A'}
                                 </p>
                               </div>
                               <Badge variant="outline" className={`${

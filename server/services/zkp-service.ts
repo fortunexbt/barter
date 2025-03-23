@@ -1,6 +1,6 @@
 import { Identity } from '@semaphore-protocol/identity';
 import { Group } from '@semaphore-protocol/group';
-import { generateProof, verifyProof, type SemaphoreProof } from '@semaphore-protocol/proof';
+import { generateProof, verifyProof } from '@semaphore-protocol/proof';
 
 // Unique group ID for the barter platform
 const BARTER_TRADE_GROUP_ID = BigInt(1);
@@ -29,15 +29,17 @@ export class ZKPService {
     identityCommitment: string,
     serializedIdentity: string
   } {
+    // Create a new Semaphore identity
     const identity = new Identity();
     
     return {
       identity,
       identityCommitment: identity.commitment.toString(),
+      // Serialize the identity for storage
       serializedIdentity: JSON.stringify({
         commitment: identity.commitment.toString(),
-        // Store the secret values safely
-        secret: identity.toString()
+        // We store the entire identity as a string
+        identityString: identity.toString()
       })
     };
   }
@@ -47,8 +49,9 @@ export class ZKPService {
    */
   static deserializeIdentity(serializedIdentity: string): Identity | null {
     try {
-      const { secret } = JSON.parse(serializedIdentity);
-      return Identity.fromString(secret);
+      const { identityString } = JSON.parse(serializedIdentity);
+      // Create a new identity from the stored trapdoor and nullifier
+      return new Identity(identityString);
     } catch (error) {
       console.error('Error deserializing identity:', error);
       return null;
@@ -77,9 +80,9 @@ export class ZKPService {
     identity: Identity,
     signal: string // The data being verified, could be a document hash
   ): Promise<{
-    proof: string,
+    proofData: string,
     merkleTreeRoot: string,
-    nullifier: string
+    nullifierHash: string
   }> {
     const group = this.initialize();
     
@@ -87,12 +90,19 @@ export class ZKPService {
       // Signal is the external data we're proving, like a document hash
       const externalNullifier = BARTER_TRADE_GROUP_ID;
       
-      const fullProof = await generateProof(identity, group, externalNullifier, signal);
+      // Generate a full proof
+      const fullProof = await generateProof(
+        identity, 
+        group, 
+        externalNullifier, 
+        signal
+      );
       
+      // For simplicity, we'll serialize the entire proof object
       return {
-        proof: JSON.stringify(fullProof),
+        proofData: JSON.stringify(fullProof),
         merkleTreeRoot: group.root.toString(),
-        nullifier: externalNullifier.toString()
+        nullifierHash: fullProof.nullifier?.toString() || ""
       };
     } catch (error) {
       console.error('Error generating ZKP proof:', error);
@@ -103,20 +113,13 @@ export class ZKPService {
   /**
    * Verifies a zero-knowledge proof
    */
-  static async verifyIdentityProof(proofJson: string, signal: string): Promise<boolean> {
+  static async verifyIdentityProof(proofDataStr: string): Promise<boolean> {
     try {
-      const fullProof = JSON.parse(proofJson);
-      const group = this.initialize();
+      // Parse the proof data
+      const fullProof = JSON.parse(proofDataStr);
       
-      // Verify that the proof is valid for the given signal
-      const externalNullifier = BARTER_TRADE_GROUP_ID;
-      const isValid = await verifyProof({ 
-        merkleTreeRoot: group.root,
-        signal,
-        nullifierHash: fullProof.nullifierHash,
-        externalNullifier,
-        proof: fullProof.proof
-      });
+      // Verify the proof
+      const isValid = await verifyProof(fullProof);
       
       return isValid;
     } catch (error) {
