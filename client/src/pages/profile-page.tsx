@@ -346,9 +346,10 @@ export default function ProfilePage() {
                           ? "bg-success bg-opacity-10 text-success" 
                           : "bg-warning bg-opacity-10 text-warning"
                       }`}>
-                        <span className="material-icons text-xs mr-1">
-                          {user?.kycStatus === "verified" ? "verified" : "pending"}
-                        </span>
+                        {user?.kycStatus === "verified" ? 
+                          <ShieldCheck className="h-4 w-4 mr-1" /> : 
+                          <Key className="h-4 w-4 mr-1" />
+                        }
                         {user?.kycStatus === "verified" ? "Verified" : "Pending Verification"}
                       </Badge>
                     </div>
@@ -489,11 +490,10 @@ export default function ProfilePage() {
                         : "bg-warning bg-opacity-10"
                     }`}>
                       <div className="flex items-center">
-                        <span className={`material-icons mr-2 ${
-                          user?.kycStatus === "verified" ? "text-success" : "text-warning"
-                        }`}>
-                          {user?.kycStatus === "verified" ? "verified_user" : "pending"}
-                        </span>
+                        {user?.kycStatus === "verified" ? 
+                          <ShieldCheck className="h-4 w-4 mr-2 text-success" /> : 
+                          <Key className="h-4 w-4 mr-2 text-warning" />
+                        }
                         <div>
                           <h4 className="text-xs font-medium text-neutral-500">Overall KYC STATUS</h4>
                           <p className={`text-sm font-medium ${
