@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, ExternalLink, CheckCircle, Clock, AlertTriangle } from "lucide-react";
+import { Loader2, ExternalLink, CheckCircle, Clock, AlertTriangle, FileText } from "lucide-react";
 import { getQueryFn } from "@/lib/queryClient";
 import { Transaction, BarterOffer, Contract } from "@shared/schema";
 import ZkpVerificationModal from "@/components/modals/zkp-verification-modal";
