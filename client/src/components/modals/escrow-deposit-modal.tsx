@@ -136,16 +136,31 @@ export default function EscrowDepositModal({
       console.log("Deposit success data:", JSON.stringify(data, null, 2));
       setDepositData(data);
       setStep("complete");
+      
+      // Invalidate relevant queries to refresh the data
       queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
       queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+      // Also invalidate barter data to update the contract status in the UI
+      queryClient.invalidateQueries({ queryKey: ['/api/barter'] });
       
+      // Show more detailed success message with the amount
+      const amount = form.getValues().amount;
       toast({
         title: "Funds Deposited",
-        description: `Successfully deposited funds to escrow contract.`,
+        description: `Successfully deposited $${amount} to escrow contract.`,
       });
       
+      // Handle the success callback with improved timing
       if (onSuccess) {
-        onSuccess(data);
+        if (isContractCreationResponse) {
+          // For the automatic contract creation flow, give user time to see success state
+          // before the modal is closed and UI updated
+          setTimeout(() => {
+            onSuccess(data);
+          }, 2000);
+        } else {
+          onSuccess(data);
+        }
       }
     },
     onError: (error: Error) => {
