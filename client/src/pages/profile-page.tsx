@@ -48,7 +48,10 @@ type KycFormValues = z.infer<typeof kycFormSchema>;
 export default function ProfilePage() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState("profile");
+  // Get tab from URL if available
+  const searchParams = new URLSearchParams(window.location.search);
+  const tabParam = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(tabParam || "profile");
   
   // State for modals
   const [isZkpModalOpen, setIsZkpModalOpen] = useState(false);
@@ -213,10 +216,24 @@ export default function ProfilePage() {
           <p className="text-neutral-500">Manage your profile and verify your identity</p>
         </div>
         
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs value={activeTab} onValueChange={(value) => {
+          setActiveTab(value);
+          // Update URL with tab parameter
+          const url = new URL(window.location.href);
+          url.searchParams.set('tab', value);
+          window.history.pushState({}, '', url.toString());
+        }}>
           <TabsList className="mb-6">
             <TabsTrigger value="profile">Profile</TabsTrigger>
-            <TabsTrigger value="kyc">KYC Verification</TabsTrigger>
+            <TabsTrigger value="kyc" className="relative">
+              KYC Verification
+              {tabParam !== 'kyc' && activeTab !== 'kyc' && !user?.kycStatus && (
+                <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
+                </span>
+              )}
+            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="profile">

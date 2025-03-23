@@ -9,7 +9,8 @@ import {
   ShoppingBag,
   FileText,
   ArrowRightLeft,
-  BarChart
+  BarChart,
+  Shield
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -49,12 +50,32 @@ export default function TourGuide() {
     {
       id: 'profile',
       title: 'Complete Your Profile',
-      description: 'Update your trading profile and verify your identity with our secure zero-knowledge proof system.',
+      description: 'First, update your personal details and trading information.',
       targetPath: '/profile',
+      targetSelector: 'button[value="profile"]',
+      position: 'bottom',
+      action: 'Next',
+      icon: <User className="h-5 w-5" />
+    },
+    {
+      id: 'kyc-tab',
+      title: 'KYC Verification Tab',
+      description: 'Click on the "KYC Verification" tab to complete your identity verification process.',
+      targetPath: '/profile',
+      targetSelector: 'button[value="kyc"]',
+      position: 'bottom',
+      action: 'Next',
+      icon: <Shield className="h-5 w-5" />
+    },
+    {
+      id: 'kyc-form',
+      title: 'Complete KYC Process',
+      description: 'Fill out the KYC form, select a document type, and upload your ID to verify your identity.',
+      targetPath: '/profile?tab=kyc',
       targetSelector: '[data-tour="profile-kyc"]',
       position: 'left',
       action: 'Next',
-      icon: <User className="h-5 w-5" />
+      icon: <Shield className="h-5 w-5" />
     },
     {
       id: 'marketplace',
