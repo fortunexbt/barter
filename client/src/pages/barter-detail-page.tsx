@@ -183,12 +183,13 @@ export default function BarterDetailPage() {
       return;
     }
     
-    // Calculate the total value for escrow
-    const offeringValue = barterOffer.offeringCommodity.price * barterOffer.offeringCommodity.volume;
-    const requestingValue = barterOffer.requestingCommodity.price * barterOffer.requestingCommodity.volume;
+    // Calculate the total value for escrow - use the commodity's total value
+    // Most important improvement: multiply price by volume for accurate amount calculation
+    const commodityTotalValue = barterOffer.offeringCommodity.price * barterOffer.offeringCommodity.volume;
+    const escrowAmountValue = commodityTotalValue;
     
-    // Use the higher value for the escrow amount as a safety measure
-    const escrowAmount = Math.max(offeringValue, requestingValue).toString();
+    // Format escrow amount as string
+    const escrowAmount = escrowAmountValue.toString();
     setEscrowAmount(escrowAmount);
     
     // Show loading state
@@ -202,9 +203,17 @@ export default function BarterDetailPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          // Specify the appropriate buyer and seller IDs based on the barter offer
           buyerId: barterOffer.requestingUser?.id,
+          sellerId: barterOffer.offeringUser?.id,
           commodityId: barterOffer.offeringCommodity.id,
-          amount: parseFloat(escrowAmount),
+          title: `Smart Contract for ${barterOffer.offeringCommodity.name}`,
+          price: commodityTotalValue,
+          contractNumber: `ESC-${Math.floor(Math.random() * 1000000).toString().padStart(6, '0')}`,
+          quantity: 1,
+          terms: `Escrow smart contract for ${barterOffer.offeringCommodity.name} with price ${commodityTotalValue} ${barterOffer.offeringCommodity.priceUnit}. 
+              Contract Address: ${contractAddress || '0x' + Math.random().toString(16).substring(2, 14)}`,
+          status: 'pending'
         }),
       });
       
@@ -220,20 +229,24 @@ export default function BarterDetailPage() {
       
       // Store the contract address for deposit and release operations
       setContractAddress(responseData.contractAddress);
+      
+      // Refresh relevant data
       queryClient.invalidateQueries({ queryKey: [`/api/barter/${id}`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/contracts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
       
       // Show success state
       setContractCreated(true);
       setContractCreating(false);
       
-      // Trigger confetti effect
+      // Trigger confetti effect for visual feedback
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 3000);
       
-      // Success notification
+      // Success notification with clear next steps
       toast({
         title: "Smart Contract Created!",
-        description: "Your contract has been generated successfully. You can now proceed to deposit funds to escrow.",
+        description: "Your contract has been generated successfully. You can now deposit funds to escrow.",
       });
       
       return responseData;
@@ -250,9 +263,34 @@ export default function BarterDetailPage() {
   };
   
   const handleDepositToEscrow = () => {
+    if (!contractAddress) {
+      toast({
+        title: "Missing Contract Address",
+        description: "Please create a smart contract first",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (!escrowAmount) {
+      // Calculate escrow amount if not already set
+      if (barterOffer?.offeringCommodity) {
+        const commodityTotalValue = barterOffer.offeringCommodity.price * barterOffer.offeringCommodity.volume;
+        setEscrowAmount(commodityTotalValue.toString());
+      } else {
+        toast({
+          title: "Missing Commodity Data",
+          description: "Cannot determine escrow amount: commodity data is missing",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+    
     // Enable deposit step
     setDepositStep(true);
-    // Open the deposit modal
+    
+    // Open the deposit modal with auto-populated values
     setIsEscrowDepositModalOpen(true);
   };
   
@@ -262,15 +300,27 @@ export default function BarterDetailPage() {
     console.log("Contract created callback with data:", data);
   };
   
-  const handleEscrowDeposited = () => {
+  const handleEscrowDeposited = (data: any) => {
     // Mark deposit as completed
     setDepositCompleted(true);
+    setIsEscrowDepositModalOpen(false);
     
+    // Trigger success animation/confetti to provide clear visual feedback
+    setShowConfetti(true);
+    setTimeout(() => setShowConfetti(false), 3000);
+    
+    // Show detailed success message with amount
+    const amount = data?.amount || escrowAmount;
     toast({
       title: "Escrow Deposit Complete",
-      description: "Funds have been deposited to the escrow smart contract.",
+      description: `$${amount} has been successfully deposited to the escrow contract. The seller will be notified to proceed with delivery.`,
     });
+    
+    // Refresh all relevant data
     queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+    queryClient.invalidateQueries({ queryKey: [`/api/barter/${id}`] });
+    queryClient.invalidateQueries({ queryKey: ['/api/contracts'] });
   };
   
   const handleEscrowReleased = () => {
