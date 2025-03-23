@@ -72,7 +72,7 @@ export default function EscrowDepositModal({
     },
   });
   
-  // Update form values when props change
+  // Update form values when props change and auto-submit in contract creation mode
   useEffect(() => {
     console.log("Contract address changed:", contractAddress);
     if (contractAddress) {
@@ -83,12 +83,26 @@ export default function EscrowDepositModal({
     }
     // Force form validation
     form.trigger();
-  }, [contractAddress, defaultAmount, form]);
+    
+    // Auto-submit if this is opened from contract creation and we have all data
+    if (isOpen && isContractCreationResponse && contractAddress && defaultAmount) {
+      console.log("Auto-submitting escrow deposit with amount:", defaultAmount);
+      
+      // Give a small delay to show the form first
+      const timer = setTimeout(() => {
+        if (form.formState.isValid) {
+          onSubmit(form.getValues() as DepositFormValues);
+        }
+      }, 1500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, contractAddress, defaultAmount, isContractCreationResponse, form]);
 
   const depositMutation = useMutation({
     mutationFn: async (data: DepositFormValues) => {
       setStep("processing");
-      return apiRequest(
+      const response = await apiRequest(
         "POST",
         "/api/smart-contracts/escrow/deposit",
         {
@@ -96,8 +110,14 @@ export default function EscrowDepositModal({
           amount: parseFloat(data.amount),
         }
       );
+      
+      // Parse the response to get the data
+      const responseData = await response.json();
+      console.log("Deposit response data:", responseData);
+      return responseData;
     },
     onSuccess: (data) => {
+      console.log("Deposit success data:", JSON.stringify(data, null, 2));
       setDepositData(data);
       setStep("complete");
       queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
