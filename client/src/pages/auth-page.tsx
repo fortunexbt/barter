@@ -164,7 +164,34 @@ export default function AuthPage() {
                     </form>
                   </Form>
                 </CardContent>
-                <CardFooter className="flex flex-col">
+                <CardFooter className="flex flex-col space-y-4">
+                  {/* Wallet Connection Options */}
+                  <div className="w-full">
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t border-neutral-200" />
+                      </div>
+                      <div className="relative flex justify-center text-xs">
+                        <span className="bg-white px-2 text-neutral-500">Or connect with wallet</span>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-4 grid grid-cols-2 gap-3">
+                      <Button variant="outline" type="button" className="flex items-center justify-center">
+                        <img src="https://metamask.io/images/metamask-fox.svg" alt="MetaMask" className="h-5 w-5 mr-2" />
+                        MetaMask
+                      </Button>
+                      <Button variant="outline" type="button" className="flex items-center justify-center">
+                        <img src="https://rabby.io/assets/logo.svg" alt="Rabby" className="h-5 w-5 mr-2" />
+                        Rabby
+                      </Button>
+                      <Button variant="outline" type="button" className="flex items-center justify-center col-span-2">
+                        <img src="https://walletconnect.com/images/logo.svg" alt="WalletConnect" className="h-5 w-5 mr-2" />
+                        WalletConnect
+                      </Button>
+                    </div>
+                  </div>
+                  
                   <div className="text-sm text-neutral-500 mt-2">
                     Don't have an account?{" "}
                     <button 
@@ -300,7 +327,34 @@ export default function AuthPage() {
                     </form>
                   </Form>
                 </CardContent>
-                <CardFooter className="flex flex-col">
+                <CardFooter className="flex flex-col space-y-4">
+                  {/* Wallet Connection Options */}
+                  <div className="w-full">
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t border-neutral-200" />
+                      </div>
+                      <div className="relative flex justify-center text-xs">
+                        <span className="bg-white px-2 text-neutral-500">Or register with wallet</span>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-4 grid grid-cols-2 gap-3">
+                      <Button variant="outline" type="button" className="flex items-center justify-center">
+                        <img src="https://metamask.io/images/metamask-fox.svg" alt="MetaMask" className="h-5 w-5 mr-2" />
+                        MetaMask
+                      </Button>
+                      <Button variant="outline" type="button" className="flex items-center justify-center">
+                        <img src="https://rabby.io/assets/logo.svg" alt="Rabby" className="h-5 w-5 mr-2" />
+                        Rabby
+                      </Button>
+                      <Button variant="outline" type="button" className="flex items-center justify-center col-span-2">
+                        <img src="https://walletconnect.com/images/logo.svg" alt="WalletConnect" className="h-5 w-5 mr-2" />
+                        WalletConnect
+                      </Button>
+                    </div>
+                  </div>
+                  
                   <div className="text-sm text-neutral-500 mt-2">
                     Already have an account?{" "}
                     <button 
