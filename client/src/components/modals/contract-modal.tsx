@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Contract } from "@shared/schema";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Loader2, FileText } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogClose, DialogTitle } from "@/components/ui/dialog";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -86,7 +86,7 @@ export default function ContractModal({ contractId, isOpen, onOpenChange }: Cont
               <div className="mb-4">
                 <div className="flex items-center">
                   <div className="w-10 h-10 bg-primary bg-opacity-10 rounded-full flex items-center justify-center">
-                    <span className="material-icons text-primary">description</span>
+                    <FileText className="h-5 w-5 text-primary" />
                   </div>
                   <div className="ml-3">
                     <h4 className="text-sm font-medium text-neutral-600">{contract.title || `Trade Contract #${contract.contractNumber}`}</h4>
