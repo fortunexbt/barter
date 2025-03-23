@@ -458,7 +458,13 @@ export default function MarketplacePage() {
             <h2 className="text-2xl font-semibold text-neutral-600">Marketplace</h2>
             <p className="text-neutral-500">Browse and trade commodities</p>
           </div>
-          <div className="mt-4 sm:mt-0">
+          <div className="mt-4 sm:mt-0 flex space-x-3">
+            <Link href="/marketplace/manage">
+              <Button variant="outline">
+                <Package className="mr-2 h-4 w-4" />
+                Manage Listings
+              </Button>
+            </Link>
             <Link href="/marketplace/new">
               <Button className="bg-primary text-white">
                 <Plus className="mr-2 h-4 w-4" />
