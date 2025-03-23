@@ -36,13 +36,38 @@ export class SmartContractService {
   ): Promise<{ 
     contractAddress: string, 
     transactionId: number,
-    transactionHash: string
+    transactionHash: string,
+    contractId: number
   }> {
     // In a real blockchain implementation, this would deploy an actual
     // smart contract and return its address on the blockchain
 
     // Simulate a contract address
     const contractAddress = `0x${Math.random().toString(16).slice(2, 42)}`;
+    const transactionHash = generateTransactionHash();
+    
+    // Get the commodity details to use for contract creation
+    const commodity = await storage.getCommodity(commodityId);
+    if (!commodity) {
+      throw new Error("Commodity not found");
+    }
+    
+    // Create a contract record in the database
+    const contractData = {
+      buyerId: buyerId,
+      sellerId: sellerId,
+      commodityId: commodityId,
+      title: `Smart Contract for ${commodity.name}`,
+      price: amount,
+      contractNumber: `ESC-${Date.now().toString().slice(-6)}`,
+      quantity: 1, // Default to 1 for now
+      terms: `Escrow smart contract for ${commodity.name} with price ${amount} ${commodity.priceUnit}. 
+              Contract Address: ${contractAddress}`,
+      status: 'pending'
+    };
+    
+    console.log("Creating contract with data:", contractData);
+    const contract = await storage.createContract(contractData);
     
     // Create a transaction record
     const transactionData: InsertTransaction = {
@@ -52,11 +77,13 @@ export class SmartContractService {
       commodityId: commodityId,
       amount: amount,
       status: 'pending',
+      contractId: contract.id, // Link transaction to contract
       metadata: JSON.stringify({
         contractAddress,
-        transactionHash: generateTransactionHash(),
+        transactionHash,
         blockNumber: Math.floor(Math.random() * 10000000) + 1,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        contractId: contract.id
       })
     };
 
@@ -65,7 +92,8 @@ export class SmartContractService {
     return {
       contractAddress,
       transactionId: transaction.id,
-      transactionHash: JSON.parse(transaction.metadata || '{}').transactionHash || ''
+      transactionHash,
+      contractId: contract.id
     };
   }
 
@@ -83,7 +111,8 @@ export class SmartContractService {
     amount: number
   ): Promise<{
     success: boolean,
-    transactionHash: string
+    transactionHash: string,
+    transactionId?: number
   }> {
     // In a real blockchain implementation, this would call the deposit function
     // on the smart contract at the specified address
@@ -94,9 +123,58 @@ export class SmartContractService {
     // Simulate success (95% of the time)
     const success = Math.random() > 0.05;
     
+    // Generate transaction hash for blockchain record
+    const transactionHash = generateTransactionHash();
+    
+    if (success) {
+      // Find the related transaction to get contract ID
+      const transactions = await storage.getTransactionsByUser(buyerId);
+      const relatedTransaction = transactions.find(t => {
+        const metadata = t.metadata ? JSON.parse(t.metadata) : {};
+        return metadata.contractAddress === contractAddress;
+      });
+      
+      if (relatedTransaction && relatedTransaction.contractId) {
+        // Get the contract
+        const contract = await storage.getContract(relatedTransaction.contractId);
+        
+        if (contract) {
+          // Update contract status to funded
+          await storage.updateContract(contract.id, {
+            status: 'funded'
+          });
+          
+          // Create a deposit transaction record
+          const transactionData: InsertTransaction = {
+            type: 'escrow_deposit',
+            senderId: buyerId,
+            receiverId: contract.sellerId,
+            commodityId: contract.commodityId,
+            amount: amount,
+            status: 'completed',
+            contractId: contract.id,
+            metadata: JSON.stringify({
+              contractAddress,
+              transactionHash,
+              blockNumber: Math.floor(Math.random() * 10000000) + 1,
+              timestamp: new Date().toISOString()
+            })
+          };
+          
+          const transaction = await storage.createTransaction(transactionData);
+          
+          return {
+            success,
+            transactionHash,
+            transactionId: transaction.id
+          };
+        }
+      }
+    }
+    
     return {
       success,
-      transactionHash: generateTransactionHash()
+      transactionHash
     };
   }
 
@@ -112,7 +190,8 @@ export class SmartContractService {
     sellerId: number
   ): Promise<{
     success: boolean,
-    transactionHash: string
+    transactionHash: string,
+    transactionId?: number
   }> {
     // In a real blockchain implementation, this would call the release function
     // on the smart contract at the specified address
@@ -122,10 +201,62 @@ export class SmartContractService {
     
     // Simulate success (95% of the time)
     const success = Math.random() > 0.05;
+    const transactionHash = generateTransactionHash();
+    
+    if (success) {
+      // Find the related transaction to get contract ID
+      const transactions = await storage.getTransactionsByUser(sellerId);
+      const relatedTransaction = transactions.find(t => {
+        const metadata = t.metadata ? JSON.parse(t.metadata) : {};
+        return metadata.contractAddress === contractAddress;
+      });
+      
+      if (relatedTransaction && relatedTransaction.contractId) {
+        // Get the contract
+        const contract = await storage.getContract(relatedTransaction.contractId);
+        
+        if (contract) {
+          // Update contract status to completed
+          await storage.updateContract(contract.id, {
+            status: 'completed'
+          });
+          
+          // Create a release transaction record
+          const transactionData: InsertTransaction = {
+            type: 'escrow_release',
+            senderId: contract.buyerId, // From the buyer's escrow
+            receiverId: sellerId, // To the seller
+            commodityId: contract.commodityId,
+            amount: contract.price,
+            status: 'completed',
+            contractId: contract.id,
+            metadata: JSON.stringify({
+              contractAddress,
+              transactionHash,
+              blockNumber: Math.floor(Math.random() * 10000000) + 1,
+              timestamp: new Date().toISOString()
+            })
+          };
+          
+          const transaction = await storage.createTransaction(transactionData);
+          
+          // Also update the commodity status to sold
+          await storage.updateCommodity(contract.commodityId, {
+            status: 'sold'
+          });
+          
+          return {
+            success,
+            transactionHash,
+            transactionId: transaction.id
+          };
+        }
+      }
+    }
     
     return {
       success,
-      transactionHash: generateTransactionHash()
+      transactionHash
     };
   }
 

@@ -101,20 +101,36 @@ export default function EscrowDepositModal({
 
   const depositMutation = useMutation({
     mutationFn: async (data: DepositFormValues) => {
+      console.log("Submitting deposit with data:", data);
       setStep("processing");
-      const response = await apiRequest(
-        "POST",
-        "/api/smart-contracts/escrow/deposit",
-        {
-          contractAddress: data.contractAddress,
-          amount: parseFloat(data.amount),
-        }
-      );
       
-      // Parse the response to get the data
-      const responseData = await response.json();
-      console.log("Deposit response data:", responseData);
-      return responseData;
+      try {
+        // Make API request directly to ensure proper handling
+        const response = await fetch("/api/smart-contracts/escrow/deposit", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            contractAddress: data.contractAddress,
+            amount: parseFloat(data.amount),
+          }),
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("Error response:", errorText);
+          throw new Error(`API Error: ${response.status} ${errorText}`);
+        }
+        
+        // Parse the response to get the data
+        const responseData = await response.json();
+        console.log("Deposit response data:", responseData);
+        return responseData;
+      } catch (error) {
+        console.error("Deposit error:", error);
+        throw error;
+      }
     },
     onSuccess: (data) => {
       console.log("Deposit success data:", JSON.stringify(data, null, 2));
