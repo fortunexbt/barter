@@ -128,7 +128,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/commodities', async (req, res, next) => {
     try {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
+      const owner = req.query.owner ? req.query.owner === 'true' : false;
       const commodities = await storage.getCommodities(limit);
+      
+      // If owner details are requested, enhance commodities with owner information
+      if (owner) {
+        const enhancedCommodities = await Promise.all(
+          commodities.map(async (commodity) => {
+            const owner = await storage.getUser(commodity.ownerId);
+            return {
+              ...commodity,
+              owner: owner ? {
+                id: owner.id,
+                username: owner.username,
+                fullName: owner.fullName || owner.username,
+                avatarUrl: owner.avatarUrl,
+                verificationStatus: owner.verificationStatus
+              } : null
+            };
+          })
+        );
+        return res.json(enhancedCommodities);
+      }
+      
       res.json(commodities);
     } catch (error) {
       next(error);
@@ -139,10 +161,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const commodity = await storage.getCommodity(id);
+      
       if (!commodity) {
         return res.status(404).json({ message: 'Commodity not found' });
       }
-      res.json(commodity);
+      
+      // Always include owner details for single commodity view
+      const owner = await storage.getUser(commodity.ownerId);
+      const enhancedCommodity = {
+        ...commodity,
+        owner: owner ? {
+          id: owner.id,
+          username: owner.username,
+          fullName: owner.fullName || owner.username,
+          avatarUrl: owner.avatarUrl,
+          verificationStatus: owner.verificationStatus
+        } : null
+      };
+      
+      res.json(enhancedCommodity);
     } catch (error) {
       next(error);
     }
