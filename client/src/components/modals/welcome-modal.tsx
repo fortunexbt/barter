@@ -21,18 +21,17 @@ interface WelcomeModalProps {
 export function WelcomeModal({ forceOpen = false, onClose }: WelcomeModalProps) {
   const { user } = useAuth();
   const [_, navigate] = useLocation();
-  const [isOpen, setIsOpen] = useState(forceOpen);
+  const [isOpen, setIsOpen] = useState(false); // Initialize as false to prevent flash on auth page
   const [hasSeenWelcome, setHasSeenWelcome] = useLocalStorage("hasSeenWelcome", false);
   
   useEffect(() => {
-    setIsOpen(forceOpen);
-  }, [forceOpen]);
-  
-  useEffect(() => {
-    // Show the welcome modal only for new users who haven't seen it
-    // Force it to show for all new users, regardless of KYC status
-    // (we'll use this as our mandatory KYC prompt after registration)
-    if (user && !hasSeenWelcome && !forceOpen) {
+    // Only set the modal to open if:
+    // 1. It's explicitly forced open through props, OR
+    // 2. There's a logged-in user who hasn't seen the welcome message
+    if (forceOpen) {
+      setIsOpen(true);
+    } else if (user && !hasSeenWelcome) {
+      // Slight delay to show the modal after user has logged in
       const timer = setTimeout(() => {
         setIsOpen(true);
       }, 500);
@@ -56,6 +55,7 @@ export function WelcomeModal({ forceOpen = false, onClose }: WelcomeModalProps) 
     if (onClose) onClose();
   };
 
+  // Don't render anything if there's no user
   if (!user) return null;
 
   return (
