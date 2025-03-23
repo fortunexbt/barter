@@ -5,6 +5,7 @@ import { insertUserSchema, LoginData } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { Redirect, useLocation } from "wouter";
 import { useEffect, useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Form,
@@ -47,6 +48,7 @@ export default function AuthPage() {
   const [location, navigate] = useLocation();
   const { user, loginMutation, registerMutation } = useAuth();
   const [activeTab, setActiveTab] = useState<string>("login");
+  const { toast } = useToast();
 
   const loginForm = useForm<LoginData>({
     resolver: zodResolver(loginSchema),
