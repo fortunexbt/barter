@@ -18,8 +18,9 @@ import {
   FormLabel, 
   FormMessage 
 } from "@/components/ui/form";
-import { Loader2, Upload, Check, Image as ImageIcon, ShieldCheck, Key } from "lucide-react";
+import { Loader2, Upload, Check, Image as ImageIcon, ShieldCheck, Key, CheckCircle, AlertTriangle } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { formatDate } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { KycDocument } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
