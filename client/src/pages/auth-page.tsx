@@ -90,8 +90,10 @@ export default function AuthPage() {
     const { confirmPassword, ...registerData } = data;
     registerMutation.mutate(registerData, {
       onSuccess: () => {
-        // Set flags in localStorage to trigger welcome modal and tour on first login
-        localStorage.setItem("hasSeenWelcome", "false");
+        // Clear all previous flags and set fresh ones to ensure welcome modal appears
+        localStorage.removeItem("hasSeenWelcome");
+        
+        // Set flags to trigger welcome modal and tour for new registrations
         localStorage.setItem("showTour", "true");
         
         // Show welcome message
@@ -102,7 +104,8 @@ export default function AuthPage() {
         });
         
         // Navigate to homepage where welcome modal will appear
-        setTimeout(() => navigate("/"), 100);
+        // Use a delay to ensure the page loads properly before showing modal
+        setTimeout(() => navigate("/profile?tab=kyc"), 100);
       }
     });
   };
