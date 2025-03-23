@@ -24,7 +24,7 @@ export default function HomePage() {
       {/* Page Content */}
       <div className="py-6 px-4 sm:px-6 lg:px-8">
         {/* Welcome Section */}
-        <div className="mb-6">
+        <div className="mb-6" data-tour="dashboard-overview">
           <h2 className="text-2xl font-semibold text-neutral-600">
             Welcome back, {user?.fullName.split(' ')[0] || 'Trader'}!
           </h2>
@@ -39,10 +39,14 @@ export default function HomePage() {
           {/* Recent Trades Column */}
           <div className="lg:col-span-2 space-y-6">
             {/* Commodity Listings */}
-            <MarketplaceWidget />
+            <div data-tour="marketplace-preview">
+              <MarketplaceWidget />
+            </div>
             
             {/* Barter Opportunities */}
-            <BarterWidget />
+            <div data-tour="barter-preview">
+              <BarterWidget />
+            </div>
           </div>
           
           {/* Sidebar Column */}
