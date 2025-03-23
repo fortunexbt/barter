@@ -71,6 +71,19 @@ export default function EscrowDepositModal({
       amount: defaultAmount,
     },
   });
+  
+  // Update form values when props change
+  useEffect(() => {
+    console.log("Contract address changed:", contractAddress);
+    if (contractAddress) {
+      form.setValue("contractAddress", contractAddress);
+    }
+    if (defaultAmount) {
+      form.setValue("amount", defaultAmount);
+    }
+    // Force form validation
+    form.trigger();
+  }, [contractAddress, defaultAmount, form]);
 
   const depositMutation = useMutation({
     mutationFn: async (data: DepositFormValues) => {
