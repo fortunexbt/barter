@@ -139,9 +139,6 @@ export default function AuthPage() {
                             <FormControl>
                               <Input type="password" placeholder="••••••••" {...field} />
                             </FormControl>
-                            <FormDescription>
-                              Password must be at least 6 characters long
-                            </FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -262,9 +259,6 @@ export default function AuthPage() {
                               <FormControl>
                                 <Input type="password" placeholder="••••••••" {...field} />
                               </FormControl>
-                              <FormDescription>
-                                Password must be at least 6 characters long
-                              </FormDescription>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -278,9 +272,6 @@ export default function AuthPage() {
                               <FormControl>
                                 <Input type="password" placeholder="••••••••" {...field} />
                               </FormControl>
-                              <FormDescription>
-                                Password must be at least 6 characters long
-                              </FormDescription>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -388,7 +379,7 @@ export default function AuthPage() {
             <p className="text-gray-600">
               BarterTrade uses advanced zero-knowledge proofs and blockchain smart contracts to create a secure, private, and efficient marketplace for commodity trading.
             </p>
-
+            
             <div className="border-t border-gray-200 pt-6 mt-8">
               <h3 className="font-medium mb-4">Platform Features</h3>
               <ul className="space-y-3">
