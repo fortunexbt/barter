@@ -11,6 +11,7 @@ import EditListingPage from "@/pages/edit-listing-page";
 import ManageListingsPage from "@/pages/manage-listings-page";
 import CommodityDetailPage from "@/pages/commodity-detail-page";
 import BarterPage from "@/pages/barter-page";
+import BarterDetailPage from "@/pages/barter-detail-page";
 import TransactionsPage from "@/pages/transactions-page";
 import ContractsPage from "@/pages/contracts-page";
 import ProfilePage from "@/pages/profile-page";
@@ -35,6 +36,7 @@ function Router() {
       <ProtectedRoute path="/marketplace/:id" component={CommodityDetailPage} />
       <ProtectedRoute path="/barter" component={BarterPage} />
       <ProtectedRoute path="/barter/new" component={BarterPage} />
+      <ProtectedRoute path="/barter/:id" component={BarterDetailPage} />
       <ProtectedRoute path="/transactions" component={TransactionsPage} />
       <ProtectedRoute path="/contracts" component={ContractsPage} />
       <ProtectedRoute path="/deals" component={DealsPage} />
