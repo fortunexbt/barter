@@ -270,6 +270,12 @@ export default function BarterDetailPage() {
               if (metadata.contractAddress) {
                 console.log("Found contract address in metadata:", metadata.contractAddress);
                 setContractAddress(metadata.contractAddress);
+                
+                // Also set escrow amount for deposit operations
+                if (barterOffer?.offeringCommodity) {
+                  const commodityTotalValue = barterOffer.offeringCommodity.price * barterOffer.offeringCommodity.volume;
+                  setEscrowAmount(commodityTotalValue.toString());
+                }
               }
             } catch (e) {
               console.error("Error parsing transaction metadata:", e);
@@ -278,6 +284,13 @@ export default function BarterDetailPage() {
         }
       } else {
         console.log("No contract found for this barter");
+        
+        // Auto-create smart contract if barter is accepted and no contract exists yet
+        // This ensures contracts are automatically created upon barter acceptance
+        if (barterOffer.status === "accepted" && isOfferingUser && barterOffer.offeringCommodity) {
+          console.log("Automatically creating smart contract for accepted barter");
+          handleCreateSmartContract();
+        }
       }
     }
   }, [barterOffer, relatedContracts, relatedTransactions]);
@@ -314,10 +327,11 @@ export default function BarterDetailPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          // Only send the necessary fields that the API expects
+          // Include all necessary fields including barterId for proper association
           buyerId: barterOffer.requestingUser?.id,
           commodityId: barterOffer.offeringCommodity.id,
           amount: commodityTotalValue,
+          barterId: barterOffer.id, // Add barter ID to link contract with barter
         }),
       });
       
@@ -474,13 +488,30 @@ export default function BarterDetailPage() {
             <Button variant="outline" onClick={() => navigate("/barter")}>
               Back to Barter
             </Button>
-            {barterOffer.status === "accepted" && (
+            {barterOffer.status === "accepted" && !contractCreated && (
               <Button 
                 onClick={handleCreateSmartContract} 
                 className="bg-secondary text-white"
               >
                 <Shield className="mr-2 h-4 w-4" />
                 Create Smart Contract
+              </Button>
+            )}
+            {barterOffer.status === "accepted" && contractCreated && contractAddress && (
+              <Button 
+                variant="outline"
+                className="text-secondary border-secondary"
+                onClick={() => {
+                  // Create contract QR code modal or copy contract address to clipboard
+                  navigator.clipboard.writeText(contractAddress);
+                  toast({
+                    title: "Contract Address Copied",
+                    description: "The smart contract address has been copied to your clipboard.",
+                  });
+                }}
+              >
+                <Shield className="mr-2 h-4 w-4" />
+                Copy Contract Address
               </Button>
             )}
           </div>
@@ -803,14 +834,14 @@ export default function BarterDetailPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Shield className="h-5 w-5 text-secondary" />
-                Smart Contract Timeline
+                Transaction Timeline
               </CardTitle>
               <CardDescription>
-                Secure your barter with a smart contract escrow
+                Real-time tracking of your barter transaction progress
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {/* Show confetti if contract was just created */}
+              {/* Show confetti if contract was just created or escrow deposited */}
               {showConfetti && (
                 <div className="absolute inset-0 pointer-events-none overflow-hidden">
                   {/* Simple confetti effect using tailwind animations */}
@@ -822,62 +853,181 @@ export default function BarterDetailPage() {
                 </div>
               )}
               
-              {/* Overall Progress Indicator */}
+              {/* Enhanced Progress Indicator */}
               <div className="mb-6">
-                <div className="flex justify-between mb-2">
+                <div className="flex items-center justify-between mb-1">
                   <h4 className="text-sm font-medium">Transaction Progress</h4>
-                  <span className="text-sm text-neutral-500">{tradeProgress}%</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-secondary">{tradeProgress}%</span>
+                    <Badge 
+                      variant="outline" 
+                      className={`
+                        ${transactionStatus === 'completed' ? 'bg-green-50 text-green-700 border-green-200' : 
+                          transactionStatus === 'funded' ? 'bg-blue-50 text-blue-700 border-blue-200' : 
+                          'bg-amber-50 text-amber-700 border-amber-200'}
+                      `}
+                    >
+                      {transactionStatus === 'completed' ? 'Completed' :
+                       transactionStatus === 'funded' ? 'Escrow Funded' : 'In Progress'}
+                    </Badge>
+                  </div>
                 </div>
-                <Progress value={tradeProgress} className="h-2" />
+                <Progress value={tradeProgress} className="h-3" />
+                <div className="flex justify-between text-xs text-neutral-500 mt-1">
+                  <span>Contract Creation</span>
+                  <span>Escrow Funded</span>
+                  <span>Trade Completed</span>
+                </div>
               </div>
               
-              {/* Contract Details if available */}
+              {/* Contract and QR Code Display */}
               {currentContract && (
-                <div className="mb-6 bg-slate-50 p-3 rounded-md">
-                  <h4 className="text-sm font-medium mb-2">Contract Information</h4>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div>
-                      <span className="text-neutral-500">Contract ID:</span>
-                      <p>{currentContract.contractNumber}</p>
-                    </div>
-                    <div>
-                      <span className="text-neutral-500">Status:</span>
-                      <p className={currentContract.status === 'completed' ? 'text-green-600' : 'text-orange-500'}>
-                        {currentContract.status?.charAt(0).toUpperCase() + currentContract.status?.slice(1) || 'Pending'}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-neutral-500">Created:</span>
-                      <p>{formatRelativeTime(currentContract.createdAt)}</p>
-                    </div>
-                    <div>
-                      <span className="text-neutral-500">Price:</span>
-                      <p>{formatCurrency(currentContract.price, 'USD')}</p>
+                <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="md:col-span-2 bg-slate-50 p-4 rounded-md">
+                    <h4 className="text-sm font-medium mb-3 flex items-center gap-1">
+                      <Shield className="h-4 w-4 text-secondary" /> 
+                      Smart Contract Details
+                    </h4>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <span className="text-neutral-500 block mb-1">Contract ID:</span>
+                        <p className="font-mono bg-white py-1 px-2 rounded border border-neutral-200 text-neutral-800">
+                          {currentContract.contractNumber}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-neutral-500 block mb-1">Status:</span>
+                        <Badge className={
+                          currentContract.status === 'completed' ? 'bg-green-100 text-green-800 hover:bg-green-200' : 
+                          currentContract.status === 'funded' ? 'bg-blue-100 text-blue-800 hover:bg-blue-200' : 
+                          'bg-amber-100 text-amber-800 hover:bg-amber-200'
+                        }>
+                          {currentContract.status?.charAt(0).toUpperCase() + currentContract.status?.slice(1) || 'Pending'}
+                        </Badge>
+                      </div>
+                      <div>
+                        <span className="text-neutral-500 block mb-1">Created:</span>
+                        <p>{formatRelativeTime(currentContract.createdAt)}</p>
+                      </div>
+                      <div>
+                        <span className="text-neutral-500 block mb-1">Value:</span>
+                        <p className="font-medium text-base">{formatCurrency(currentContract.price, 'USD')}</p>
+                      </div>
+                      <div className="col-span-2">
+                        <span className="text-neutral-500 block mb-1">Blockchain Address:</span>
+                        <div className="flex items-center gap-1 font-mono bg-white py-1 px-2 rounded border border-neutral-200 text-neutral-800 text-xs break-all">
+                          {contractAddress || "Not available"}
+                        </div>
+                      </div>
                     </div>
                   </div>
+                  
+                  {/* QR Code Display */}
+                  {contractAddress && (
+                    <div className="bg-white p-3 rounded-md shadow-sm border flex flex-col items-center justify-center">
+                      <span className="text-xs text-neutral-500 mb-1">Contract Address QR</span>
+                      <div className="bg-white p-2 rounded-md border-2 border-neutral-200">
+                        <svg className="w-24 h-24" viewBox="0 0 100 100">
+                          {/* Simple QR code SVG representation */}
+                          <rect x="0" y="0" width="100" height="100" fill="white" />
+                          <rect x="10" y="10" width="15" height="15" fill="black" />
+                          <rect x="75" y="10" width="15" height="15" fill="black" />
+                          <rect x="10" y="75" width="15" height="15" fill="black" />
+                          <rect x="35" y="35" width="30" height="30" fill="black" />
+                          <rect x="30" y="10" width="5" height="5" fill="black" />
+                          <rect x="40" y="10" width="5" height="5" fill="black" />
+                          <rect x="65" y="10" width="5" height="5" fill="black" />
+                          <rect x="10" y="30" width="5" height="5" fill="black" />
+                          <rect x="30" y="30" width="5" height="5" fill="black" />
+                          <rect x="75" y="30" width="5" height="5" fill="black" />
+                          <rect x="85" y="30" width="5" height="5" fill="black" />
+                          <rect x="10" y="40" width="5" height="5" fill="black" />
+                          <rect x="10" y="50" width="5" height="5" fill="black" />
+                          <rect x="10" y="60" width="5" height="5" fill="black" />
+                          <rect x="30" y="65" width="5" height="5" fill="black" />
+                          <rect x="70" y="65" width="5" height="5" fill="black" />
+                          <rect x="30" y="75" width="5" height="5" fill="black" />
+                          <rect x="40" y="75" width="5" height="5" fill="black" />
+                          <rect x="50" y="75" width="5" height="5" fill="black" />
+                          <rect x="65" y="75" width="5" height="5" fill="black" />
+                          <rect x="85" y="75" width="5" height="5" fill="black" />
+                          <rect x="40" y="40" width="5" height="5" fill="white" />
+                          <rect x="50" y="40" width="5" height="5" fill="white" />
+                        </svg>
+                      </div>
+                      <span className="text-xs font-mono text-neutral-600 mt-2 max-w-full truncate">
+                        {contractAddress.substring(0, 12)}...
+                      </span>
+                    </div>
+                  )}
                 </div>
               )}
               
-              {/* Transaction History if available */}
+              {/* Enhanced Transaction History */}
               {currentTransactions.length > 0 && (
                 <div className="mb-6">
-                  <h4 className="text-sm font-medium mb-2">Transaction History</h4>
-                  <div className="space-y-2">
-                    {currentTransactions.map((tx) => (
-                      <div key={tx.id} className="text-sm bg-slate-50 p-2 rounded-md flex justify-between">
-                        <div>
-                          <span className="font-medium">
-                            {tx.type === 'escrow_creation' && 'Contract Created'}
-                            {tx.type === 'escrow_deposit' && 'Funds Deposited'}
-                            {tx.type === 'escrow_release' && 'Funds Released'}
-                          </span>
-                          <p className="text-neutral-500">{formatRelativeTime(tx.createdAt)}</p>
+                  <h4 className="text-sm font-medium mb-3 flex items-center gap-1">
+                    <DollarSign className="h-4 w-4 text-secondary" />
+                    Transaction Activity Timeline
+                  </h4>
+                  <div className="relative pl-6 border-l-2 border-neutral-200 space-y-4 py-1">
+                    {currentTransactions.map((tx, index) => (
+                      <div key={tx.id} className="relative">
+                        {/* Timeline node */}
+                        <div className="absolute -left-[1.4rem] w-6 h-6 rounded-full flex items-center justify-center bg-white border-2 border-secondary">
+                          {tx.type === 'escrow_creation' && <Shield className="h-3 w-3 text-secondary" />}
+                          {tx.type === 'escrow_deposit' && <DollarSign className="h-3 w-3 text-blue-500" />}
+                          {tx.type === 'escrow_release' && <Check className="h-3 w-3 text-green-500" />}
                         </div>
-                        <div className="text-right">
-                          <Badge variant={tx.status === 'completed' ? 'default' : 'outline'}>
-                            {tx.status}
-                          </Badge>
-                          {tx.amount && <p>{formatCurrency(tx.amount, 'USD')}</p>}
+                        
+                        {/* Transaction card */}
+                        <div className="bg-white p-3 rounded-md shadow-sm border border-neutral-100 ml-2">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h5 className="font-medium">
+                                {tx.type === 'escrow_creation' && 'Smart Contract Created'}
+                                {tx.type === 'escrow_deposit' && 'Escrow Funds Deposited'}
+                                {tx.type === 'escrow_release' && 'Funds Released to Seller'}
+                              </h5>
+                              <p className="text-xs text-neutral-500">
+                                {formatRelativeTime(tx.createdAt)}
+                              </p>
+                            </div>
+                            <Badge variant={tx.status === 'completed' ? 'default' : 'outline'}>
+                              {tx.status === 'completed' ? 'Confirmed' : 'Pending'}
+                            </Badge>
+                          </div>
+                          
+                          {/* Transaction details */}
+                          <div className="mt-2 text-sm">
+                            {tx.type === 'escrow_creation' && (
+                              <p className="text-neutral-600">
+                                Smart contract created by {
+                                  tx.senderId === barterOffer.offeringUserId 
+                                    ? barterOffer.offeringUser?.fullName 
+                                    : barterOffer.requestingUser?.fullName
+                                }
+                              </p>
+                            )}
+                            {tx.type === 'escrow_deposit' && (
+                              <p className="text-neutral-600">
+                                <span className="font-medium">{formatCurrency(tx.amount || 0, 'USD')}</span> deposited into escrow by {
+                                  tx.senderId === barterOffer.offeringUserId 
+                                    ? barterOffer.offeringUser?.fullName 
+                                    : barterOffer.requestingUser?.fullName
+                                }
+                              </p>
+                            )}
+                            {tx.type === 'escrow_release' && (
+                              <p className="text-neutral-600">
+                                <span className="font-medium">{formatCurrency(tx.amount || 0, 'USD')}</span> released to {
+                                  tx.receiverId === barterOffer.offeringUserId 
+                                    ? barterOffer.offeringUser?.fullName 
+                                    : barterOffer.requestingUser?.fullName
+                                }
+                              </p>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -885,121 +1035,150 @@ export default function BarterDetailPage() {
                 </div>
               )}
               
-              <div className="space-y-6 relative">
-                {/* Step 1: Create Smart Contract */}
-                <div className="flex">
-                  <div className="mr-4 flex flex-col items-center">
-                    <div className={`flex h-8 w-8 items-center justify-center rounded-full ${contractCreated ? 'bg-green-500 text-white' : 'bg-secondary text-white'}`}>
+              {/* Action Steps */}
+              <div className="bg-slate-50 p-4 rounded-md">
+                <h4 className="text-sm font-medium mb-4 flex items-center gap-1">
+                  <ArrowRight className="h-4 w-4 text-secondary" /> 
+                  Next Steps
+                </h4>
+                
+                <div className="space-y-4">
+                  {/* Step 1: Create Smart Contract */}
+                  <div className="flex items-center gap-3">
+                    <div className={`flex h-8 w-8 items-center justify-center rounded-full ${
+                      contractCreated ? 'bg-green-500 text-white' : 'bg-secondary text-white'
+                    }`}>
                       {contractCreated ? <Check className="h-4 w-4" /> : 1}
                     </div>
-                    <div className="h-full w-px bg-secondary/20" />
+                    <div className="flex-1">
+                      <div className="flex justify-between items-start">
+                        <h4 className={`font-medium ${contractCreated ? 'text-green-700' : ''}`}>
+                          Create Smart Contract
+                        </h4>
+                        {contractCreated && (
+                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                            <Check className="mr-1 h-3 w-3" /> Completed
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-neutral-500 text-sm mb-2">
+                        {contractCreated 
+                          ? `Contract created with address ${contractAddress.substring(0, 8)}...` 
+                          : "Initialize a secure escrow contract for this barter"}
+                      </p>
+                      {contractCreating ? (
+                        <Button 
+                          size="sm"
+                          className="bg-secondary text-white"
+                          disabled
+                        >
+                          <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                          Creating Contract...
+                        </Button>
+                      ) : !contractCreated && (
+                        <Button 
+                          onClick={handleCreateSmartContract}
+                          size="sm"
+                          className="bg-secondary text-white"
+                        >
+                          Create Contract
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                  <div>
-                    <h4 className={`font-medium ${contractCreated ? 'text-green-700' : ''}`}>
-                      Create Smart Contract
-                    </h4>
-                    <p className="text-neutral-500 text-sm mb-2">
-                      {contractCreated 
-                        ? `Contract created with address ${contractAddress.substring(0, 8)}...` 
-                        : "Initialize a secure escrow contract for this barter"}
-                    </p>
-                    {contractCreating ? (
-                      <Button 
-                        size="sm"
-                        className="bg-secondary text-white"
-                        disabled
-                      >
-                        <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                        Creating...
-                      </Button>
-                    ) : contractCreated ? (
-                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                        <Check className="mr-1 h-3 w-3" /> Contract Created
-                      </Badge>
-                    ) : (
-                      <Button 
-                        onClick={handleCreateSmartContract}
-                        size="sm"
-                        className="bg-secondary text-white"
-                      >
-                        Create Contract
-                      </Button>
-                    )}
-                  </div>
-                </div>
-                
-                {/* Step 2: Deposit Funds to Escrow */}
-                <div className="flex">
-                  <div className="mr-4 flex flex-col items-center">
+                  
+                  {/* Step 2: Deposit Funds to Escrow */}
+                  <div className="flex items-center gap-3">
                     <div className={`flex h-8 w-8 items-center justify-center rounded-full ${
                       depositCompleted 
                         ? 'bg-green-500 text-white' 
                         : contractCreated 
                           ? 'bg-blue-500 text-white' 
-                          : 'bg-neutral-200'
+                          : 'bg-neutral-200 text-neutral-500'
                     }`}>
                       {depositCompleted ? <Check className="h-4 w-4" /> : 2}
                     </div>
-                    <div className="h-full w-px bg-neutral-200" />
-                  </div>
-                  <div>
-                    <h4 className={`font-medium ${
-                      depositCompleted 
-                        ? 'text-green-700' 
-                        : contractCreated 
-                          ? 'text-blue-700' 
-                          : 'text-neutral-500'
-                    }`}>
-                      Deposit Funds to Escrow
-                    </h4>
-                    <p className="text-neutral-500 text-sm mb-2">
-                      {depositCompleted 
-                        ? "Funds successfully deposited to escrow" 
-                        : "Lock funds in the escrow contract to secure the transaction"}
-                    </p>
-                    {depositCompleted ? (
-                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                        <Check className="mr-1 h-3 w-3" /> Deposit Complete
-                      </Badge>
-                    ) : (
-                      <Button 
-                        onClick={handleDepositToEscrow}
-                        size="sm"
-                        variant={contractCreated ? "default" : "outline"}
-                        className={contractCreated ? "bg-blue-500 hover:bg-blue-600" : ""}
-                        disabled={!contractCreated}
-                      >
-                        Deposit to Escrow
-                      </Button>
-                    )}
-                  </div>
-                </div>
-                
-                {/* Step 3: Release Funds to Seller */}
-                <div className="flex">
-                  <div className="mr-4 flex flex-col items-center">
-                    <div className={`flex h-8 w-8 items-center justify-center rounded-full ${
-                      depositCompleted ? 'bg-blue-500 text-white' : 'bg-neutral-200'
-                    }`}>
-                      3
+                    <div className="flex-1">
+                      <div className="flex justify-between items-start">
+                        <h4 className={`font-medium ${
+                          depositCompleted 
+                            ? 'text-green-700' 
+                            : contractCreated 
+                              ? 'text-blue-700' 
+                              : 'text-neutral-500'
+                        }`}>
+                          Deposit Funds to Escrow
+                        </h4>
+                        {depositCompleted && (
+                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                            <Check className="mr-1 h-3 w-3" /> Completed
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-neutral-500 text-sm mb-2">
+                        {depositCompleted 
+                          ? `${formatCurrency(parseFloat(escrowAmount), 'USD')} successfully deposited to escrow` 
+                          : "Lock funds in the escrow contract to secure the transaction"}
+                      </p>
+                      {!depositCompleted && contractCreated && (
+                        <Button 
+                          onClick={handleDepositToEscrow}
+                          size="sm"
+                          variant="default"
+                          className="bg-blue-500 hover:bg-blue-600"
+                        >
+                          <DollarSign className="mr-1 h-3 w-3" />
+                          Deposit {escrowAmount && formatCurrency(parseFloat(escrowAmount), 'USD')}
+                        </Button>
+                      )}
                     </div>
                   </div>
-                  <div>
-                    <h4 className={`font-medium ${depositCompleted ? 'text-blue-700' : 'text-neutral-500'}`}>
-                      Release Funds to Seller
-                    </h4>
-                    <p className="text-neutral-500 text-sm mb-2">
-                      Release escrow funds after confirming delivery
-                    </p>
-                    <Button 
-                      onClick={() => setIsEscrowReleaseModalOpen(true)}
-                      size="sm"
-                      variant={depositCompleted ? "default" : "outline"}
-                      className={depositCompleted ? "bg-blue-500 hover:bg-blue-600" : ""}
-                      disabled={!depositCompleted}
-                    >
-                      Release Escrow
-                    </Button>
+                  
+                  {/* Step 3: Release Funds to Seller */}
+                  <div className="flex items-center gap-3">
+                    <div className={`flex h-8 w-8 items-center justify-center rounded-full ${
+                      transactionStatus === 'completed'
+                        ? 'bg-green-500 text-white'
+                        : depositCompleted 
+                          ? 'bg-blue-500 text-white' 
+                          : 'bg-neutral-200 text-neutral-500'
+                    }`}>
+                      {transactionStatus === 'completed' ? <Check className="h-4 w-4" /> : 3}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex justify-between items-start">
+                        <h4 className={`font-medium ${
+                          transactionStatus === 'completed'
+                            ? 'text-green-700'
+                            : depositCompleted 
+                              ? 'text-blue-700' 
+                              : 'text-neutral-500'
+                        }`}>
+                          Release Funds to Seller
+                        </h4>
+                        {transactionStatus === 'completed' && (
+                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                            <Check className="mr-1 h-3 w-3" /> Completed
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-neutral-500 text-sm mb-2">
+                        {transactionStatus === 'completed'
+                          ? "Funds have been released to the seller and trade is complete"
+                          : "Release escrow funds after confirming receipt of commodities"}
+                      </p>
+                      {depositCompleted && transactionStatus !== 'completed' && (
+                        <Button 
+                          onClick={() => setIsEscrowReleaseModalOpen(true)}
+                          size="sm"
+                          variant="default"
+                          className="bg-blue-500 hover:bg-blue-600"
+                        >
+                          <ArrowRight className="mr-1 h-3 w-3" />
+                          Release Funds
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
