@@ -87,7 +87,7 @@ BarterTrade is a modern web-based platform for commodity trading and bartering w
 
 - **Storage**:
   - In-memory storage (development)
-  - Compatible with PostgreSQL (production)
+  - PostgreSQL (production)
 
 - **Security**:
   - Zero-knowledge proofs (Semaphore protocol)
