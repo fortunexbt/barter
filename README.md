@@ -139,7 +139,7 @@ For deployment instructions, see [Deployment Guide](documentation/deployment-gui
 
 - Implement proper database storage (PostgreSQL)
 - Add comprehensive error handling and logging
-- Enhance the KYC verification process with admin dashboard
+- Enhance the KYC verification process with third party verification (Trulioo)
 - Implement more robust smart contract integrations
 
 ### Long-term
