@@ -1,77 +1,39 @@
+import { lazy, Suspense } from "react";
 import { Switch, Route } from "wouter";
-import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "@/components/ui/toaster";
-import NotFound from "@/pages/not-found";
-import HomePage from "@/pages/home-page";
-import AuthPage from "@/pages/auth-page";
-import MarketplacePage from "@/pages/marketplace-page";
-import NewListingPage from "@/pages/new-listing-page";
-import EditListingPage from "@/pages/edit-listing-page";
-import ManageListingsPage from "@/pages/manage-listings-page";
-import CommodityDetailPage from "@/pages/commodity-detail-page";
-import BarterPage from "@/pages/barter-page";
-import BarterDetailPage from "@/pages/barter-detail-page";
-import TransactionsPage from "@/pages/transactions-page";
-import ContractsPage from "@/pages/contracts-page";
-import ProfilePage from "@/pages/profile-page";
-import SettingsPage from "@/pages/settings-page";
-import DealsPage from "@/pages/deals-page";
-import NotificationsPage from "@/pages/notifications-page";
-import AdminPage from "@/pages/admin-page";
-import { WelcomeModal } from "@/components/modals/welcome-modal";
-import { ProtectedRoute } from "./lib/protected-route";
-import { AuthProvider } from "./hooks/use-auth";
+import { queryClient } from "./lib/queryClient";
 import ErrorBoundary from "@/components/ui/error-boundary";
+import ProtocolLabPage from "@/pages/protocol-lab-page";
 
-function Router() {
+const LegacyApp = lazy(() => import("./legacy-app"));
+
+function LegacyLoading() {
   return (
-    <Switch>
-      <Route path="/auth" component={AuthPage} />
-      <ProtectedRoute path="/" component={HomePage} />
-      <ProtectedRoute path="/marketplace" component={MarketplacePage} />
-      <ProtectedRoute path="/marketplace/new" component={NewListingPage} />
-      <ProtectedRoute path="/marketplace/manage" component={ManageListingsPage} />
-      <ProtectedRoute path="/marketplace/edit/:id" component={EditListingPage} />
-      <ProtectedRoute path="/marketplace/:id" component={CommodityDetailPage} />
-      <ProtectedRoute path="/barter" component={BarterPage} />
-      <ProtectedRoute path="/barter/new" component={BarterPage} />
-      <ProtectedRoute path="/barter/:id" component={BarterDetailPage} />
-      <ProtectedRoute path="/transactions" component={TransactionsPage} />
-      <ProtectedRoute path="/contracts" component={ContractsPage} />
-      <ProtectedRoute path="/deals" component={DealsPage} />
-      <ProtectedRoute path="/profile" component={ProfilePage} />
-      <ProtectedRoute path="/profile/funds" component={ProfilePage} />
-      <ProtectedRoute path="/settings" component={SettingsPage} />
-      <ProtectedRoute path="/notifications" component={NotificationsPage} />
-      <ProtectedRoute path="/admin" component={AdminPage} />
-      <Route component={NotFound} />
-    </Switch>
+    <main className="flex min-h-screen items-center justify-center bg-neutral-100 px-6 text-center">
+      <div role="status">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">
+          Legacy prototype
+        </p>
+        <p className="mt-2 text-sm text-neutral-600">Opening the authenticated workspace…</p>
+      </div>
+    </main>
   );
 }
 
-function AppContent() {
-  return (
-    <>
-      <ErrorBoundary>
-        <Router />
-      </ErrorBoundary>
-      <WelcomeModal />
-      <Toaster />
-    </>
-  );
-}
-
-function App() {
+export default function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <AppContent />
-        </AuthProvider>
+        <Switch>
+          <Route path="/lab" component={ProtocolLabPage} />
+          <Route path="/demo" component={ProtocolLabPage} />
+          <Route>
+            <Suspense fallback={<LegacyLoading />}>
+              <LegacyApp />
+            </Suspense>
+          </Route>
+        </Switch>
       </QueryClientProvider>
     </ErrorBoundary>
   );
 }
-
-export default App;

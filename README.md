@@ -1,170 +1,107 @@
+# Barter Protocol Lab
 
-# BarterTrade Platform
+An interactive commodity-exchange protocol demonstrator: three synthetic trades, one deterministic state machine, and an immutable event tape you can replay without accounts, secrets, a database, or external services.
 
-BarterTrade is a modern web-based platform for commodity trading and bartering with secure identity verification through zero-knowledge proofs.
+[![CI](https://github.com/fortunexbt/barter/actions/workflows/ci.yml/badge.svg)](https://github.com/fortunexbt/barter/actions/workflows/ci.yml)
+![TypeScript](https://img.shields.io/badge/TypeScript-strict-111111)
+![License](https://img.shields.io/badge/license-MIT-b3261e)
 
-![BarterTrade](https://img.shields.io/badge/BarterTrade-Platform-blue)
-![React](https://img.shields.io/badge/React-Frontend-blue)
-![Express](https://img.shields.io/badge/Express-Backend-green)
-![TypeScript](https://img.shields.io/badge/TypeScript-Language-blue)
+![Barter Protocol Lab showing the deterministic paper-ledger workbench](./assets/barter-protocol-lab.jpg)
 
-## 🌟 Features
+The showcase route is **`/lab`**. Its visual language borrows from a 1970s commodity clearing desk: warm paper stock, drafting ink, customs-stamp green, red ledger rules, and monospaced manifests.
 
-- **User Authentication**: Secure login and registration
-- **KYC Verification**: Identity verification with zero-knowledge proof technology
-- **Commodity Management**: List, browse, and manage commodities
-- **Barter System**: AI-powered matching for optimal barter trades
-- **Smart Contracts**: Blockchain-backed contracts for secure transactions
-- **Real-time Notifications**: WebSocket-based notification system
-- **Interactive UI**: Modern, responsive interface built with React and Tailwind CSS
+## What you can replay
 
-## 🚀 Quick Start
+| Folio | Scenario | State path | Outcome |
+| --- | --- | --- | --- |
+| PL-0174-A | Copper cathodes / green coffee | match → terms → inspection | simulated settlement |
+| PL-0288-B | Durum wheat / freight capacity | match → counter → revised terms | simulated settlement |
+| PL-0312-C | Cocoa beans / machine bearings | match → inspection hold | clean cancellation |
 
-### Prerequisites
+Every timestamp, valuation, event, and journal fingerprint is fixed. Replaying the same scenario at the same step produces the same snapshot. The demo makes no network requests and moves no money, title, token, or commodity.
 
-- Node.js (14.x or higher)
-- npm or yarn
+## Run it
 
-### Installation
+Requirements: Node.js 20+ and npm.
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/username/bartertrade.git
-   cd bartertrade
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Start the development server:
-   ```bash
-   npm run dev
-   ```
-
-4. Open your browser and navigate to [http://localhost:5000](http://localhost:5000)
-
-## 🏗️ Project Structure
-
-```
-├── client/                 # Frontend React application
-│   ├── src/                # Source code
-│   │   ├── components/     # Reusable UI components
-│   │   ├── hooks/          # Custom React hooks
-│   │   ├── lib/            # Utility functions
-│   │   ├── pages/          # Page components
-│   │   ├── App.tsx         # Main application component
-│   │   └── main.tsx        # Entry point
-│   └── index.html          # HTML template
-├── server/                 # Backend Express server
-│   ├── services/           # Business logic services
-│   ├── auth.ts             # Authentication setup
-│   ├── index.ts            # Server entry point
-│   ├── routes.ts           # API routes
-│   ├── storage.ts          # Data storage layer
-│   └── vite.ts             # Vite configuration for dev server
-├── shared/                 # Shared code between client and server
-│   └── schema.ts           # Data models and validation schemas
-└── package.json            # Project dependencies and scripts
+```bash
+npm install
+npm run dev
 ```
 
-## 💻 Technology Stack
+Open [http://localhost:5000/lab](http://localhost:5000/lab). No `.env`, sign-in, Postgres instance, wallet, or API key is needed.
 
-- **Frontend**:
-  - React
-  - TypeScript
-  - Tailwind CSS
-  - Shadcn UI components
-  - React Query
-  - Wouter (routing)
+To exercise the complete quality gate:
 
-- **Backend**:
-  - Node.js
-  - Express
-  - Passport.js (authentication)
-  - WebSockets (real-time communications)
+```bash
+npm run verify
+```
 
-- **Storage**:
-  - In-memory storage (development)
-  - PostgreSQL (production)
+That command runs TypeScript checking, deterministic state-machine tests, and the production build.
 
-- **Security**:
-  - Zero-knowledge proofs (Semaphore protocol)
-  - Session-based authentication
-  - Input validation with Zod
+## Capability ledger
 
-## 🔑 Core Functionality
+The repository began as a broad marketplace prototype. This revival keeps that surface available for exploration while drawing a hard line between working software and product concepts.
 
-### Authentication Flow
+| Status | Included |
+| --- | --- |
+| Implemented | Public protocol lab, deterministic reducer, three replay fixtures, event journal, responsive UI, session authentication, in-memory development storage, optional Postgres adapter |
+| Simulated | Commodity reference values, counterparties, matching, inspection evidence, agreement records, escrow states, identity checks, settlement receipts |
+| Roadmap | Live market data, regulated identity provider, inspection network, custody or payment rails, legal title transfer, blockchain anchoring, production matching engine |
 
-1. User registers via `/api/register` endpoint
-2. User logs in via `/api/login` endpoint
-3. Server creates a session and returns user data
-4. Client stores user data in context and passes session cookie for subsequent requests
+The authenticated `/auth` workspace is explicitly marked **legacy prototype**. It is useful for exploring screens and data flows, but it is not a live marketplace and must not receive real identity documents, funds, wallet keys, or commercially sensitive data.
 
-### KYC Verification Flow
+## Architecture
 
-1. User submits KYC documents
-2. Admin reviews and verifies documents
-3. Zero-knowledge proofs are generated for privacy-preserving verification
-4. Verification status is updated in the user profile
+```text
+/lab UI ──> fixed scenario fixtures ──> pure replay reducer ──> snapshot + event tape
 
-### Trading and Bartering
+legacy UI ──> Express REST API ──> in-memory adapter (default)
+                              └──> PostgreSQL adapter (optional)
+```
 
-1. Users can list commodities for trade
-2. AI-powered matching system suggests optimal barter trades
-3. Users can create, accept, or reject barter offers
-4. Smart contracts ensure secure transactions
+The lab deliberately sits outside the authentication provider and storage layer. This keeps the showcase portable and makes its claims independently testable. The reducer rejects invalid transitions, clamps replay boundaries, and derives a stable journal mark from applied events.
 
-## 📚 API Reference
+Key files:
 
-For a complete list of API endpoints, see [API Reference](documentation/api-reference.md).
+- `client/src/features/protocol-lab/demo-engine.ts` — scenarios and replay engine
+- `client/src/features/protocol-lab/demo-engine.test.ts` — deterministic contract tests
+- `client/src/pages/protocol-lab-page.tsx` — public interactive showcase
+- `server/storage.ts` — typed in-memory adapter and optional database selection
+- `shared/schema.ts` — shared domain model
 
-## 📋 User Flows
+## Optional database mode
 
-For detailed user flows, see [User Flows Documentation](documentation/user-flows.md).
+Without `DATABASE_URL`, the server starts with deterministic in-memory fixtures. For persistent local development, copy `.env.example`, provide a PostgreSQL connection string, and run:
 
-## 🛠️ Development Guide
+```bash
+npm run db:push
+npm run dev
+```
 
-For technical implementation details, see [Technical Guide](documentation/technical-guide.md).
+A persistent production deployment must set a strong `SESSION_SECRET`. See `.env.example` for the supported variables.
 
-## 🚢 Deployment
+## Security boundary
 
-For deployment instructions, see [Deployment Guide](documentation/deployment-guide.md).
+- Registration always creates a standard trader account; clients cannot assign themselves admin or verified status.
+- Password hashes are excluded from authentication responses.
+- Session cookies are HTTP-only, same-site, and secure in production.
+- Identity screens accept only three named synthetic fixture IDs—there is no file picker or free-text document intake—and the API rejects every other value.
+- The legacy WebSocket endpoint fails closed until session-authenticated upgrades are implemented.
+- Production dependencies are audited in CI; `npm audit --omit=dev` reports zero known vulnerabilities at this revision.
+- The repository has not been audited for custody, compliance, or production commodity trading.
 
-## 🔄 Future Improvements
+## Scripts
 
-### Short-term
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Start Express and Vite on port 5000 |
+| `npm run check` | Run the TypeScript compiler |
+| `npm test` | Test deterministic replay invariants |
+| `npm run build` | Build browser and server bundles |
+| `npm run verify` | Run check, tests, and build |
+| `npm run db:push` | Push the optional Drizzle schema |
 
-- Implement proper database storage (PostgreSQL)
-- Add comprehensive error handling and logging
-- Enhance the KYC verification process with third party verification (Trulioo)
-- Implement more robust smart contract integrations
+## License
 
-### Long-term
-
-- Implement a mobile responsive design
-- Add multi-factor authentication
-- Develop a mobile app using React Native
-- Implement analytics and reporting features
-- Add support for multiple languages and currencies
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🙏 Acknowledgements
-
-- [Shadcn UI](https://ui.shadcn.com/) for the component library
-- [Semaphore Protocol](https://semaphore.appliedzkp.org/) for zero-knowledge proofs
-- [Tailwind CSS](https://tailwindcss.com/) for styling
-- [React Query](https://tanstack.com/query/latest) for data fetching
+MIT © 2026 FortuneXBT. See [LICENSE](LICENSE).

@@ -142,8 +142,8 @@ export default function ZkpVerificationModal({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       toast({
-        title: "Identity Verified",
-        description: "Your identity has been verified using zero-knowledge proof.",
+        title: "Proof Simulation Complete",
+        description: "The synthetic challenge-response experiment completed. This is not an identity verification.",
         variant: "default",
       });
       // Don't automatically close the modal - let the user review the proof and press the button
@@ -181,7 +181,9 @@ export default function ZkpVerificationModal({
       onOpenChange(false);
       
       // The profile page should listen for this event and show KYC Success Modal
-      window.dispatchEvent(new CustomEvent('zkpVerificationComplete'));
+      window.dispatchEvent(new CustomEvent('zkp-verification-complete', {
+        detail: { simulated: true },
+      }));
     } else {
       onOpenChange(false);
     }
@@ -206,9 +208,9 @@ export default function ZkpVerificationModal({
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Zero-Knowledge Identity Verification</DialogTitle>
+          <DialogTitle>Challenge-Response Experiment</DialogTitle>
           <DialogDescription>
-            Verifying your identity without sharing sensitive information
+            Demonstrating a proof-shaped flow with synthetic prototype data
           </DialogDescription>
         </DialogHeader>
         
@@ -216,7 +218,7 @@ export default function ZkpVerificationModal({
           <div className="flex items-center mb-6">
             <div className="w-full">
               <div className="flex justify-between mb-2 text-sm">
-                <span>{stage === "generating" ? "Generating Proof" : stage === "verifying" ? "Verifying Identity" : "Verification Complete"}</span>
+                <span>{stage === "generating" ? "Generating Fixture Proof" : stage === "verifying" ? "Checking Fixture" : "Experiment Complete"}</span>
                 <span>{Math.round(progress)}%</span>
               </div>
               <Progress value={progress} className="h-2" />
@@ -317,8 +319,8 @@ export default function ZkpVerificationModal({
                   ? '-translate-x-2 opacity-100' 
                   : 'translate-x-10 opacity-0'
               }`}>
-                <p className="font-semibold">Verifying Identity</p>
-                <p className="text-muted-foreground">Confirming without exposing data...</p>
+                <p className="font-semibold">Checking Fixture</p>
+                <p className="text-muted-foreground">Exercising the local proof flow...</p>
               </div>
             </div>
           </div>
@@ -326,7 +328,7 @@ export default function ZkpVerificationModal({
           {/* Generated proof display */}
           {proof && (
             <div className="mb-4">
-              <div className="text-xs text-muted-foreground mb-1">Generated Zero-Knowledge Proof:</div>
+              <div className="text-xs text-muted-foreground mb-1">Generated experiment payload:</div>
               <div className="p-2 bg-muted font-mono text-xs rounded-md break-all">
                 {proof}
               </div>
@@ -336,12 +338,11 @@ export default function ZkpVerificationModal({
           {/* Explanation of ZKP */}
           <div className="space-y-3 text-sm">
             <h4 className="font-medium flex items-center gap-2">
-              <KeyRound className="h-4 w-4 text-primary/70" /> How Zero-Knowledge Proofs Work
+              <KeyRound className="h-4 w-4 text-primary/70" /> Experiment Boundary
             </h4>
             <p className="text-muted-foreground text-xs">
-              Zero-knowledge proofs allow you to prove your identity to {counterpartyName} without 
-              sharing personal information. This cryptographic technique verifies you've been KYC-approved 
-              without exposing your identity documents.
+              This prototype explores a local challenge-response interaction with {counterpartyName} using fixture
+              inputs. It is not zero knowledge and does not validate a government identity, KYC approval, or a real counterparty.
             </p>
             
             {stage === "complete" && (
@@ -349,9 +350,9 @@ export default function ZkpVerificationModal({
                 <div className="flex items-start">
                   <CheckCircle className="h-5 w-5 text-green-600 mr-2 mt-0.5" />
                   <div>
-                    <h4 className="text-sm font-semibold text-green-800">Verification Successful</h4>
+                    <h4 className="text-sm font-semibold text-green-800">Proof Experiment Complete</h4>
                     <p className="text-xs text-green-700">
-                      Your identity has been cryptographically verified with {counterpartyName}. You can now proceed with the transaction securely.
+                      The synthetic proof flow completed for {counterpartyName}. This result carries no identity or transaction assurance.
                     </p>
                   </div>
                 </div>
@@ -371,7 +372,7 @@ export default function ZkpVerificationModal({
                 Processing...
               </>
             ) : stage === "complete" ? (
-              "Complete Verification"
+              "Close Experiment"
             ) : (
               "Cancel"
             )}

@@ -301,7 +301,7 @@ export default function BarterDetailPage() {
     if (!barterOffer?.offeringCommodity || !barterOffer?.requestingCommodity) {
       toast({
         title: "Missing Commodity Data",
-        description: "Cannot create smart contract: commodity data is missing",
+        description: "Cannot create agreement simulation: commodity data is missing",
         variant: "destructive"
       });
       return;
@@ -363,8 +363,8 @@ export default function BarterDetailPage() {
       
       // Success notification with clear next steps
       toast({
-        title: "Smart Contract Created!",
-        description: "Your contract has been generated successfully. You can now deposit funds to escrow.",
+        title: "Agreement Simulation Created",
+        description: "A local agreement record was generated. You can now record a notional deposit; no funds will move.",
       });
       
       return responseData;
@@ -384,7 +384,7 @@ export default function BarterDetailPage() {
     if (!contractAddress) {
       toast({
         title: "Missing Contract Address",
-        description: "Please create a smart contract first",
+        description: "Please create an agreement simulation first",
         variant: "destructive"
       });
       return;
@@ -430,8 +430,8 @@ export default function BarterDetailPage() {
     // Show detailed success message with amount
     const amount = data?.amount || escrowAmount;
     toast({
-      title: "Escrow Deposit Complete",
-      description: `$${amount} has been successfully deposited to the escrow contract. The seller will be notified to proceed with delivery.`,
+      title: "Notional Deposit Recorded",
+      description: `$${amount} was recorded in local prototype state. No funds moved and no seller was notified.`,
     });
     
     // Refresh all relevant data
@@ -443,8 +443,8 @@ export default function BarterDetailPage() {
   
   const handleEscrowReleased = () => {
     toast({
-      title: "Escrow Released",
-      description: "Funds have been released to the seller. Transaction complete.",
+      title: "Notional Release Recorded",
+      description: "The local simulation reached its release state. No funds moved.",
     });
     queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
   };
@@ -494,7 +494,7 @@ export default function BarterDetailPage() {
                 className="bg-secondary text-white"
               >
                 <Shield className="mr-2 h-4 w-4" />
-                Create Smart Contract
+                Create Agreement Simulation
               </Button>
             )}
             {barterOffer.status === "accepted" && contractCreated && contractAddress && (
@@ -505,13 +505,13 @@ export default function BarterDetailPage() {
                   // Create contract QR code modal or copy contract address to clipboard
                   navigator.clipboard.writeText(contractAddress);
                   toast({
-                    title: "Contract Address Copied",
-                    description: "The smart contract address has been copied to your clipboard.",
+                    title: "Simulation Reference Copied",
+                    description: "The local agreement reference has been copied to your clipboard.",
                   });
                 }}
               >
                 <Shield className="mr-2 h-4 w-4" />
-                Copy Contract Address
+                Copy Simulation Reference
               </Button>
             )}
           </div>
@@ -576,7 +576,7 @@ export default function BarterDetailPage() {
                           <p className="text-sm font-medium">{barterOffer.offeringUser.fullName}</p>
                           <div className="flex items-center">
                             <Badge variant="outline" className="text-xs mr-2">
-                              {barterOffer.offeringUser.verificationStatus || "Unverified"}
+                              Demo identity: {barterOffer.offeringUser.verificationStatus || "pending"}
                             </Badge>
                             <Button 
                               variant="ghost" 
@@ -584,7 +584,7 @@ export default function BarterDetailPage() {
                               className="h-6 px-2"
                               onClick={() => setIsZkpModalOpen(true)}
                             >
-                              Verify Identity
+                              Open Proof Experiment
                             </Button>
                           </div>
                         </div>
@@ -660,7 +660,7 @@ export default function BarterDetailPage() {
                           <p className="text-sm font-medium">{barterOffer.requestingUser.fullName}</p>
                           <div className="flex items-center">
                             <Badge variant="outline" className="text-xs mr-2">
-                              {barterOffer.requestingUser.verificationStatus || "Unverified"}
+                              Demo identity: {barterOffer.requestingUser.verificationStatus || "pending"}
                             </Badge>
                             <Button 
                               variant="ghost" 
@@ -668,7 +668,7 @@ export default function BarterDetailPage() {
                               className="h-6 px-2"
                               onClick={() => setIsZkpModalOpen(true)}
                             >
-                              Verify Identity
+                              Open Proof Experiment
                             </Button>
                           </div>
                         </div>
@@ -760,7 +760,7 @@ export default function BarterDetailPage() {
                   <div className="flex flex-wrap gap-4">
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="success" className="min-w-[120px]">
+                        <Button className="min-w-[120px] bg-green-700 text-white hover:bg-green-800">
                           <Check className="mr-2 h-4 w-4" />
                           Accept Offer
                         </Button>
@@ -837,7 +837,7 @@ export default function BarterDetailPage() {
                 Transaction Timeline
               </CardTitle>
               <CardDescription>
-                Real-time tracking of your barter transaction progress
+                Local tracking of simulated agreement and notional-settlement states
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -868,15 +868,15 @@ export default function BarterDetailPage() {
                       `}
                     >
                       {transactionStatus === 'completed' ? 'Completed' :
-                       transactionStatus === 'funded' ? 'Escrow Funded' : 'In Progress'}
+                       transactionStatus === 'funded' ? 'Notional Recorded' : 'In Progress'}
                     </Badge>
                   </div>
                 </div>
                 <Progress value={tradeProgress} className="h-3" />
                 <div className="flex justify-between text-xs text-neutral-500 mt-1">
-                  <span>Contract Creation</span>
-                  <span>Escrow Funded</span>
-                  <span>Trade Completed</span>
+                  <span>Agreement Record</span>
+                  <span>Notional Deposit</span>
+                  <span>Simulation Complete</span>
                 </div>
               </div>
               
@@ -886,7 +886,7 @@ export default function BarterDetailPage() {
                   <div className="md:col-span-2 bg-slate-50 p-4 rounded-md">
                     <h4 className="text-sm font-medium mb-3 flex items-center gap-1">
                       <Shield className="h-4 w-4 text-secondary" /> 
-                      Smart Contract Details
+                      Agreement Simulation Details
                     </h4>
                     <div className="grid grid-cols-2 gap-3 text-sm">
                       <div>
@@ -914,7 +914,7 @@ export default function BarterDetailPage() {
                         <p className="font-medium text-base">{formatCurrency(currentContract.price, 'USD')}</p>
                       </div>
                       <div className="col-span-2">
-                        <span className="text-neutral-500 block mb-1">Blockchain Address:</span>
+                        <span className="text-neutral-500 block mb-1">Simulation Reference:</span>
                         <div className="flex items-center gap-1 font-mono bg-white py-1 px-2 rounded border border-neutral-200 text-neutral-800 text-xs break-all">
                           {contractAddress || "Not available"}
                         </div>
@@ -925,7 +925,7 @@ export default function BarterDetailPage() {
                   {/* QR Code Display */}
                   {contractAddress && (
                     <div className="bg-white p-3 rounded-md shadow-sm border flex flex-col items-center justify-center">
-                      <span className="text-xs text-neutral-500 mb-1">Contract Address QR</span>
+                      <span className="text-xs text-neutral-500 mb-1">Simulation Reference QR</span>
                       <div className="bg-white p-2 rounded-md border-2 border-neutral-200">
                         <svg className="w-24 h-24" viewBox="0 0 100 100">
                           {/* Simple QR code SVG representation */}
@@ -968,7 +968,7 @@ export default function BarterDetailPage() {
                 <div className="mb-6">
                   <h4 className="text-sm font-medium mb-3 flex items-center gap-1">
                     <DollarSign className="h-4 w-4 text-secondary" />
-                    Transaction Activity Timeline
+                    Prototype Activity Timeline
                   </h4>
                   <div className="relative pl-6 border-l-2 border-neutral-200 space-y-4 py-1">
                     {currentTransactions.map((tx, index) => (
@@ -985,9 +985,9 @@ export default function BarterDetailPage() {
                           <div className="flex justify-between items-start">
                             <div>
                               <h5 className="font-medium">
-                                {tx.type === 'escrow_creation' && 'Smart Contract Created'}
-                                {tx.type === 'escrow_deposit' && 'Escrow Funds Deposited'}
-                                {tx.type === 'escrow_release' && 'Funds Released to Seller'}
+                                {tx.type === 'escrow_creation' && 'Agreement Record Created'}
+                                {tx.type === 'escrow_deposit' && 'Notional Deposit Recorded'}
+                                {tx.type === 'escrow_release' && 'Notional Release Recorded'}
                               </h5>
                               <p className="text-xs text-neutral-500">
                                 {formatRelativeTime(tx.createdAt)}
@@ -1002,7 +1002,7 @@ export default function BarterDetailPage() {
                           <div className="mt-2 text-sm">
                             {tx.type === 'escrow_creation' && (
                               <p className="text-neutral-600">
-                                Smart contract created by {
+                                Local agreement record created by {
                                   tx.senderId === barterOffer.offeringUserId 
                                     ? barterOffer.offeringUser?.fullName 
                                     : barterOffer.requestingUser?.fullName
@@ -1011,7 +1011,7 @@ export default function BarterDetailPage() {
                             )}
                             {tx.type === 'escrow_deposit' && (
                               <p className="text-neutral-600">
-                                <span className="font-medium">{formatCurrency(tx.amount || 0, 'USD')}</span> deposited into escrow by {
+                                <span className="font-medium">{formatCurrency(tx.amount || 0, 'USD')}</span> recorded as notional by {
                                   tx.senderId === barterOffer.offeringUserId 
                                     ? barterOffer.offeringUser?.fullName 
                                     : barterOffer.requestingUser?.fullName
@@ -1020,7 +1020,7 @@ export default function BarterDetailPage() {
                             )}
                             {tx.type === 'escrow_release' && (
                               <p className="text-neutral-600">
-                                <span className="font-medium">{formatCurrency(tx.amount || 0, 'USD')}</span> released to {
+                                <span className="font-medium">{formatCurrency(tx.amount || 0, 'USD')}</span> marked released for {
                                   tx.receiverId === barterOffer.offeringUserId 
                                     ? barterOffer.offeringUser?.fullName 
                                     : barterOffer.requestingUser?.fullName
@@ -1053,7 +1053,7 @@ export default function BarterDetailPage() {
                     <div className="flex-1">
                       <div className="flex justify-between items-start">
                         <h4 className={`font-medium ${contractCreated ? 'text-green-700' : ''}`}>
-                          Create Smart Contract
+                          Create Agreement Record
                         </h4>
                         {contractCreated && (
                           <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
@@ -1063,8 +1063,8 @@ export default function BarterDetailPage() {
                       </div>
                       <p className="text-neutral-500 text-sm mb-2">
                         {contractCreated 
-                          ? `Contract created with address ${contractAddress.substring(0, 8)}...` 
-                          : "Initialize a secure escrow contract for this barter"}
+                          ? `Local record created with reference ${contractAddress.substring(0, 8)}...`
+                          : "Initialize a local agreement simulation for this barter"}
                       </p>
                       {contractCreating ? (
                         <Button 
@@ -1073,7 +1073,7 @@ export default function BarterDetailPage() {
                           disabled
                         >
                           <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                          Creating Contract...
+                          Creating Record...
                         </Button>
                       ) : !contractCreated && (
                         <Button 
@@ -1081,7 +1081,7 @@ export default function BarterDetailPage() {
                           size="sm"
                           className="bg-secondary text-white"
                         >
-                          Create Contract
+                          Create Record
                         </Button>
                       )}
                     </div>
@@ -1107,7 +1107,7 @@ export default function BarterDetailPage() {
                               ? 'text-blue-700' 
                               : 'text-neutral-500'
                         }`}>
-                          Deposit Funds to Escrow
+                          Record Notional Deposit
                         </h4>
                         {depositCompleted && (
                           <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
@@ -1117,8 +1117,8 @@ export default function BarterDetailPage() {
                       </div>
                       <p className="text-neutral-500 text-sm mb-2">
                         {depositCompleted 
-                          ? `${formatCurrency(parseFloat(escrowAmount), 'USD')} successfully deposited to escrow` 
-                          : "Lock funds in the escrow contract to secure the transaction"}
+                          ? `${formatCurrency(parseFloat(escrowAmount), 'USD')} recorded as notional prototype state`
+                          : "Advance the simulation without holding or transferring funds"}
                       </p>
                       {!depositCompleted && contractCreated && (
                         <Button 
@@ -1128,7 +1128,7 @@ export default function BarterDetailPage() {
                           className="bg-blue-500 hover:bg-blue-600"
                         >
                           <DollarSign className="mr-1 h-3 w-3" />
-                          Deposit {escrowAmount && formatCurrency(parseFloat(escrowAmount), 'USD')}
+                          Record {escrowAmount && formatCurrency(parseFloat(escrowAmount), 'USD')}
                         </Button>
                       )}
                     </div>
@@ -1154,7 +1154,7 @@ export default function BarterDetailPage() {
                               ? 'text-blue-700' 
                               : 'text-neutral-500'
                         }`}>
-                          Release Funds to Seller
+                          Record Notional Release
                         </h4>
                         {transactionStatus === 'completed' && (
                           <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
@@ -1164,8 +1164,8 @@ export default function BarterDetailPage() {
                       </div>
                       <p className="text-neutral-500 text-sm mb-2">
                         {transactionStatus === 'completed'
-                          ? "Funds have been released to the seller and trade is complete"
-                          : "Release escrow funds after confirming receipt of commodities"}
+                          ? "The simulation reached its release state; no funds moved"
+                          : "Advance local state after the fixture delivery confirmation"}
                       </p>
                       {depositCompleted && transactionStatus !== 'completed' && (
                         <Button 
@@ -1175,7 +1175,7 @@ export default function BarterDetailPage() {
                           className="bg-blue-500 hover:bg-blue-600"
                         >
                           <ArrowRight className="mr-1 h-3 w-3" />
-                          Release Funds
+                          Record Release
                         </Button>
                       )}
                     </div>

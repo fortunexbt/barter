@@ -95,41 +95,41 @@ export default function SmartContractModal({
   const creationSteps = [
     {
       icon: <Boxes className="h-8 w-8 text-blue-500" />,
-      title: "Smart Contract Initialization",
-      description: "Preparing escrow contract for your commodity exchange"
+      title: "Agreement Initialization",
+      description: "Preparing a local agreement record for the exchange simulation"
     },
     {
       icon: <Shield className="h-8 w-8 text-indigo-500" />,
-      title: "Contract Deployment",
-      description: "Deploying secure escrow smart contract to the blockchain"
+      title: "Journal Recording",
+      description: "Writing the simulated agreement to the local prototype journal"
     },
     {
       icon: <CheckCircle className="h-8 w-8 text-green-500" />,
-      title: "Contract Created",
-      description: "Smart contract successfully deployed and ready for transactions"
+      title: "Record Created",
+      description: "Agreement simulation is ready for the next local state change"
     }
   ];
   
   const completionSteps = [
     {
       icon: <FileCheck className="h-8 w-8 text-blue-500" />,
-      title: "Verification Process",
-      description: "Confirming transaction details and party identities"
+      title: "Fixture Check",
+      description: "Checking synthetic transaction details and identity states"
     },
     {
       icon: <ArrowLeftRight className="h-8 w-8 text-indigo-500" />,
-      title: "Fund Transfer",
-      description: "Processing secure transaction between parties"
+      title: "Notional Transfer",
+      description: "Recording a simulated value movement between fixture parties"
     },
     {
       icon: <Link className="h-8 w-8 text-purple-500" />,
-      title: "Blockchain Confirmation",
-      description: "Recording transaction on the distributed ledger"
+      title: "Journal Confirmation",
+      description: "Recording the state transition in the local prototype"
     },
     {
       icon: <CheckCircle className="h-8 w-8 text-green-500" />,
       title: "Transaction Complete",
-      description: "Contract successfully executed and assets transferred"
+      description: "Simulation completed; no assets were transferred"
     }
   ];
   
@@ -141,13 +141,13 @@ export default function SmartContractModal({
         <DialogHeader>
           <DialogTitle>
             {type === "created" 
-              ? "Smart Contract Created" 
-              : "Smart Contract Executed"}
+              ? "Agreement Record Created"
+              : "Settlement Simulation Complete"}
           </DialogTitle>
           <DialogDescription>
             {type === "created"
-              ? `Creating secure escrow smart contract for ${commodityName}`
-              : `Finalizing transaction for ${commodityName} with blockchain security`}
+              ? `Creating a local agreement record for ${commodityName}`
+              : `Finalizing the local settlement simulation for ${commodityName}`}
           </DialogDescription>
         </DialogHeader>
         
@@ -155,7 +155,7 @@ export default function SmartContractModal({
           <div className="flex items-center justify-center mb-6">
             <div className="w-full">
               <div className="flex justify-between mb-2 text-sm">
-                <span>{type === "created" ? "Deployment Progress" : "Transaction Progress"}</span>
+                <span>{type === "created" ? "Recording Progress" : "Simulation Progress"}</span>
                 <span>{Math.round(progress)}%</span>
               </div>
               <Progress value={progress} className="h-2" />
@@ -184,13 +184,13 @@ export default function SmartContractModal({
           {/* Contract details */}
           <div className="mb-6 space-y-3 text-xs">
             <div className="p-3 bg-muted rounded-lg font-mono">
-              <div className="mb-1 text-muted-foreground">Contract Address:</div>
+              <div className="mb-1 text-muted-foreground">Simulation Reference:</div>
               <div className="text-primary">{contractAddress}</div>
             </div>
             
             {step >= 2 && (
               <div className="p-3 bg-muted rounded-lg font-mono">
-                <div className="mb-1 text-muted-foreground">Transaction Hash:</div>
+                <div className="mb-1 text-muted-foreground">Journal Mark:</div>
                 <div className="text-primary">{getTxHash()}</div>
               </div>
             )}
@@ -231,13 +231,13 @@ export default function SmartContractModal({
                 <div>
                   <h4 className="text-sm font-semibold text-green-800">
                     {type === "created" 
-                      ? "Contract Ready" 
-                      : "Transaction Successful"}
+                      ? "Record Ready"
+                      : "Simulation Complete"}
                   </h4>
                   <p className="text-xs text-green-700">
                     {type === "created" 
-                      ? `Your escrow smart contract for ${commodityName} has been deployed to the blockchain. The contract is now ready to secure your transaction.`
-                      : `The transaction for ${commodityName} has been successfully verified and recorded on the blockchain. All parties have been notified.`}
+                      ? `A local agreement record for ${commodityName} is ready. Nothing was deployed and no assets are protected or held.`
+                      : `The synthetic ${commodityName} transaction reached its terminal local state. No assets moved and no external party was notified.`}
                   </p>
                 </div>
               </div>

@@ -135,8 +135,8 @@ export default function CommodityDetail({ commodityId }: CommodityDetailProps) {
       setEscrowDepositAmount(calculateTotal());
       setShowContractDialog(true);
       toast({
-        title: "Escrow contract created",
-        description: "Smart contract has been deployed to the blockchain",
+        title: "Agreement simulation created",
+        description: "A local prototype record has been generated; nothing was deployed",
         variant: "default"
       });
     },
@@ -165,8 +165,8 @@ export default function CommodityDetail({ commodityId }: CommodityDetailProps) {
     },
     onSuccess: (data) => {
       toast({
-        title: "Funds deposited to escrow",
-        description: "Transaction has been sent to the blockchain",
+        title: "Notional deposit recorded",
+        description: "The prototype state was updated locally; no funds moved",
         variant: "default"
       });
       // Invalidate related queries
@@ -196,8 +196,8 @@ export default function CommodityDetail({ commodityId }: CommodityDetailProps) {
     },
     onSuccess: (data) => {
       toast({
-        title: "Funds released from escrow",
-        description: "Transaction has been sent to the blockchain",
+        title: "Notional release recorded",
+        description: "The prototype state was updated locally; no funds moved",
         variant: "default"
       });
       // Invalidate related queries
@@ -314,15 +314,15 @@ export default function CommodityDetail({ commodityId }: CommodityDetailProps) {
             
             <Accordion type="single" collapsible className="w-full">
               <AccordionItem value="blockchain">
-                <AccordionTrigger>Blockchain Verification</AccordionTrigger>
+                <AccordionTrigger>Prototype Evidence</AccordionTrigger>
                 <AccordionContent>
                   <div className="space-y-4">
                     <div className="flex items-start">
                       <ShieldCheck className="h-5 w-5 text-success mr-2 mt-0.5" />
                       <div>
-                        <p className="font-medium">Verified Digital Ownership</p>
+                        <p className="font-medium">Synthetic ownership record</p>
                         <p className="text-sm text-neutral-500">
-                          This commodity has been verified on the blockchain with smart contract protection.
+                          This fixture includes a local ownership marker for interface demonstration only.
                         </p>
                       </div>
                     </div>
@@ -398,7 +398,7 @@ export default function CommodityDetail({ commodityId }: CommodityDetailProps) {
                         <span className="font-medium">KYC Status:</span>
                         {owner.kycStatus === "verified" ? (
                           <span className="inline-flex items-center ml-2 text-success">
-                            <CheckCircle className="h-3 w-3 mr-1" /> Verified
+                            <CheckCircle className="h-3 w-3 mr-1" /> Demo complete
                           </span>
                         ) : (
                           <span className="inline-flex items-center ml-2 text-warning">
@@ -442,12 +442,12 @@ export default function CommodityDetail({ commodityId }: CommodityDetailProps) {
                       {createEscrowMutation.isPending && (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       )}
-                      Create Smart Contract
+                      Create agreement simulation
                     </Button>
                     
                     <div className="text-xs text-neutral-500 text-center">
-                      <p>Secure transaction with escrow protection</p>
-                      <p>ZKP-verified seller identity</p>
+                      <p>Local notional-settlement state</p>
+                      <p>Synthetic seller identity state</p>
                     </div>
                   </div>
                 )}
@@ -491,9 +491,9 @@ export default function CommodityDetail({ commodityId }: CommodityDetailProps) {
       <Dialog open={showContractDialog} onOpenChange={setShowContractDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Smart Contract Escrow</DialogTitle>
+            <DialogTitle>Notional Settlement Simulation</DialogTitle>
             <DialogDescription>
-              Commodity purchase is secured through a blockchain smart contract escrow system
+              Explore the prototype agreement sequence. No blockchain or custody service is connected.
             </DialogDescription>
           </DialogHeader>
           
@@ -501,22 +501,22 @@ export default function CommodityDetail({ commodityId }: CommodityDetailProps) {
             <div className="bg-neutral-50 p-4 rounded-md">
               <h4 className="font-medium mb-2 flex items-center">
                 <ShieldCheck className="h-4 w-4 text-success mr-2" />
-                Escrow Contract Created
+                Agreement Record Created
               </h4>
               <p className="text-xs text-neutral-600 font-mono break-all">
-                Contract Address: {escrowAddress}
+                Simulation Reference: {escrowAddress}
               </p>
             </div>
             
             <div className="space-y-3">
-              <h4 className="font-medium">Escrow Process:</h4>
+              <h4 className="font-medium">Simulated process:</h4>
               <div className="flex items-start">
                 <div className="flex-shrink-0 h-6 w-6 rounded-full bg-primary bg-opacity-10 flex items-center justify-center text-primary">
                   1
                 </div>
                 <div className="ml-3">
-                  <p className="text-sm">Deposit funds to the escrow contract</p>
-                  <p className="text-xs text-neutral-500">Funds will be held securely until delivery</p>
+                  <p className="text-sm">Record a notional deposit</p>
+                  <p className="text-xs text-neutral-500">No funds are held or transferred</p>
                 </div>
               </div>
               <div className="flex items-start">
@@ -533,7 +533,7 @@ export default function CommodityDetail({ commodityId }: CommodityDetailProps) {
                   3
                 </div>
                 <div className="ml-3">
-                  <p className="text-sm">Release funds after confirmation</p>
+                  <p className="text-sm">Record a notional release after confirmation</p>
                   <p className="text-xs text-neutral-500">Complete the transaction after successful delivery</p>
                 </div>
               </div>
@@ -556,7 +556,7 @@ export default function CommodityDetail({ commodityId }: CommodityDetailProps) {
                 {depositToEscrowMutation.isPending && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
-                Deposit ${escrowDepositAmount}
+                Record ${escrowDepositAmount} notional
               </Button>
               <Button
                 onClick={handleReleaseEscrow}
@@ -565,7 +565,7 @@ export default function CommodityDetail({ commodityId }: CommodityDetailProps) {
                 {releaseFromEscrowMutation.isPending && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
-                Release Funds
+                Record Release
               </Button>
             </div>
           </DialogFooter>

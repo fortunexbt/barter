@@ -132,10 +132,10 @@ export function KycSuccessModal({ isOpen, onOpenChange }: KycSuccessModalProps) 
           
           <DialogHeader className="pt-8">
             <DialogTitle className="text-xl text-center">
-              🎉 KYC Approved!
+              Identity Simulation Complete
             </DialogTitle>
             <DialogDescription className="text-center text-base pt-2">
-              You're ready to explore BarterTrade
+              The fixture tour is ready; no KYC approval was issued
             </DialogDescription>
           </DialogHeader>
           
@@ -144,40 +144,40 @@ export function KycSuccessModal({ isOpen, onOpenChange }: KycSuccessModalProps) 
               <div className="bg-primary/5 p-3 rounded-lg border border-primary/10">
                 <div className="flex items-center gap-2 mb-2">
                   <Lock className="h-4 w-4 text-primary/80" />
-                  <h4 className="text-sm font-medium">Privacy Secured</h4>
+                  <h4 className="text-sm font-medium">Proof Experiment</h4>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Your identity is protected with zero-knowledge proofs
+                  Synthetic proof-flow state recorded for this prototype
                 </p>
               </div>
               
               <div className="bg-primary/5 p-3 rounded-lg border border-primary/10">
                 <div className="flex items-center gap-2 mb-2">
                   <FileCheck className="h-4 w-4 text-primary/80" />
-                  <h4 className="text-sm font-medium">Smart Contracts</h4>
+                  <h4 className="text-sm font-medium">Agreement Simulations</h4>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Access to secure blockchain-based contracts
+                  Access to local agreement simulation screens
                 </p>
               </div>
               
               <div className="bg-primary/5 p-3 rounded-lg border border-primary/10">
                 <div className="flex items-center gap-2 mb-2">
                   <ArrowRightLeft className="h-4 w-4 text-primary/80" />
-                  <h4 className="text-sm font-medium">Unlimited Trading</h4>
+                  <h4 className="text-sm font-medium">Fixture Limits</h4>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  No volume restrictions on your transactions
+                  Explore simulated limit and volume states
                 </p>
               </div>
               
               <div className="bg-primary/5 p-3 rounded-lg border border-primary/10">
                 <div className="flex items-center gap-2 mb-2">
                   <PartyPopper className="h-4 w-4 text-primary/80" />
-                  <h4 className="text-sm font-medium">Premium Access</h4>
+                  <h4 className="text-sm font-medium">Prototype Access</h4>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Unlock all features of the platform
+                  Explore the legacy interface without production assurances
                 </p>
               </div>
             </div>
@@ -188,9 +188,9 @@ export function KycSuccessModal({ isOpen, onOpenChange }: KycSuccessModalProps) 
                   <Check className="h-3.5 w-3.5 text-green-600" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-semibold text-green-800">Marketplace Unlocked</h4>
+                  <h4 className="text-sm font-semibold text-green-800">Prototype Tour Available</h4>
                   <p className="text-xs text-green-700">
-                    Explore commodities, create offers, and build your trade network with full platform access.
+                    Explore synthetic commodities and offers. Nothing here constitutes a live market or trading account.
                   </p>
                 </div>
               </div>
@@ -202,7 +202,7 @@ export function KycSuccessModal({ isOpen, onOpenChange }: KycSuccessModalProps) 
               className="w-full"
               onClick={handleGoToMarketplace}
             >
-              Go to Marketplace
+              Explore Legacy Prototype
               <ChevronRight className="ml-2 h-4 w-4" />
             </Button>
           </DialogFooter>

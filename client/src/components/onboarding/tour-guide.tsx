@@ -59,8 +59,8 @@ export default function TourGuide() {
     },
     {
       id: 'kyc-tab',
-      title: 'KYC Verification Tab',
-      description: 'Click on the "KYC Verification" tab to complete your identity verification process.',
+      title: 'Identity Simulation Tab',
+      description: 'Open the identity tab to explore the synthetic document and proof flow.',
       targetPath: '/profile',
       targetSelector: 'button[value="kyc"]',
       position: 'bottom',
@@ -90,7 +90,7 @@ export default function TourGuide() {
     {
       id: 'barter',
       title: 'Start Bartering',
-      description: 'Create and manage barter offers with our AI-powered matching system for optimal trades.',
+      description: 'Create and manage barter offers with fixture-backed matching suggestions.',
       targetPath: '/barter',
       targetSelector: '[data-tour="barter-offers"]',
       position: 'right',
@@ -99,8 +99,8 @@ export default function TourGuide() {
     },
     {
       id: 'contracts',
-      title: 'Secure with Smart Contracts',
-      description: 'Use blockchain-based smart contracts for secure and trustless commodity exchanges.',
+      title: 'Model Agreement States',
+      description: 'Walk through local agreement states. These screens do not deploy contracts or transfer assets.',
       targetPath: '/contracts',
       targetSelector: '[data-tour="contracts-list"]',
       position: 'left',

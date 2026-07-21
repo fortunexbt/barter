@@ -72,10 +72,10 @@ export function WelcomeModal({ forceOpen = false, onClose }: WelcomeModalProps) 
             <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
               <PartyPopper className="h-5 w-5 text-primary" />
             </div>
-            <span>👋 Welcome to BarterTrade!</span>
+            <span>Welcome to the Legacy Prototype</span>
           </DialogTitle>
           <DialogDescription className="text-base pt-2">
-            To start trading, please complete your KYC verification.
+            Explore a synthetic identity-flow interface before browsing fixture market screens.
           </DialogDescription>
         </DialogHeader>
         
@@ -86,9 +86,9 @@ export function WelcomeModal({ forceOpen = false, onClose }: WelcomeModalProps) 
                 <ShieldCheck className="h-5 w-5 text-primary" />
               </div>
               <div className="flex-1">
-                <h4 className="text-sm font-medium">Why verify your identity?</h4>
+                <h4 className="text-sm font-medium">What is this flow?</h4>
                 <p className="text-sm text-muted-foreground mt-1">
-                  KYC verification increases trust between trading parties and unlocks premium features like smart contracts and escrow services.
+                  This synthetic identity flow demonstrates interface states only. It does not increase counterparty trust or unlock real financial services.
                 </p>
               </div>
             </div>
@@ -100,19 +100,19 @@ export function WelcomeModal({ forceOpen = false, onClose }: WelcomeModalProps) 
                 <div className="h-5 w-5 rounded-full bg-primary/20 flex items-center justify-center">
                   <span className="text-xs font-medium text-primary">1</span>
                 </div>
-                <span>Upload identification document</span>
+                <span>Use synthetic document fields only</span>
               </li>
               <li className="flex items-center gap-2">
                 <div className="h-5 w-5 rounded-full bg-primary/20 flex items-center justify-center">
                   <span className="text-xs font-medium text-primary">2</span>
                 </div>
-                <span>Generate secure zero-knowledge proof</span>
+                <span>Explore a local challenge-response experiment</span>
               </li>
               <li className="flex items-center gap-2">
                 <div className="h-5 w-5 rounded-full bg-primary/20 flex items-center justify-center">
                   <span className="text-xs font-medium text-primary">3</span>
                 </div>
-                <span>Start trading with full platform access</span>
+                <span>Continue to fixture marketplace screens</span>
               </li>
             </ul>
           </div>
@@ -123,7 +123,7 @@ export function WelcomeModal({ forceOpen = false, onClose }: WelcomeModalProps) 
             className="w-full sm:w-auto"
             onClick={handleBeginKYC}
           >
-            Begin KYC Process
+            Open Identity Simulation
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </DialogFooter>

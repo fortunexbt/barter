@@ -1,6 +1,8 @@
 
 # User Flows Documentation
 
+> **Archived concept flows.** These sequences describe the original UI intent, not real KYC, custody, blockchain settlement, market access, or asset movement. The revived `/lab` route is the supported deterministic demonstration.
+
 This document outlines the key user flows in the BarterTrade platform.
 
 ## 1. User Registration and Onboarding

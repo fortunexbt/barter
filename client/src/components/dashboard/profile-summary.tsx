@@ -51,7 +51,7 @@ export default function ProfileSummary() {
                   ? <BadgeCheck className="h-3 w-3 mr-1" /> 
                   : <Clock className="h-3 w-3 mr-1" />
                 }
-                {user.kycStatus === "verified" ? "Verified" : "Pending"}
+              {user.kycStatus === "verified" ? "Demo complete" : "Demo pending"}
               </span>
             </div>
           </div>
