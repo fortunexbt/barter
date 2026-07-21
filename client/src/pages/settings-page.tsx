@@ -973,7 +973,7 @@ export default function SettingsPage() {
                     <Separator />
                     
                     <div>
-                      <h3 className="text-sm font-medium mb-3">Smart Contract Preferences</h3>
+                      <h3 className="text-sm font-medium mb-3">Settlement Simulation Preferences</h3>
                       <div className="flex flex-row items-center justify-between rounded-lg border p-4">
                         <div className="space-y-0.5">
                           <Label>Automatic Contract Execution</Label>
@@ -988,7 +988,7 @@ export default function SettingsPage() {
                         <div className="space-y-0.5">
                           <Label>Gas Price Optimization</Label>
                           <p className="text-sm text-neutral-500">
-                            Optimize gas fees for blockchain transactions
+                            Prefer lower notional processing costs in demo receipts
                           </p>
                         </div>
                         <Switch defaultChecked />

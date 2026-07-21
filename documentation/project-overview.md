@@ -1,6 +1,8 @@
 
 # BarterTrade Platform Documentation
 
+> **Archived product concept.** This document preserves the original prototype brief; its blockchain, escrow, identity verification, real-time notification, and marketplace language is aspirational rather than implemented production capability. The root README and `/lab` status sheet are authoritative.
+
 ## 1. Project Overview
 
 BarterTrade is a web-based platform designed to facilitate commodity trading and bartering between users. The platform combines traditional trading mechanisms with modern zero-knowledge proof (ZKP) technology for secure identity verification.

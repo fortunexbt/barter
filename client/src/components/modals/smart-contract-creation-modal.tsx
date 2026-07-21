@@ -160,10 +160,10 @@ export default function SmartContractCreationModal({
       queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
       
       toast({
-        title: "Smart Contract Created",
+        title: "Agreement Simulation Created",
         description: contractAddress 
-          ? `Escrow contract created with address ${contractAddress.substring(0, 8)}...`
-          : "Escrow contract created successfully",
+          ? `Local record created with reference ${contractAddress.substring(0, 8)}...`
+          : "Local agreement record created successfully",
       });
       
       if (onSuccess) {
@@ -251,14 +251,14 @@ export default function SmartContractCreationModal({
         <DialogContent className="sm:max-w-md md:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              {step === "create" && <><KeyRound className="h-5 w-5 text-primary" /> Generate Smart Contract</>}
-              {step === "processing" && <><Loader2 className="h-5 w-5 animate-spin text-primary" /> Creating Smart Contract...</>}
-              {step === "complete" && <><CheckCircle2 className="h-5 w-5 text-green-500" /> Smart Contract Created</>}
+              {step === "create" && <><KeyRound className="h-5 w-5 text-primary" /> Generate Agreement Record</>}
+              {step === "processing" && <><Loader2 className="h-5 w-5 animate-spin text-primary" /> Creating Local Record...</>}
+              {step === "complete" && <><CheckCircle2 className="h-5 w-5 text-green-500" /> Agreement Record Created</>}
             </DialogTitle>
             <DialogDescription>
-              {step === "create" && "Creating a secure blockchain contract for this commodity transaction."}
-              {step === "processing" && "Please wait while the contract is being deployed to the blockchain."}
-              {step === "complete" && "Your escrow contract has been successfully deployed to the blockchain."}
+              {step === "create" && "Create a simulated agreement record for this commodity transaction."}
+              {step === "processing" && "The prototype is writing a local agreement and journal reference."}
+              {step === "complete" && "The local agreement simulation is ready. Nothing was deployed or funded."}
             </DialogDescription>
           </DialogHeader>
 
@@ -303,9 +303,9 @@ export default function SmartContractCreationModal({
                     className="w-full flex items-center justify-center gap-2"
                     disabled={form.formState.isSubmitting}>
                     {form.formState.isSubmitting ? (
-                      <><Loader2 className="h-4 w-4 animate-spin" /> Creating Contract...</>
+                      <><Loader2 className="h-4 w-4 animate-spin" /> Creating Record...</>
                     ) : (
-                      <><KeyRound className="h-4 w-4" /> Generate Smart Contract</>
+                      <><KeyRound className="h-4 w-4" /> Generate Agreement Record</>
                     )}
                   </Button>
                 </>
@@ -327,7 +327,7 @@ export default function SmartContractCreationModal({
             <div className="flex flex-col items-center justify-center py-12">
               <Loader2 className="h-16 w-16 animate-spin text-primary" />
               <p className="mt-6 text-center text-muted-foreground">
-                Creating your secure escrow contract on the blockchain...
+                Writing the agreement simulation to the local prototype journal...
                 <br />
                 <span className="text-xs">This may take a few moments.</span>
               </p>
@@ -353,7 +353,7 @@ export default function SmartContractCreationModal({
                       />
                     )}
                   </div>
-                  <p className="mt-2 text-xs text-center text-muted-foreground">Scan to view on blockchain</p>
+                  <p className="mt-2 text-xs text-center text-muted-foreground">Encoded simulation reference</p>
                 </div>
 
                 {/* Contract details */}
@@ -364,7 +364,7 @@ export default function SmartContractCreationModal({
                   <div className="space-y-2">
                     {contractData.contractAddress && (
                       <div className="space-y-1">
-                        <div className="text-xs text-muted-foreground">Contract Address</div>
+                        <div className="text-xs text-muted-foreground">Simulation Reference</div>
                         <div className="flex items-center gap-2">
                           <Badge variant="outline" className="font-mono text-xs bg-primary/5 px-2 py-1 overflow-hidden text-ellipsis whitespace-nowrap max-w-full">
                             {contractData.contractAddress}
@@ -375,7 +375,7 @@ export default function SmartContractCreationModal({
                     
                     {contractData.transactionHash && (
                       <div className="space-y-1">
-                        <div className="text-xs text-muted-foreground">Transaction Hash</div>
+                        <div className="text-xs text-muted-foreground">Journal Mark</div>
                         <div className="font-mono text-xs bg-muted-foreground/10 px-2 py-1 rounded-sm overflow-hidden text-ellipsis whitespace-nowrap">
                           {contractData.transactionHash}
                         </div>
@@ -404,10 +404,10 @@ export default function SmartContractCreationModal({
                 <div className="flex items-start gap-2">
                   <Banknote className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
                   <div>
-                    <h3 className="font-medium text-sm">Next Step: Deposit Funds</h3>
+                    <h3 className="font-medium text-sm">Next Step: Record Notional Deposit</h3>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Your escrow smart contract has been created successfully. To proceed with the transaction, 
-                      you need to deposit ${form.getValues().amount} to the escrow address.
+                      The agreement simulation is ready. You may record a ${form.getValues().amount} notional
+                      deposit; no money will be held or transferred.
                     </p>
                   </div>
                 </div>

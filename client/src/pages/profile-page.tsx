@@ -31,7 +31,7 @@ import {
   FormMessage 
 } from "@/components/ui/form";
 import { 
-  Loader2, Upload, Check, Image as ImageIcon, ShieldCheck, Key, 
+  Loader2, Upload, Image as ImageIcon, ShieldCheck, Key,
   CheckCircle, AlertTriangle, Briefcase, MapPin, Calendar, 
   Award, CreditCard, Settings, Bell, Lock, PieChart,
   UserCircle, Clock, Truck, Box, BarChart2, FileText, Share2
@@ -60,13 +60,6 @@ const profileFormSchema = z.object({
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
-
-const kycFormSchema = z.object({
-  documentType: z.string().min(1, "Document type is required"),
-  documentNumber: z.string().min(1, "Document number is required"),
-});
-
-type KycFormValues = z.infer<typeof kycFormSchema>;
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -120,15 +113,6 @@ export default function ProfilePage() {
     },
   });
   
-  // Form for KYC verification
-  const kycForm = useForm<KycFormValues>({
-    resolver: zodResolver(kycFormSchema),
-    defaultValues: {
-      documentType: "",
-      documentNumber: "",
-    },
-  });
-  
   // Update profile form when user data changes
   useEffect(() => {
     if (user) {
@@ -177,58 +161,6 @@ export default function ProfilePage() {
     },
   });
   
-  // Submit KYC document mutation
-  const submitKycMutation = useMutation({
-    mutationFn: async (kycData: KycFormValues) => {
-      if (!user) throw new Error("User not authenticated");
-      
-      const response = await apiRequest("POST", "/api/kyc/submit", {
-        userId: user.id,
-        ...kycData,
-      });
-      return await response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/kyc/documents"] });
-      toast({
-        title: "Documents Submitted",
-        description: "Your KYC documents have been submitted for verification.",
-      });
-      // Open ZKP verification modal
-      setIsZkpModalOpen(true);
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Submission Failed",
-        description: error.message || "There was an error submitting your KYC documents.",
-        variant: "destructive",
-      });
-    },
-  });
-  
-  // Verify KYC document mutation
-  const verifyKycMutation = useMutation({
-    mutationFn: async (documentId: number) => {
-      const response = await apiRequest("POST", `/api/kyc/verify/${documentId}`);
-      return await response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/kyc/documents"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
-      toast({
-        title: "Document Verified",
-        description: "Your document has been verified successfully.",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Verification Failed",
-        description: error.message || "There was an error verifying the document.",
-        variant: "destructive",
-      });
-    },
-  });
-  
   // Event listener for ZKP verification complete
   useEffect(() => {
     const handleZkpComplete = () => {
@@ -272,7 +204,7 @@ export default function ProfilePage() {
     const handleKycSuccessComplete = () => {
       console.log("KYC success completed, preparing to show platform tour");
       // Store a flag in localStorage to indicate KYC is complete
-      localStorage.setItem('kycVerified', 'true');
+      localStorage.setItem('identitySimulationComplete', 'true');
       
       // Force refresh user data
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
@@ -297,17 +229,9 @@ export default function ProfilePage() {
     updateProfileMutation.mutate(data);
   };
   
-  const onKycSubmit = (data: KycFormValues) => {
-    submitKycMutation.mutate(data);
-  };
-  
   // Handle opening modals directly
   const handleShowZkpModal = () => {
     setIsZkpModalOpen(true);
-  };
-  
-  const handleShowKycModal = () => {
-    setIsKycModalOpen(true);
   };
   
   // Handle KYC completion
@@ -468,9 +392,9 @@ export default function ProfilePage() {
               <CardHeader className="border-b pb-3">
                 <div className="flex justify-between items-center">
                   <div>
-                    <CardTitle>Identity Verification</CardTitle>
+                    <CardTitle>Identity Flow Prototype</CardTitle>
                     <CardDescription>
-                      Verify your identity to unlock full platform features
+                      Explore synthetic document and proof states; never submit real identity data
                     </CardDescription>
                   </div>
                   <div className={`py-1 px-3 rounded-full text-xs font-medium ${
@@ -478,7 +402,7 @@ export default function ProfilePage() {
                       ? "bg-green-100 text-green-800" 
                       : "bg-amber-100 text-amber-800"
                   }`}>
-                    {user?.kycStatus === "verified" ? "Verified" : "Verification Needed"}
+                    {user?.kycStatus === "verified" ? "Demo state: complete" : "Demo state: pending"}
                   </div>
                 </div>
               </CardHeader>
@@ -490,17 +414,17 @@ export default function ProfilePage() {
                       <ShieldCheck className="h-8 w-8 text-green-600" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-medium text-green-600">Verification Complete</h3>
+                      <h3 className="text-lg font-medium text-green-600">Fixture State Complete</h3>
                       <p className="text-sm text-neutral-600 max-w-md mx-auto mt-2">
-                        Your identity has been verified successfully. You have full access to all platform features including smart contracts and premium listings.
+                        This account carries a completed prototype flag. It is not evidence of identity, KYC, eligibility, or counterparty trust.
                       </p>
                     </div>
                     
                     <div className="flex items-center justify-center gap-6 mt-4">
                       <div className="text-center">
-                        <div className="text-xs text-neutral-500">VERIFICATION DATE</div>
+                        <div className="text-xs text-neutral-500">FIXTURE DATE</div>
                         <div className="font-medium">
-                          {formatDate(new Date(), {
+                          {formatDate(new Date(), "Not available", {
                             month: 'short',
                             day: 'numeric',
                             year: 'numeric'
@@ -520,29 +444,28 @@ export default function ProfilePage() {
                       <KycVerificationForm 
                         onComplete={handleKycComplete}
                         onShowZkpModal={handleShowZkpModal}
-                        onShowKycModal={handleShowKycModal}
                       />
                     </div>
                     
                     <div className="space-y-6">
                       <div className="rounded-lg border p-4">
-                        <h4 className="text-sm font-medium mb-2">Verification Benefits</h4>
+                        <h4 className="text-sm font-medium mb-2">Prototype States Exposed</h4>
                         <ul className="space-y-2 text-sm">
                           <li className="flex items-start gap-2">
                             <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                            <span>Smart contract escrow services</span>
+                            <span>Agreement and notional-settlement simulations</span>
                           </li>
                           <li className="flex items-start gap-2">
                             <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                            <span>Higher trading limits and volumes</span>
+                            <span>Fixture trading-limit states</span>
                           </li>
                           <li className="flex items-start gap-2">
                             <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                            <span>Zero-knowledge verification with counterparties</span>
+                            <span>Local challenge-response interface experiment</span>
                           </li>
                           <li className="flex items-start gap-2">
                             <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                            <span>Access to premium marketplace listings</span>
+                            <span>Legacy marketplace prototype screens</span>
                           </li>
                         </ul>
                       </div>
@@ -569,28 +492,14 @@ export default function ProfilePage() {
                                     </div>
                                   </div>
                                   <Badge variant={document.verified ? "success" : "outline"} className="text-xs">
-                                    {document.verified ? "Verified" : "Pending"}
+                                    {document.verified ? "Demo complete" : "Demo pending"}
                                   </Badge>
                                 </div>
                                 
-                                {/* Demo purpose only: button to simulate verification */}
                                 {!document.verified && (
-                                  <Button 
-                                    variant="outline"
-                                    size="sm"
-                                    className="mt-2 text-xs h-7"
-                                    onClick={() => verifyKycMutation.mutate(document.id)}
-                                    disabled={verifyKycMutation.isPending}
-                                  >
-                                    {verifyKycMutation.isPending ? (
-                                      <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                                    ) : (
-                                      <>
-                                        <Check className="h-3 w-3 mr-1" />
-                                        Simulate Verification
-                                      </>
-                                    )}
-                                  </Button>
+                                  <p className="mt-2 text-[11px] text-muted-foreground">
+                                    Fixture review is administrator-only.
+                                  </p>
                                 )}
                               </div>
                             ))}

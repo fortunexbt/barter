@@ -1,413 +1,205 @@
 import { useState } from "react";
-import { useAuth } from "@/hooks/use-auth";
-import { useMutation } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import { 
-  FileImage, 
-  Upload, 
-  Shield, 
-  CheckCircle, 
-  Loader2,
-  AlertTriangle,
-  ArrowRight
-} from "lucide-react";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+import { ArrowRight, CheckCircle, FileImage, Shield, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import { useToast } from "@/hooks/use-toast";
 
-const kycFormSchema = z.object({
-  documentType: z.string().min(1, "Document type is required"),
-  documentNumber: z.string().min(3, "Document number is required"),
-});
-
-type KycFormValues = z.infer<typeof kycFormSchema>;
+const identityFixtures = [
+  {
+    id: "IDF-0174-ALPHA",
+    label: "Fixture Alpha · exporter",
+    recordType: "Synthetic trade credential",
+    subject: "Huila Export Cooperative",
+    jurisdiction: "Demo jurisdiction A",
+  },
+  {
+    id: "IDF-0288-BRAVO",
+    label: "Fixture Bravo · carrier",
+    recordType: "Synthetic operator credential",
+    subject: "Adriatic Freight Fixture",
+    jurisdiction: "Demo jurisdiction B",
+  },
+  {
+    id: "IDF-0312-CHARLIE",
+    label: "Fixture Charlie · foundry",
+    recordType: "Synthetic buyer credential",
+    subject: "Andes Metals Desk",
+    jurisdiction: "Demo jurisdiction C",
+  },
+] as const;
 
 interface KycVerificationFormProps {
-  onComplete?: (kycStatus: string) => void;
+  onComplete?: (identityState: string) => void;
   onShowZkpModal: () => void;
-  onShowKycModal: () => void;
 }
 
-export function KycVerificationForm({ onComplete, onShowZkpModal, onShowKycModal }: KycVerificationFormProps) {
-  const { user } = useAuth();
+export function KycVerificationForm({
+  onComplete,
+  onShowZkpModal,
+}: KycVerificationFormProps) {
   const { toast } = useToast();
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [step, setStep] = useState<1 | 2 | 3>(1);
-  
-  const form = useForm<KycFormValues>({
-    resolver: zodResolver(kycFormSchema),
-    defaultValues: {
-      documentType: "",
-      documentNumber: "",
-    },
-  });
-  
-  // Handle document upload
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setUploadedFile(e.target.files[0]);
-    }
-  };
-  
-  // Submit KYC document
-  const submitKycMutation = useMutation({
-    mutationFn: async (data: KycFormValues) => {
-      // Create form data to handle file upload
-      const formData = new FormData();
-      formData.append("userId", user?.id.toString() ?? "");
-      formData.append("documentType", data.documentType);
-      formData.append("documentNumber", data.documentNumber);
-      
-      if (uploadedFile) {
-        formData.append("document", uploadedFile);
-      }
-      
-      const res = await apiRequest("POST", "/api/kyc/submit", formData);
-      return await res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/kyc/documents"] });
-      setStep(2);
-      
-      // Show success toast instead of automatically continuing
-      toast({
-        title: "KYC Documents Submitted",
-        description: "Your documents have been submitted. Please continue with identity verification.",
-      });
-      
-      // Instead of automatically showing the ZKP verification modal,
-      // let the user decide when to proceed
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "KYC Submission Error",
-        description: error.message || "There was an error submitting your KYC documents. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-  
-  // Handle ZKP verification completion
-  const handleZkpComplete = () => {
-    setStep(3);
-    
-    // Let the user decide when to continue to the next step instead of automatically showing KYC modal
-    toast({
-      title: "ZKP Verification Complete",
-      description: "Your identity has been cryptographically verified. You can now complete the KYC process.",
-    });
-  };
-  
-  // Handle KYC approval completion
-  const handleKycApproved = () => {
-    if (onComplete) {
-      onComplete("verified");
-    }
-    
-    // Show success toast
-    toast({
-      title: "KYC Verification Complete",
-      description: "Your identity has been verified. You now have full access to all platform features.",
-    });
-  };
-  
-  const onSubmit = (data: KycFormValues) => {
-    if (!uploadedFile) {
-      toast({
-        title: "Document Required",
-        description: "Please upload an identification document to continue.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    submitKycMutation.mutate(data);
-  };
-  
-  // For demo purposes, advance to the next step directly
-  // This is used to avoid actual file upload requirements in this demo
-  const simulateKycSubmission = () => {
-    // Create a simulated uploaded file
-    if (!uploadedFile) {
-      const blob = new Blob(["document content"], { type: "application/pdf" });
-      const simulatedFile = new File([blob], "identity_document.pdf", { type: "application/pdf" });
-      setUploadedFile(simulatedFile);
-    }
-    
+  const [fixtureId, setFixtureId] = useState<string>(identityFixtures[0].id);
+  const fixture = identityFixtures.find((item) => item.id === fixtureId) ?? identityFixtures[0];
+
+  const continueWithFixture = () => {
     setStep(2);
-    // Show toast with instructions instead of automatically showing ZKP modal
     toast({
-      title: "Documents Submitted",
-      description: "Your documents are ready. Click 'Generate ZKP' to continue with identity verification.",
+      title: "Synthetic Fixture Loaded",
+      description: `${fixture.id} is local demo data. No document was uploaded or retained.`,
     });
   };
-  
+
+  const openProofExperiment = () => {
+    setStep(3);
+    onShowZkpModal();
+  };
+
   return (
     <div className="space-y-6">
-      {/* Progress indicator */}
       <div className="space-y-2">
         <div className="flex justify-between text-sm text-muted-foreground">
-          <span>Your Progress</span>
+          <span>Fixture flow</span>
           <span>Step {step} of 3</span>
         </div>
         <Progress value={(step / 3) * 100} className="h-2" />
       </div>
-      
-      {/* Step 1: Document Upload */}
+
       {step === 1 && (
         <div className="space-y-6">
-          <div className="rounded-lg border p-4 bg-muted/30">
-            <div className="flex flex-col sm:flex-row gap-3 items-start">
-              <div className="h-10 w-10 rounded-full bg-primary/10 flex-shrink-0 flex items-center justify-center">
-                <Shield className="h-5 w-5 text-primary" />
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+            <div className="flex flex-col items-start gap-3 sm:flex-row">
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-amber-100">
+                <ShieldAlert className="h-5 w-5 text-amber-700" aria-hidden="true" />
               </div>
               <div className="flex-1">
-                <h4 className="text-base font-medium">KYC Verification</h4>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Upload your identification document and provide some basic information. Your data is secured using zero-knowledge proofs for privacy.
+                <h4 className="text-base font-medium text-amber-950">Real document intake is disabled</h4>
+                <p className="mt-1 text-sm text-amber-900/80">
+                  This repository is not an identity provider. Choose a named synthetic fixture below;
+                  there is no file picker, document number field, upload request, or persistence step.
                 </p>
               </div>
             </div>
           </div>
-          
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              {/* Document Type */}
-              <FormField
-                control={form.control}
-                name="documentType"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Document Type</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select document type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="passport">Passport</SelectItem>
-                        <SelectItem value="drivers_license">Driver's License</SelectItem>
-                        <SelectItem value="national_id">National ID</SelectItem>
-                        <SelectItem value="other">Other Government ID</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>
-                      Select the type of identification document you'll be uploading
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              {/* Document Number */}
-              <FormField
-                control={form.control}
-                name="documentNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Document Number</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="Enter the ID number on your document" />
-                    </FormControl>
-                    <FormDescription>
-                      This information will be kept secure and private
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              {/* Document Upload */}
-              <div className="space-y-2">
-                <Label htmlFor="document-upload">Upload Document</Label>
-                <div className="border-2 border-dashed rounded-lg p-4 text-center">
-                  <div className="flex flex-col items-center gap-2">
-                    {uploadedFile ? (
-                      <>
-                        <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
-                          <CheckCircle className="h-6 w-6 text-green-600" />
-                        </div>
-                        <div className="text-sm font-medium">{uploadedFile.name}</div>
-                        <p className="text-xs text-muted-foreground">
-                          {Math.round(uploadedFile.size / 1024)} KB
-                        </p>
-                      </>
-                    ) : (
-                      <>
-                        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                          <FileImage className="h-6 w-6 text-primary" />
-                        </div>
-                        <div className="text-sm font-medium">Upload any document to simulate KYC</div>
-                        <p className="text-xs text-muted-foreground">
-                          Passport, ID, driver's license, etc.
-                        </p>
-                      </>
-                    )}
-                    
-                    <Input
-                      id="document-upload"
-                      type="file"
-                      className="hidden"
-                      accept="image/*,.pdf"
-                      onChange={handleFileChange}
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="mt-2"
-                      onClick={() => document.getElementById('document-upload')?.click()}
-                    >
-                      <Upload className="h-4 w-4 mr-2" />
-                      {uploadedFile ? "Replace File" : "Select File"}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex justify-end">
-                <Button 
-                  type="button" 
-                  disabled={submitKycMutation.isPending}
-                  onClick={() => simulateKycSubmission()}
-                >
-                  {submitKycMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Submitting...
-                    </>
-                  ) : (
-                    <>
-                      Continue to Verification
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </>
-                  )}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </div>
-      )}
-      
-      {/* Step 2: ZKP Generation */}
-      {step === 2 && (
-        <div className="space-y-6">
-          <div className="rounded-lg border p-4 bg-blue-50">
-            <div className="flex flex-col sm:flex-row gap-3 items-start">
-              <div className="h-10 w-10 rounded-full bg-blue-100 flex-shrink-0 flex items-center justify-center">
-                <Shield className="h-5 w-5 text-blue-600" />
-              </div>
-              <div className="flex-1">
-                <h4 className="text-base font-medium">Zero-Knowledge Proof Generation</h4>
-                <p className="text-sm text-blue-600/70 mt-1">
-                  Your identity document is being processed. We're generating a cryptographic proof that verifies your identity without exposing your personal data.
-                </p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="flex justify-center py-8">
-            <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-              <Loader2 className="h-8 w-8 text-primary animate-spin" />
-            </div>
-          </div>
-          
-          <div className="rounded-lg bg-muted p-4">
-            <h5 className="text-sm font-medium mb-2">What is a Zero-Knowledge Proof?</h5>
-            <p className="text-sm text-muted-foreground">
-              Zero-knowledge proofs allow us to verify your identity without storing or sharing your personal information. This cryptographic technique enhances your privacy while maintaining trust between trading parties.
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium" htmlFor="identity-fixture">
+              Synthetic identity fixture
+            </label>
+            <Select value={fixtureId} onValueChange={setFixtureId}>
+              <SelectTrigger id="identity-fixture">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {identityFixtures.map((item) => (
+                  <SelectItem value={item.id} key={item.id}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              All fixture names, references, and outcomes are invented for interface testing.
             </p>
           </div>
-          
+
+          <div className="rounded-lg border-2 border-dashed p-4">
+            <div className="flex items-start gap-3">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                <FileImage className="h-6 w-6 text-primary" aria-hidden="true" />
+              </div>
+              <dl className="grid flex-1 gap-2 text-sm sm:grid-cols-2">
+                <div>
+                  <dt className="text-xs uppercase tracking-wide text-muted-foreground">Fixture ID</dt>
+                  <dd className="font-mono font-medium">{fixture.id}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs uppercase tracking-wide text-muted-foreground">Record class</dt>
+                  <dd>{fixture.recordType}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs uppercase tracking-wide text-muted-foreground">Synthetic subject</dt>
+                  <dd>{fixture.subject}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs uppercase tracking-wide text-muted-foreground">File intake</dt>
+                  <dd className="font-medium text-amber-700">Disabled</dd>
+                </div>
+              </dl>
+            </div>
+          </div>
+
           <div className="flex justify-end">
-            <Button 
-              type="button"
-              onClick={onShowZkpModal}
-              className="mt-4"
-            >
-              Generate ZKP
-              <ArrowRight className="ml-2 h-4 w-4" />
+            <Button type="button" onClick={continueWithFixture}>
+              Load {fixture.id}
+              <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
             </Button>
           </div>
         </div>
       )}
-      
-      {/* Step 3: KYC Completion */}
-      {step === 3 && (
+
+      {step === 2 && (
         <div className="space-y-6">
-          <div className="rounded-lg border p-4 bg-green-50">
-            <div className="flex flex-col sm:flex-row gap-3 items-start">
-              <div className="h-10 w-10 rounded-full bg-green-100 flex-shrink-0 flex items-center justify-center">
-                <CheckCircle className="h-5 w-5 text-green-600" />
+          <div className="rounded-lg border bg-blue-50 p-4">
+            <div className="flex flex-col items-start gap-3 sm:flex-row">
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-blue-100">
+                <Shield className="h-5 w-5 text-blue-600" aria-hidden="true" />
               </div>
               <div className="flex-1">
-                <h4 className="text-base font-medium">Verification Complete!</h4>
-                <p className="text-sm text-green-600/70 mt-1">
-                  Your identity has been verified using zero-knowledge proofs. You now have full access to all platform features.
+                <h4 className="text-base font-medium">Challenge-Response Experiment</h4>
+                <p className="mt-1 text-sm text-blue-700/80">
+                  {fixture.id} will exercise a local proof-shaped interaction. It is not zero knowledge
+                  and does not establish identity, eligibility, KYC, or counterparty trust.
                 </p>
               </div>
             </div>
           </div>
-          
-          <div className="rounded-lg bg-gradient-to-tr from-primary/5 to-primary/20 p-4">
-            <h5 className="text-sm font-medium mb-2">You now have access to:</h5>
-            <ul className="space-y-2 text-sm">
-              <li className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-500" />
-                <span>Smart contract-based escrow services</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-500" />
-                <span>Higher trading limits and volume</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-500" />
-                <span>Zero-knowledge identity verification with counterparties</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-500" />
-                <span>Access to premium marketplace listings</span>
-              </li>
-            </ul>
+
+          <div className="rounded-lg bg-muted p-4">
+            <h5 className="mb-2 text-sm font-medium">Experiment boundary</h5>
+            <p className="text-sm text-muted-foreground">
+              A production identity system would require trusted issuance, regulated review, secure key
+              handling, revocation, retention controls, and an independent audit. None are implemented here.
+            </p>
           </div>
-          
+
           <div className="flex justify-end">
-            <Button 
-              type="button"
-              onClick={() => {
-                if (onComplete) {
-                  onComplete("verified");
-                }
-              }}
-            >
-              Go to Marketplace
-              <ArrowRight className="ml-2 h-4 w-4" />
+            <Button type="button" onClick={openProofExperiment}>
+              Run Fixture Experiment
+              <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {step === 3 && (
+        <div className="space-y-6">
+          <div className="rounded-lg border bg-green-50 p-4">
+            <div className="flex flex-col items-start gap-3 sm:flex-row">
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-green-100">
+                <CheckCircle className="h-5 w-5 text-green-600" aria-hidden="true" />
+              </div>
+              <div className="flex-1">
+                <h4 className="text-base font-medium">Fixture Flow Opened</h4>
+                <p className="mt-1 text-sm text-green-700/80">
+                  The synthetic flow was launched with {fixture.id}. No identity status, account access,
+                  document, or assurance changed.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end">
+            <Button type="button" onClick={() => onComplete?.("fixture_complete")}>
+              Return to Prototype
+              <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
             </Button>
           </div>
         </div>

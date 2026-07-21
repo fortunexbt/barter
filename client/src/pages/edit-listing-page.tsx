@@ -553,10 +553,10 @@ export default function EditListingPage() {
                     <ShieldCheck className="h-6 w-6 text-primary/70" />
                   </div>
                   <div>
-                    <h3 className="text-base font-medium text-neutral-800">Listing Protection</h3>
+                    <h3 className="text-base font-medium text-neutral-800">Prototype Safeguards</h3>
                     <p className="text-sm text-neutral-600 mt-1">
-                      All listings are protected by our smart contract escrow system, ensuring secure transactions 
-                      between buyers and sellers. Commodities are verified and quality-checked by our platform.
+                      This prototype records listing and agreement states locally. It does not custody funds,
+                      verify commodities, or replace independent inspection and legal due diligence.
                     </p>
                   </div>
                 </div>

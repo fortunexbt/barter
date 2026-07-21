@@ -108,7 +108,7 @@ export default function Sidebar() {
                   "text-sm font-medium",
                   user?.kycStatus === "verified" ? "text-green-600" : "text-amber-600"
                 )}>
-                  {user?.kycStatus === "verified" ? "Verified" : "Pending"}
+                  {user?.kycStatus === "verified" ? "Demo complete" : "Demo pending"}
                 </p>
               </div>
             </div>

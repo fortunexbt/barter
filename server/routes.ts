@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, NextFunction, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
@@ -8,7 +8,6 @@ import {
   insertContractSchema, 
   insertTransactionSchema, 
   insertNotificationSchema, 
-  insertKycDocumentSchema,
   InsertCommodity,
   InsertBarterOffer,
   InsertContract,
@@ -16,11 +15,36 @@ import {
   InsertNotification,
   InsertKycDocument
 } from "@shared/schema";
-import { ZodError } from "zod";
+import { ZodError, type ZodType } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { WebSocketServer } from 'ws';
 import { ZKPService } from './services/zkp-service';
 import { SmartContractService } from './services/smart-contract-service';
+
+const isAdmin = (req: Request, res: Response, next: NextFunction) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+
+  if (req.user!.role !== 'admin') {
+    return res.status(403).json({ message: 'Forbidden - Admin access required' });
+  }
+
+  return next();
+};
+
+const toPublicUser = <T extends { password: string; zkpIdentity: unknown }>(
+  user: T,
+): Omit<T, 'password' | 'zkpIdentity'> => {
+  const { password: _password, zkpIdentity: _zkpIdentity, ...publicUser } = user;
+  return publicUser;
+};
+
+const IDENTITY_FIXTURE_IDS = new Set([
+  "IDF-0174-ALPHA",
+  "IDF-0288-BRAVO",
+  "IDF-0312-CHARLIE",
+]);
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup auth routes (/api/register, /api/login, /api/logout, /api/user)
@@ -45,59 +69,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     path: '/api/ws/notifications'
   });
   
-  // Store active connections by user ID
-  const clients = new Map();
-  
-  // Handle WebSocket connections
-  wss.on('connection', (ws, req) => {
-    console.log('WebSocket client connected to notifications channel');
-    
-    // Send a welcome message to confirm connection
+  // The original prototype trusted a client-supplied user ID, which allowed
+  // notification impersonation. Keep the endpoint explicit and closed until
+  // the HTTP session can be authenticated during the WebSocket upgrade.
+  wss.on('connection', (ws) => {
     ws.send(JSON.stringify({
       type: 'system',
-      message: 'Connected to notification system'
+      message: 'Live notifications are disabled in this prototype; use REST refreshes.'
     }));
-    
-    ws.on('message', (message: string) => {
-      try {
-        const data = JSON.parse(message);
-        if (data.type === 'auth' && data.userId) {
-          // Store the connection with the user ID
-          clients.set(data.userId, ws);
-          console.log(`User ${data.userId} authenticated with WebSocket`);
-        }
-      } catch (error) {
-        console.error('Error processing WebSocket message:', error);
-      }
-    });
-    
-    ws.on('close', () => {
-      // Remove connection when closed
-      for (const [userId, client] of clients.entries()) {
-        if (client === ws) {
-          clients.delete(userId);
-          console.log(`User ${userId} WebSocket connection closed`);
-          break;
-        }
-      }
-    });
-    
-    // Handle errors
-    ws.on('error', (error) => {
-      console.error('WebSocket error:', error);
-    });
+    ws.close(1008, 'Session-authenticated WebSockets are not implemented');
   });
-  
-  // Helper function to send notification via WebSocket
-  const sendNotification = (userId: number, notification: any) => {
-    const client = clients.get(userId);
-    if (client && client.readyState === 1) { // WebSocket.OPEN
-      client.send(JSON.stringify(notification));
-    }
-  };
+
+  const sendNotification = (_userId: number, _notification: unknown) => undefined;
 
   // Middleware to verify authentication
-  const isAuthenticated = (req, res, next) => {
+  const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
     if (req.isAuthenticated()) {
       return next();
     }
@@ -105,12 +91,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   };
   
   // Middleware for validating request body with Zod schema
-  const validateBody = (schema) => (req, res, next) => {
+  const validateBody = (schema: ZodType) => (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) => {
     try {
-      // Log the request body for debugging purposes
-      console.log('Request body:', JSON.stringify(req.body));
-      console.log('Schema expected:', JSON.stringify(schema.shape));
-      
       schema.parse(req.body);
       next();
     } catch (error) {
@@ -628,79 +614,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // KYC routes
-  
-  // Generate ZKP identity for KYC verification
-  app.post('/api/kyc/generate-identity', isAuthenticated, async (req, res, next) => {
-    try {
-      // Initialize ZKP group if not already done
-      ZKPService.initialize();
-      
-      // Create a new identity for the user
-      const { identity, identityCommitment, serializedIdentity } = ZKPService.createIdentity();
-      
-      // Add the identity commitment to the group
-      ZKPService.addMember(identityCommitment);
-      
-      // Update the user's record to simulate ZKP verification
-      const updatedUser = await storage.updateUser(req.user!.id, {
-        identityCommitment: identity.commitment.toString(),
-        zkpVerified: true,
-        // Update KYC status as well to simulate verification
-        kycStatus: "verified"
-      });
-      
-      // Return the updated user data
-      res.json(updatedUser);
-    } catch (error) {
-      console.error('Error generating ZKP identity:', error);
-      next(error);
-    }
-  });
 
-  app.post('/api/kyc/documents', isAuthenticated, validateBody(insertKycDocumentSchema), async (req, res, next) => {
+  const createIdentityFixtureRecord = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const kycDocumentData: InsertKycDocument = {
-        ...req.body,
-        userId: req.user!.id,
-      };
-      const kycDocument = await storage.createKycDocument(kycDocumentData);
-      res.status(201).json(kycDocument);
-    } catch (error) {
-      next(error);
-    }
-  });
-  
-  // New endpoint to handle KYC document uploads with file
-  app.post('/api/kyc/submit', isAuthenticated, async (req, res, next) => {
-    try {
-      // In a real implementation, we would process the uploaded file
-      // For this demo, we'll just create a KYC document record
+      const fixtureId = req.body?.fixtureId;
+      if (typeof fixtureId !== "string" || !IDENTITY_FIXTURE_IDS.has(fixtureId)) {
+        return res.status(400).json({
+          message: "Only named synthetic identity fixture IDs are accepted",
+          acceptedFixtureIds: [...IDENTITY_FIXTURE_IDS],
+        });
+      }
+
       const kycDocumentData: InsertKycDocument = {
         userId: req.user!.id,
-        documentType: req.body.documentType || "identity_document",
-        documentNumber: req.body.documentNumber || `ID${Math.floor(Math.random() * 1000000)}`,
-        verified: false, // Start as unverified
+        documentType: "synthetic_fixture",
+        documentNumber: fixtureId,
+        status: "fixture",
+        verified: false,
       };
-      
       const kycDocument = await storage.createKycDocument(kycDocumentData);
-      
-      // Create notification
-      const notification: InsertNotification = {
+
+      await storage.createNotification({
         userId: req.user!.id,
-        message: "Your KYC document has been submitted for verification",
+        message: `Synthetic identity fixture ${fixtureId} loaded; no document was uploaded`,
         type: "kyc",
-        icon: "file_present",
+        icon: "science",
         iconBg: "info",
         read: false,
-      };
-      
-      await storage.createNotification(notification);
-      
+      });
+
       res.status(201).json(kycDocument);
     } catch (error) {
       next(error);
     }
-  });
+  };
+
+  app.post('/api/kyc/documents', isAuthenticated, createIdentityFixtureRecord);
+  app.post('/api/kyc/submit', isAuthenticated, createIdentityFixtureRecord);
   
   app.get('/api/kyc/documents', isAuthenticated, async (req, res, next) => {
     try {
@@ -716,17 +666,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Generate ZKP identity using the ZKP service
       const identityData = ZKPService.createIdentity();
+      ZKPService.addMember(identityData.identityCommitment);
       
       // Update the user with the identity commitment
       const updatedUser = await storage.updateUser(req.user!.id, {
         identityCommitment: identityData.identityCommitment,
         zkpIdentity: identityData.serializedIdentity,
       });
+
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
       
       // Create a notification
       const notification: InsertNotification = {
         userId: req.user!.id,
-        message: "Your zero-knowledge identity has been generated",
+        message: "A synthetic challenge-response experiment identity has been generated",
         type: "kyc",
         icon: "shield",
         iconBg: "info",
@@ -735,7 +690,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       await storage.createNotification(notification);
       
-      res.status(201).json(updatedUser);
+      res.status(201).json(toPublicUser(updatedUser));
     } catch (error) {
       next(error);
     }
@@ -750,43 +705,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "User not found" });
       }
       
-      // For demo purposes, we'll accept verification even if identity was never generated
-      // In a real app this would strictly require the identity to be present
-      let isValid = true;
-      
-      if (user.zkpIdentity) {
-        // Deserialize the identity
-        const identity = ZKPService.deserializeIdentity(user.zkpIdentity);
-        if (identity) {
-          // Either use the proof from request or generate one
-          let proofData;
-          
-          if (req.body && req.body.proofData) {
-            // Use the client-provided proof
-            proofData = req.body.proofData;
-          } else {
-            // Generate a proof on the server
-            proofData = await ZKPService.generateVerificationProof(identity);
-          }
-          
-          // Verify the proof
-          isValid = await ZKPService.verifyIdentityProof(proofData.toString());
-        }
+      if (!user.zkpIdentity) {
+        return res.status(400).json({ message: "Generate an experiment identity first" });
       }
-      
-      // For demo purposes, we'll always proceed with verification
-      // In a real app, we would stop here if !isValid
-      
-      // Update user's ZKP verification status and KYC status
+
+      const identity = ZKPService.deserializeIdentity(user.zkpIdentity);
+      if (!identity) {
+        return res.status(400).json({ message: "Stored experiment identity is invalid" });
+      }
+
+      const submittedProof = req.body?.proofData;
+      const proofData = typeof submittedProof === "string"
+        ? submittedProof
+        : typeof submittedProof?.proofData === "string"
+          ? submittedProof.proofData
+          : (await ZKPService.generateVerificationProof(
+              identity,
+              `prototype-user:${user.id}`,
+            )).proofData;
+
+      const isValid = await ZKPService.verifyIdentityProof(proofData);
+      if (!isValid) {
+        return res.status(400).json({ message: "Experiment proof did not validate" });
+      }
+
+      // Proof validity is deliberately separate from real-world identity/KYC status.
       const updatedUser = await storage.updateUser(req.user!.id, {
         zkpVerified: true,
-        kycStatus: "verified"
       });
+
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
       
       // Create a notification
       const notification: InsertNotification = {
         userId: req.user!.id,
-        message: "Your identity has been verified with zero-knowledge proofs",
+        message: "Your synthetic challenge-response fixture validated; KYC status is unchanged",
         type: "kyc",
         icon: "shield_check",
         iconBg: "success",
@@ -795,41 +750,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       await storage.createNotification(notification);
       
-      res.json({ success: true, user: updatedUser });
+      res.json({ success: true, user: toPublicUser(updatedUser), kycVerified: false });
     } catch (error) {
       console.error("ZKP verification error:", error);
-      
-      // For demo purposes, we'll still mark the user as verified
-      // even if the verification process had errors
-      // In a real app, this would return an error
-      try {
-        // Update the user anyway for demonstration
-        const updatedUser = await storage.updateUser(req.user!.id, {
-          zkpVerified: true,
-          kycStatus: "verified"
-        });
-        
-        const notification: InsertNotification = {
-          userId: req.user!.id,
-          message: "Your identity has been verified with zero-knowledge proofs",
-          type: "kyc",
-          icon: "shield_check",
-          iconBg: "success",
-          read: false,
-        };
-        
-        await storage.createNotification(notification);
-        
-        res.json({ success: true, user: updatedUser, demo: true });
-      } catch (fallbackError) {
-        // If even this fails, then we have to return an error
-        next(error);
-      }
+      next(error);
     }
   });
 
-  // For demo purposes, auto-verify KYC documents. In a real app, this would be an admin-only route
-  app.put('/api/kyc/documents/:id/verify', isAuthenticated, async (req, res, next) => {
+  app.put('/api/kyc/documents/:id/verify', isAdmin, async (req, res, next) => {
     try {
       const id = parseInt(req.params.id);
       const kycDocument = await storage.getKycDocument(id);
@@ -838,14 +766,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'KYC document not found' });
       }
       
-      // In a real app, this would check for admin permissions
-      
       const verifiedDocument = await storage.verifyKycDocument(id);
       
       // Create notification for the user
       const notification: InsertNotification = {
         userId: kycDocument.userId,
-        message: `Your ${kycDocument.documentType} has been verified`,
+        message: `Your ${kycDocument.documentType} prototype record was marked reviewed by an administrator`,
         type: 'kyc',
         icon: 'verified_user',
         iconBg: 'success',
@@ -1093,19 +1019,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Admin middleware - checks if user is authenticated and has admin role
-  const isAdmin = (req, res, next) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
-    
-    if (req.user!.role !== 'admin') {
-      return res.status(403).json({ message: 'Forbidden - Admin access required' });
-    }
-    
-    return next();
-  };
-
   // Admin routes
   app.get('/api/admin/users', isAdmin, async (req, res, next) => {
     try {
@@ -1123,7 +1036,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         user && index === self.findIndex(u => u && u.id === user.id)
       );
       
-      res.json(uniqueUsers);
+      res.json(uniqueUsers.filter((user): user is NonNullable<typeof user> => Boolean(user)).map(toPublicUser));
     } catch (error) {
       next(error);
     }

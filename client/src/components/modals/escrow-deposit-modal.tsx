@@ -146,8 +146,8 @@ export default function EscrowDepositModal({
       // Show more detailed success message with the amount
       const amount = form.getValues().amount;
       toast({
-        title: "Funds Deposited",
-        description: `Successfully deposited $${amount} to escrow contract.`,
+        title: "Notional Deposit Recorded",
+        description: `Recorded $${amount} in the local settlement simulation. No funds moved.`,
       });
       
       // Handle the success callback with improved timing
@@ -165,7 +165,7 @@ export default function EscrowDepositModal({
     },
     onError: (error: Error) => {
       toast({
-        title: "Error Depositing Funds",
+        title: "Error Recording Deposit",
         description: error.message,
         variant: "destructive",
       });
@@ -205,14 +205,14 @@ export default function EscrowDepositModal({
       <DialogContent className="sm:max-w-md md:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            {step === "create" && <><CreditCard className="h-5 w-5 text-primary" /> Deposit Funds to Escrow</>}
-            {step === "processing" && <><Loader2 className="h-5 w-5 animate-spin text-primary" /> Processing Deposit...</>}
-            {step === "complete" && <><CheckCircle2 className="h-5 w-5 text-green-600" /> Deposit Complete</>}
+            {step === "create" && <><CreditCard className="h-5 w-5 text-primary" /> Record Notional Deposit</>}
+            {step === "processing" && <><Loader2 className="h-5 w-5 animate-spin text-primary" /> Recording Deposit...</>}
+            {step === "complete" && <><CheckCircle2 className="h-5 w-5 text-green-600" /> Deposit State Recorded</>}
           </DialogTitle>
           <DialogDescription>
-            {step === "create" && "Deposit funds to the escrow contract to proceed with the secure transaction."}
-            {step === "processing" && "Please wait while your deposit is being processed through the blockchain."}
-            {step === "complete" && "Your funds have been securely deposited to the escrow contract."}
+            {step === "create" && "Record a notional amount to advance the local settlement simulation."}
+            {step === "processing" && "The prototype is writing the deposit state to its local journal."}
+            {step === "complete" && "The notional deposit was recorded. No funds were held or transferred."}
           </DialogDescription>
         </DialogHeader>
 
@@ -245,7 +245,7 @@ export default function EscrowDepositModal({
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="flex items-center gap-2">
-                          Contract Address
+                          Simulation Reference
                           {isContractCreationResponse && (
                             <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
                               Auto-Generated
@@ -273,8 +273,8 @@ export default function EscrowDepositModal({
                         </FormControl>
                         <FormDescription className="text-xs">
                           {isContractCreationResponse 
-                            ? "Secure blockchain address for this escrow transaction." 
-                            : "The blockchain address of the escrow contract."}
+                            ? "Generated reference for this local simulation."
+                            : "The local agreement simulation reference."}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -309,8 +309,8 @@ export default function EscrowDepositModal({
                         </FormControl>
                         <FormDescription className="text-xs">
                           {isContractCreationResponse && !!defaultAmount 
-                            ? "This amount will be held in escrow until the transaction is completed." 
-                            : "The amount to deposit into the escrow contract."}
+                            ? "This amount is notional and exists only in prototype state."
+                            : "The notional amount to record in the simulation."}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -325,10 +325,10 @@ export default function EscrowDepositModal({
                   <div className="flex items-start gap-2">
                     <ArrowRightCircle className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
                     <div>
-                      <h3 className="font-medium text-sm">Secure Transaction Info</h3>
+                      <h3 className="font-medium text-sm">Simulation Boundary</h3>
                       <p className="text-sm text-muted-foreground mt-1">
-                        Your deposit will be held in escrow until the delivery is confirmed. 
-                        Once you confirm receipt of the commodity, funds will be released to the seller.
+                        This action changes only local prototype state. It does not hold funds, confirm delivery,
+                        or instruct a seller.
                       </p>
                     </div>
                   </div>
@@ -348,7 +348,7 @@ export default function EscrowDepositModal({
                   className={isContractCreationResponse ? "bg-green-600 hover:bg-green-700 flex items-center gap-1" : ""}
                 >
                   {isContractCreationResponse && <CreditCard className="h-4 w-4" />}
-                  {isContractCreationResponse ? "Complete Deposit" : "Deposit Funds"}
+                  {isContractCreationResponse ? "Record Deposit" : "Record Notional"}
                 </Button>
               </DialogFooter>
             </form>
@@ -359,7 +359,7 @@ export default function EscrowDepositModal({
           <div className="flex flex-col items-center justify-center py-12">
             <Loader2 className="h-16 w-16 animate-spin text-primary" />
             <p className="mt-6 text-center text-muted-foreground">
-              Processing your deposit transaction on the blockchain...
+              Recording the notional deposit in the local prototype...
               <br />
               <span className="text-xs">This may take a few moments to confirm.</span>
             </p>
@@ -394,7 +394,7 @@ export default function EscrowDepositModal({
 
             <p className="text-sm text-muted-foreground">
               {depositData.success 
-                ? "Your deposit has been confirmed and the funds are now securely held in the escrow contract. The seller will be notified to proceed with delivery."
+                ? "The notional deposit state is recorded locally. No funds are held and no seller was contacted."
                 : "There was an issue with your deposit. Please try again or contact support for assistance."}
             </p>
 

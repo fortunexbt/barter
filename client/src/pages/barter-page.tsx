@@ -72,7 +72,7 @@ export default function BarterPage() {
       if (!response.ok) {
         throw new Error("Failed to fetch user commodities");
       }
-      const allCommodities = await response.json();
+      const allCommodities: Commodity[] = await response.json();
       return allCommodities.filter(c => c.ownerId === user?.id);
     }
   });
@@ -87,7 +87,7 @@ export default function BarterPage() {
       if (!response.ok) {
         throw new Error("Failed to fetch available commodities");
       }
-      const allCommodities = await response.json();
+      const allCommodities: Commodity[] = await response.json();
       return allCommodities.filter(c => c.status === "available" && c.ownerId !== user?.id);
     }
   });

@@ -164,8 +164,8 @@ export default function ContractsPage() {
       <div className="py-6 px-4 sm:px-6 lg:px-8">
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-2xl font-semibold text-neutral-600">Smart Contracts</h2>
-            <p className="text-neutral-500">Manage your trading and barter agreements</p>
+            <h2 className="text-2xl font-semibold text-neutral-600">Settlement Simulations</h2>
+            <p className="text-neutral-500">Model trading and barter agreement states locally</p>
           </div>
           <div className="mt-4 sm:mt-0">
             <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
@@ -179,7 +179,7 @@ export default function ContractsPage() {
                 <DialogHeader>
                   <DialogTitle>Create New Contract</DialogTitle>
                   <DialogDescription>
-                    Create a smart contract for your commodity trade.
+                    Create a simulated agreement record for your commodity trade.
                   </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>

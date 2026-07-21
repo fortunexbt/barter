@@ -1,11 +1,11 @@
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
-import { Express } from "express";
+import type { Express } from "express";
 import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
-import { User as SelectUser } from "@shared/schema";
+import { PublicUser, User as SelectUser } from "@shared/schema";
 
 declare global {
   namespace Express {
@@ -14,6 +14,11 @@ declare global {
 }
 
 const scryptAsync = promisify(scrypt);
+
+function toPublicUser(user: SelectUser): PublicUser {
+  const { password: _password, zkpIdentity: _zkpIdentity, ...publicUser } = user;
+  return publicUser;
+}
 
 async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
@@ -45,13 +50,33 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
+  const configuredSessionSecret = process.env.SESSION_SECRET;
+  const usesPersistentDatabase = Boolean(process.env.DATABASE_URL);
+
+  if (
+    process.env.NODE_ENV === "production" &&
+    usesPersistentDatabase &&
+    !configuredSessionSecret
+  ) {
+    throw new Error("SESSION_SECRET is required for persistent production mode");
+  }
+
+  if (!configuredSessionSecret) {
+    console.warn(
+      "SESSION_SECRET is not set; using an ephemeral secret for this local prototype process.",
+    );
+  }
+
   const sessionSettings: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET || "barter-trade-secret-key",
+    secret: configuredSessionSecret ?? randomBytes(32).toString("hex"),
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,
     cookie: {
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
     }
   };
 
@@ -63,46 +88,8 @@ export function setupAuth(app: Express) {
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
-        // Regular user authentication
         const user = await storage.getUserByUsername(username);
-        
-        // Quick admin login for testing
-        if (username === "admin" && password === "admin123") {
-          // Check if admin exists in storage first
-          if (user && user.role === "admin") {
-            return done(null, user);
-          }
-          
-          // Create and register the admin user in storage
-          try {
-            // Check if admin already exists but with wrong credentials
-            if (user) {
-              console.log("Admin user exists but credentials didn't match");
-              return done(null, false);
-            }
-            
-            // Create new admin user
-            const hashedPassword = await hashPassword("admin123");
-            const adminUser = await storage.createUser({
-              username: "admin",
-              password: hashedPassword,
-              fullName: "Admin User",
-              email: "admin@example.com",
-              role: "admin",
-              kycStatus: "verified",
-              accountLevel: "premium",
-              profileImage: "https://randomuser.me/api/portraits/men/99.jpg",
-            });
-            
-            console.log("Admin user created successfully", { id: adminUser.id });
-            return done(null, adminUser);
-          } catch (adminErr) {
-            console.error("Error creating admin user:", adminErr);
-            return done(null, false);
-          }
-        }
-        
-        // Normal authentication check
+
         if (!user || !(await comparePasswords(password, user.password))) {
           return done(null, false);
         } else {
@@ -128,26 +115,33 @@ export function setupAuth(app: Express) {
     try {
       console.log("Registration attempt:", { username: req.body.username, email: req.body.email });
       
-      // Validate required fields
-      if (!req.body.username || !req.body.password || !req.body.email) {
+      const { username, password, email, fullName } = req.body;
+
+      if (!username || !password || !email || !fullName) {
         return res.status(400).json({ message: "Missing required fields" });
       }
       
-      const existingUser = await storage.getUserByUsername(req.body.username);
+      const existingUser = await storage.getUserByUsername(username);
       if (existingUser) {
         console.log("Registration failed: Username already exists");
         return res.status(400).json({ message: "Username already exists" });
       }
 
-      const existingEmail = await storage.getUserByEmail(req.body.email);
+      const existingEmail = await storage.getUserByEmail(email);
       if (existingEmail) {
         console.log("Registration failed: Email already exists");
         return res.status(400).json({ message: "Email already exists" });
       }
 
       const user = await storage.createUser({
-        ...req.body,
-        password: await hashPassword(req.body.password),
+        username,
+        password: await hashPassword(password),
+        email,
+        fullName,
+        role: "trader",
+        kycStatus: "pending",
+        accountLevel: "standard",
+        profileImage: "",
       });
 
       console.log("User registered successfully:", { id: user.id, username: user.username });
@@ -157,7 +151,7 @@ export function setupAuth(app: Express) {
           console.error("Error during login after registration:", err);
           return next(err);
         }
-        res.status(201).json(user);
+        res.status(201).json(toPublicUser(user));
       });
     } catch (err) {
       console.error("Registration error:", err);
@@ -173,7 +167,7 @@ export function setupAuth(app: Express) {
       return res.status(400).json({ message: "Missing username or password" });
     }
     
-    passport.authenticate("local", (err, user, info) => {
+    passport.authenticate("local", (err: unknown, user: SelectUser | false | null) => {
       if (err) {
         console.error("Login error:", err);
         return next(err);
@@ -190,7 +184,7 @@ export function setupAuth(app: Express) {
           return next(loginErr);
         }
         console.log("User logged in successfully:", { id: user.id, username: user.username });
-        return res.status(200).json(user);
+        return res.status(200).json(toPublicUser(user));
       });
     })(req, res, next);
   });
@@ -219,6 +213,6 @@ export function setupAuth(app: Express) {
       return res.status(401).json({ message: "Not authenticated" });
     }
     console.log("User info requested for:", req.user?.id);
-    res.json(req.user);
+    res.json(toPublicUser(req.user));
   });
 }

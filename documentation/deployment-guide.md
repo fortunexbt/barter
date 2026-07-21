@@ -1,6 +1,8 @@
 
 # Deployment Guide
 
+> **Archived Replit-era guide.** It is not a production runbook. Use the root README for the current no-database protocol lab and treat the authenticated workspace as a legacy prototype only.
+
 This guide provides instructions for deploying the BarterTrade platform on Replit.
 
 ## Prerequisites

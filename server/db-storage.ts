@@ -15,7 +15,7 @@ import {
 } from "@shared/schema";
 import session from "express-session";
 import memoryStore from "memorystore";
-import { IStorage } from "./storage";
+import type { IStorage } from "./storage";
 
 // Create a PostgreSQL client for the database
 // Create the postgres client with proper SSL configuration for cloud databases
@@ -74,7 +74,7 @@ export class PostgresStorage implements IStorage {
     
     // Execute the query with the searchPattern parameter
     const results = await queryClient.unsafe(query, [searchPattern]);
-    return results as User[];
+    return results as unknown as User[];
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
@@ -97,11 +97,8 @@ export class PostgresStorage implements IStorage {
   }
 
   async getCommodities(limit?: number): Promise<Commodity[]> {
-    let query = db.select().from(commodities);
-    if (limit) {
-      query = query.limit(limit);
-    }
-    return await query;
+    const query = db.select().from(commodities);
+    return limit ? await query.limit(limit) : await query;
   }
 
   async getCommoditiesByOwner(ownerId: number): Promise<Commodity[]> {
@@ -125,7 +122,7 @@ export class PostgresStorage implements IStorage {
     
     // Execute the query with the searchPattern parameter
     const results = await queryClient.unsafe(query, [searchPattern]);
-    return results as Commodity[];
+    return results as unknown as Commodity[];
   }
 
   async createCommodity(insertCommodity: InsertCommodity): Promise<Commodity> {
@@ -192,7 +189,11 @@ export class PostgresStorage implements IStorage {
   }
 
   async createContract(insertContract: InsertContract): Promise<Contract> {
-    const results = await db.insert(contracts).values(insertContract).returning();
+    const contractNumber = `CT-${Date.now().toString(36).toUpperCase()}`;
+    const results = await db.insert(contracts).values({
+      ...insertContract,
+      contractNumber,
+    }).returning();
     return results[0];
   }
 

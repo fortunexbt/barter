@@ -85,8 +85,8 @@ export default function PlatformTour({ forceTour = false }: PlatformTourProps) {
       icon: <ArrowRightLeft className="h-8 w-8 text-amber-500" />
     },
     {
-      title: "Create Smart Contracts",
-      description: "Secure your trades with blockchain-backed smart contracts. Our escrow system ensures safe commodity transfers.",
+      title: "Model Settlement States",
+      description: "Explore local agreement and notional escrow states. No blockchain, custody, or commodity transfer is connected.",
       action: "Explore Contracts",
       targetPath: "/contracts",
       icon: <FileText className="h-8 w-8 text-blue-500" />
@@ -100,7 +100,7 @@ export default function PlatformTour({ forceTour = false }: PlatformTourProps) {
     },
     {
       title: "Complete Your Profile",
-      description: "Update your trading profile and verify your identity with our secure zero-knowledge proof system for enhanced trust.",
+      description: "Update a demo trading profile and explore the identity-proof experiment using synthetic data only.",
       action: "Update Profile",
       targetPath: "/profile",
       icon: <BookUser className="h-8 w-8 text-violet-500" />
