@@ -8,8 +8,6 @@ import {
   User,
   Loader2
 } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
-import { useMutation } from "@tanstack/react-query";
 import { 
   Dialog,
   DialogContent,
@@ -21,7 +19,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 interface KycApprovalModalProps {
@@ -30,7 +27,6 @@ interface KycApprovalModalProps {
 }
 
 export default function KycApprovalModal({ isOpen, onOpenChange }: KycApprovalModalProps) {
-  const { user } = useAuth();
   const { toast } = useToast();
   const [stage, setStage] = useState<"processing" | "approved" | "rejected">("processing");
   const [progress, setProgress] = useState(0);
@@ -83,58 +79,40 @@ export default function KycApprovalModal({ isOpen, onOpenChange }: KycApprovalMo
     }
   };
   
-  // Update user KYC status in database
-  const updateKycStatusMutation = useMutation({
-    mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/kyc/verify", { userId: user?.id });
-      return await res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
-      toast({
-        title: "KYC Verification Complete",
-        description: "Your identity has been verified successfully.",
-        variant: "default",
-      });
-      onOpenChange(false);
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Verification Error",
-        description: error.message || "There was an error verifying your identity.",
-        variant: "destructive",
-      });
-    },
-  });
-  
   const handleComplete = () => {
     if (stage === "approved") {
-      updateKycStatusMutation.mutate();
-    } else {
-      onOpenChange(false);
+      toast({
+        title: "Identity Simulation Complete",
+        description: "The local fixture flow completed. No account, identity, or KYC status was verified.",
+        variant: "default",
+      });
+      window.dispatchEvent(new CustomEvent('kyc-approval-complete', {
+        detail: { simulated: true },
+      }));
     }
+    onOpenChange(false);
   };
   
   const verificationSteps = [
     {
       icon: <FileText className="h-8 w-8 text-blue-500" />,
-      title: "Document Analysis",
-      description: "Scanning and analyzing your submitted documents"
+      title: "Fixture Intake",
+      description: "Reading synthetic fields from the local prototype record"
     },
     {
       icon: <User className="h-8 w-8 text-indigo-500" />,
-      title: "Identity Verification",
-      description: "Verifying your personal information with secure data sources"
+      title: "Fixture Identity Check",
+      description: "Exercising the interface without external identity data sources"
     },
     {
       icon: <ClipboardCheck className="h-8 w-8 text-violet-500" />,
-      title: "Compliance Check",
-      description: "Ensuring compliance with regulatory requirements"
+      title: "Policy Placeholder",
+      description: "Showing where regulated provider and review results would appear"
     },
     {
       icon: <ShieldCheck className="h-8 w-8 text-green-500" />,
-      title: "Verification Complete",
-      description: "Your identity has been successfully verified"
+      title: "Simulation Complete",
+      description: "The fixture identity state has been updated"
     }
   ];
   
@@ -142,9 +120,9 @@ export default function KycApprovalModal({ isOpen, onOpenChange }: KycApprovalMo
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>KYC Verification</DialogTitle>
+          <DialogTitle>Identity Status Simulation</DialogTitle>
           <DialogDescription>
-            Verifying your identity for enhanced trust and security
+            A timed interface demonstration using fixture data only
           </DialogDescription>
         </DialogHeader>
         
@@ -152,7 +130,7 @@ export default function KycApprovalModal({ isOpen, onOpenChange }: KycApprovalMo
           <div className="flex items-center mb-6">
             <div className="w-full">
               <div className="flex justify-between mb-2 text-sm">
-                <span>Verification Progress</span>
+                <span>Simulation Progress</span>
                 <span>{Math.round(progress)}%</span>
               </div>
               <Progress value={progress} className="h-2" />
@@ -228,9 +206,9 @@ export default function KycApprovalModal({ isOpen, onOpenChange }: KycApprovalMo
               <div className="flex items-start">
                 <ShieldCheck className="h-5 w-5 text-green-600 mr-2 mt-0.5" />
                 <div>
-                  <h4 className="text-sm font-semibold text-green-800">Verification Successful</h4>
+                  <h4 className="text-sm font-semibold text-green-800">Fixture State Updated</h4>
                   <p className="text-xs text-green-700">
-                    Your KYC verification is complete. You now have full access to all platform features, including advanced trading options and higher transaction limits.
+                    The synthetic sequence reached its final UI state. It does not establish identity, compliance, account access, or transaction limits.
                   </p>
                 </div>
               </div>
@@ -244,15 +222,10 @@ export default function KycApprovalModal({ isOpen, onOpenChange }: KycApprovalMo
             disabled={stage === "processing"}
             variant={stage === "approved" ? "default" : "outline"}
           >
-            {updateKycStatusMutation.isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Updating...
-              </>
-            ) : stage === "processing" ? (
+            {stage === "processing" ? (
               "Processing..."
             ) : stage === "approved" ? (
-              "Complete Verification"
+              "Complete Simulation"
             ) : (
               "Close"
             )}

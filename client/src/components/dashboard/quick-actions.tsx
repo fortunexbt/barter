@@ -48,7 +48,7 @@ export default function QuickActions() {
     },
     { 
       icon: <Wallet className="w-full h-full" />, 
-      label: "Add Funds", 
+      label: "Notional Funds",
       to: "/profile/funds", 
       textColor: "text-amber-600" 
     },

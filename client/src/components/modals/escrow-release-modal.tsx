@@ -128,8 +128,8 @@ export default function EscrowReleaseModal({
       queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
       
       toast({
-        title: "Funds Released",
-        description: `Successfully released funds to the seller.`,
+        title: "Notional Release Recorded",
+        description: `Recorded a local release state. No funds moved and no seller was paid.`,
       });
       
       if (onSuccess) {
@@ -138,7 +138,7 @@ export default function EscrowReleaseModal({
     },
     onError: (error: Error) => {
       toast({
-        title: "Error Releasing Funds",
+        title: "Error Recording Release",
         description: error.message,
         variant: "destructive",
       });
@@ -178,26 +178,25 @@ export default function EscrowReleaseModal({
       <DialogContent className="sm:max-w-md md:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            {step === "confirm" && <><ShieldCheck className="h-5 w-5 text-amber-500" /> Release Escrow Funds</>}
-            {step === "processing" && <><Loader2 className="h-5 w-5 animate-spin text-primary" /> Processing Release...</>}
-            {step === "complete" && <><CheckCircle2 className="h-5 w-5 text-green-600" /> Funds Successfully Released</>}
+            {step === "confirm" && <><ShieldCheck className="h-5 w-5 text-amber-500" /> Record Notional Release</>}
+            {step === "processing" && <><Loader2 className="h-5 w-5 animate-spin text-primary" /> Recording Release...</>}
+            {step === "complete" && <><CheckCircle2 className="h-5 w-5 text-green-600" /> Release State Recorded</>}
           </DialogTitle>
           <DialogDescription>
-            {step === "confirm" && "Confirm that you want to release funds from the escrow contract to the seller."}
-            {step === "processing" && "Please wait while your request is being processed through the blockchain."}
-            {step === "complete" && "The funds have been securely released to the seller."}
+            {step === "confirm" && "Confirm the next state in this local settlement simulation."}
+            {step === "processing" && "The prototype is writing the release state to its local journal."}
+            {step === "complete" && "The notional release was recorded. No funds were transferred."}
           </DialogDescription>
         </DialogHeader>
 
         {step === "confirm" && (
           <>
-            <Alert variant="warning" className="border-amber-200 bg-amber-50">
+            <Alert variant="default" className="border-amber-200 bg-amber-50">
               <AlertCircle className="h-4 w-4 text-amber-500" />
               <AlertTitle className="text-amber-700">Important - Confirm Delivery</AlertTitle>
               <AlertDescription className="text-amber-700/80">
-                This action will release the escrowed funds to the seller.
-                Only proceed if you have received the commodity as agreed.
-                This action cannot be reversed once completed.
+                This action marks the prototype agreement as released. It is not a payment instruction and
+                does not prove receipt of any commodity.
               </AlertDescription>
             </Alert>
 
@@ -210,9 +209,9 @@ export default function EscrowReleaseModal({
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="flex items-center gap-2">
-                          Contract Address
+                          Simulation Reference
                           <Badge variant="outline" className="text-xs bg-muted/50">
-                            Verified
+                            Fixture
                           </Badge>
                         </FormLabel>
                         <FormControl>
@@ -233,7 +232,7 @@ export default function EscrowReleaseModal({
                           </div>
                         </FormControl>
                         <FormDescription className="text-xs">
-                          The blockchain address of the escrow smart contract.
+                          The generated reference for this local agreement simulation.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -250,7 +249,7 @@ export default function EscrowReleaseModal({
                           <Input {...field} disabled={!!sellerId} />
                         </FormControl>
                         <FormDescription className="text-xs">
-                          The ID of the seller who will receive the funds.
+                          The fixture seller attached to the simulated release.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -268,8 +267,8 @@ export default function EscrowReleaseModal({
                     <div>
                       <h3 className="text-sm font-medium">Delivery Confirmation</h3>
                       <p className="text-sm text-muted-foreground mt-1">
-                        By confirming this release, you certify that you have received the commodity
-                        as described, and authorize the release of the escrowed funds to the seller.
+                        Recording this step only advances local prototype state. It does not certify delivery
+                        or authorize any financial transfer.
                       </p>
                     </div>
                   </div>
@@ -288,7 +287,7 @@ export default function EscrowReleaseModal({
                     className="bg-amber-500 hover:bg-amber-600 flex items-center gap-1"
                   >
                     <Banknote className="h-4 w-4" />
-                    Confirm & Release Funds
+                    Record Release State
                   </Button>
                 </DialogFooter>
               </form>
@@ -300,7 +299,7 @@ export default function EscrowReleaseModal({
           <div className="flex flex-col items-center justify-center py-12">
             <Loader2 className="h-16 w-16 animate-spin text-primary" />
             <p className="mt-6 text-center text-muted-foreground">
-              Processing your release transaction on the blockchain...
+              Recording the notional release in the local prototype...
               <br />
               <span className="text-xs">This may take a few moments to confirm.</span>
             </p>
@@ -351,7 +350,7 @@ export default function EscrowReleaseModal({
                   <div>
                     <h3 className="text-sm font-medium text-green-800">Transaction Complete</h3>
                     <p className="text-sm text-green-700/80 mt-1">
-                      The funds have been successfully released from escrow to the seller. This completes the transaction.
+                      The local prototype recorded a notional release. No funds moved and no seller was paid.
                       {releaseData.transactionId && " The transaction is now recorded in your transaction history."}
                     </p>
                   </div>

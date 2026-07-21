@@ -6,16 +6,16 @@ import { migrate } from 'drizzle-orm/postgres-js/migrator';
 
 // Only run if executed directly
 if (import.meta.url === `file://${process.argv[1]}`) {
-  // Use an immediately invoked function expression to avoid top-level await
-  (async () => {
-    await runMigrations();
-  })();
+  runMigrations().catch((error) => {
+    console.error("Migration command failed:", error);
+    process.exitCode = 1;
+  });
 }
 
 export async function runMigrations() {
   if (!process.env.DATABASE_URL) {
-    console.error("DATABASE_URL environment variable must be set");
-    process.exit(1);
+    console.log("No DATABASE_URL set; using the in-memory prototype store.");
+    return false;
   }
 
   console.log("🔄 Checking database schema and running migrations if needed...");
@@ -65,6 +65,12 @@ export async function runMigrations() {
             account_level TEXT,
             trading_since TIMESTAMP,
             profile_image TEXT,
+            wallet_address TEXT,
+            verification_level TEXT,
+            credit_score INTEGER,
+            preferred_currency TEXT DEFAULT 'USD',
+            address TEXT,
+            phone TEXT,
             identity_commitment TEXT,
             zkp_identity TEXT,
             zkp_verified BOOLEAN
@@ -76,11 +82,19 @@ export async function runMigrations() {
             name TEXT NOT NULL,
             status TEXT,
             grade TEXT NOT NULL,
-            price INTEGER NOT NULL,
+            price DOUBLE PRECISION NOT NULL,
             price_unit TEXT NOT NULL,
-            volume INTEGER NOT NULL,
+            volume DOUBLE PRECISION NOT NULL,
             volume_unit TEXT NOT NULL,
             owner_id INTEGER NOT NULL REFERENCES users(id),
+            description TEXT,
+            category TEXT,
+            subcategory TEXT,
+            origin TEXT,
+            image_url TEXT,
+            certifications JSONB DEFAULT '[]'::jsonb,
+            market_trend TEXT,
+            contract_address TEXT,
             created_at TIMESTAMP,
             icon TEXT,
             icon_bg TEXT
@@ -96,22 +110,38 @@ export async function runMigrations() {
             requesting_commodity_id INTEGER NOT NULL REFERENCES commodities(id),
             offering_user_id INTEGER NOT NULL REFERENCES users(id),
             requesting_user_id INTEGER NOT NULL REFERENCES users(id),
-            value_match INTEGER NOT NULL
+            value_match INTEGER NOT NULL,
+            offerer_id INTEGER,
+            offered_commodity_id INTEGER,
+            desired_commodity_id INTEGER,
+            offer_volume DOUBLE PRECISION,
+            desired_volume DOUBLE PRECISION,
+            expiration_date TIMESTAMP,
+            barter_ratio DOUBLE PRECISION,
+            match_score INTEGER
           );
 
           -- Contracts table
           CREATE TABLE IF NOT EXISTS contracts (
             id SERIAL PRIMARY KEY,
             status TEXT,
-            price INTEGER NOT NULL,
+            price DOUBLE PRECISION NOT NULL,
             title TEXT NOT NULL,
             created_at TIMESTAMP,
             contract_number TEXT NOT NULL,
             seller_id INTEGER NOT NULL REFERENCES users(id),
             buyer_id INTEGER NOT NULL REFERENCES users(id),
             commodity_id INTEGER NOT NULL REFERENCES commodities(id),
-            quantity INTEGER NOT NULL,
+            quantity DOUBLE PRECISION NOT NULL,
             terms TEXT NOT NULL,
+            amount DOUBLE PRECISION,
+            contract_type TEXT,
+            payment_terms TEXT,
+            delivery_date TIMESTAMP,
+            smart_contract_address TEXT,
+            delivery_method TEXT,
+            terms_hash TEXT,
+            documents JSONB DEFAULT '[]'::jsonb,
             updated_at TIMESTAMP
           );
 
@@ -126,13 +156,14 @@ export async function runMigrations() {
             receiver_id INTEGER NOT NULL REFERENCES users(id),
             barter_id INTEGER REFERENCES barter_offers(id),
             contract_id INTEGER REFERENCES contracts(id),
-            amount INTEGER,
+            amount DOUBLE PRECISION,
             metadata TEXT
           );
 
           -- Notifications table
           CREATE TABLE IF NOT EXISTS notifications (
             id SERIAL PRIMARY KEY,
+            title TEXT DEFAULT 'Protocol notice',
             message TEXT NOT NULL,
             type TEXT NOT NULL,
             created_at TIMESTAMP,
@@ -151,6 +182,10 @@ export async function runMigrations() {
             document_type TEXT NOT NULL,
             document_number TEXT NOT NULL,
             verified BOOLEAN,
+            status TEXT DEFAULT 'pending',
+            file_url TEXT,
+            verified_at TIMESTAMP,
+            verified_by TEXT,
             uploaded_at TIMESTAMP,
             verification_proof_id TEXT
           );
@@ -177,7 +212,7 @@ export async function runMigrations() {
 
   } catch (error) {
     console.error("❌ Migration failed:", error);
-    process.exit(1);
+    throw error;
   }
   
   console.log("✅ Database is ready!");

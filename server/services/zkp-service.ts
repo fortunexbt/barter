@@ -1,129 +1,131 @@
-import { Identity } from '@semaphore-protocol/identity';
-import { Group } from '@semaphore-protocol/group';
-import { generateProof, verifyProof } from '@semaphore-protocol/proof';
+import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 
-// Unique group ID for the barter platform
-const BARTER_TRADE_GROUP_ID = BigInt(1);
+interface PrototypeIdentity {
+  commitment: string;
+  secret: string;
+}
 
-// In-memory group for demo purposes, in production this would be stored in a database
-let zkpGroup: Group | null = null;
+interface PrototypeProof {
+  version: "prototype-proof-v1";
+  commitment: string;
+  signal: string;
+  response: string;
+}
 
+const members = new Set<string>();
+const experimentSecrets = new Map<string, string>();
+
+function digest(value: string): string {
+  return createHash("sha256").update(value).digest("hex");
+}
+
+function isPrototypeIdentity(value: unknown): value is PrototypeIdentity {
+  if (!value || typeof value !== "object") return false;
+  const identity = value as Partial<PrototypeIdentity>;
+  return typeof identity.commitment === "string" && typeof identity.secret === "string";
+}
+
+/**
+ * Compatibility service for the legacy identity-flow screens.
+ *
+ * This is deliberately not a zero-knowledge proof system and must never be
+ * treated as KYC. It provides an inspectable, local challenge-response fixture
+ * without retaining the vulnerable cryptography dependency tree from the
+ * original prototype.
+ */
 export class ZKPService {
-  /**
-   * Initializes the ZKP group for user identities
-   */
   static initialize() {
-    if (!zkpGroup) {
-      // Create a new group with ID 1 and zero members initially
-      zkpGroup = new Group();
-    }
-    return zkpGroup;
+    return members;
   }
 
-  /**
-   * Creates a new identity for a user
-   * @returns The identity commitment and serialized identity data
-   */
-  static createIdentity(): { 
-    identity: Identity, 
-    identityCommitment: string,
-    serializedIdentity: string
+  static createIdentity(): {
+    identity: PrototypeIdentity;
+    identityCommitment: string;
+    serializedIdentity: string;
   } {
-    // Create a new Semaphore identity
-    const identity = new Identity();
-    
+    const secret = randomBytes(32).toString("hex");
+    const commitment = digest(`barter-prototype:${secret}`);
+    const identity = { commitment, secret };
+
+    experimentSecrets.set(commitment, secret);
+
     return {
       identity,
-      identityCommitment: identity.commitment.toString(),
-      // Serialize the identity for storage
-      serializedIdentity: JSON.stringify({
-        commitment: identity.commitment.toString(),
-        // We store the entire identity as a string
-        identityString: identity.toString()
-      })
+      identityCommitment: commitment,
+      serializedIdentity: JSON.stringify(identity),
     };
   }
-  
-  /**
-   * Recreates an identity from serialized data
-   */
-  static deserializeIdentity(serializedIdentity: string): Identity | null {
+
+  static deserializeIdentity(serializedIdentity: string): PrototypeIdentity | null {
     try {
-      const { identityString } = JSON.parse(serializedIdentity);
-      // Create a new identity from the stored trapdoor and nullifier
-      return new Identity(identityString);
-    } catch (error) {
-      console.error('Error deserializing identity:', error);
+      const identity: unknown = JSON.parse(serializedIdentity);
+      if (!isPrototypeIdentity(identity)) return null;
+      if (digest(`barter-prototype:${identity.secret}`) !== identity.commitment) return null;
+
+      experimentSecrets.set(identity.commitment, identity.secret);
+      members.add(identity.commitment);
+      return identity;
+    } catch {
       return null;
     }
   }
 
-  /**
-   * Registers a user's identity commitment to the group
-   */
   static addMember(identityCommitment: string): boolean {
-    try {
-      const group = this.initialize();
-      group.addMember(BigInt(identityCommitment));
-      return true;
-    } catch (error) {
-      console.error('Error adding member to ZKP group:', error);
-      return false;
-    }
+    if (!experimentSecrets.has(identityCommitment)) return false;
+    members.add(identityCommitment);
+    return true;
   }
 
-  /**
-   * Generates a zero-knowledge proof that a user is part of the verified group
-   * without revealing which specific user they are
-   */
   static async generateVerificationProof(
-    identity: Identity,
-    signal: string // The data being verified, could be a document hash
+    identity: PrototypeIdentity,
+    signal: string,
   ): Promise<{
-    proofData: string,
-    merkleTreeRoot: string,
-    nullifierHash: string
+    proofData: string;
+    merkleTreeRoot: string;
+    nullifierHash: string;
   }> {
-    const group = this.initialize();
-    
-    try {
-      // Signal is the external data we're proving, like a document hash
-      const externalNullifier = BARTER_TRADE_GROUP_ID;
-      
-      // Generate a full proof
-      const fullProof = await generateProof(
-        identity, 
-        group, 
-        externalNullifier, 
-        signal
-      );
-      
-      // For simplicity, we'll serialize the entire proof object
-      return {
-        proofData: JSON.stringify(fullProof),
-        merkleTreeRoot: group.root.toString(),
-        nullifierHash: fullProof.nullifier?.toString() || ""
-      };
-    } catch (error) {
-      console.error('Error generating ZKP proof:', error);
-      throw new Error('Failed to generate zero-knowledge proof');
+    if (!members.has(identity.commitment)) {
+      throw new Error("Experiment identity is not registered");
     }
+
+    const proof: PrototypeProof = {
+      version: "prototype-proof-v1",
+      commitment: identity.commitment,
+      signal,
+      response: createHmac("sha256", identity.secret).update(signal).digest("hex"),
+    };
+
+    return {
+      proofData: JSON.stringify(proof),
+      merkleTreeRoot: digest([...members].sort().join("|")),
+      nullifierHash: digest(`${identity.commitment}:${signal}`),
+    };
   }
 
-  /**
-   * Verifies a zero-knowledge proof
-   */
-  static async verifyIdentityProof(proofDataStr: string): Promise<boolean> {
+  static async verifyIdentityProof(proofData: string): Promise<boolean> {
     try {
-      // Parse the proof data
-      const fullProof = JSON.parse(proofDataStr);
-      
-      // Verify the proof
-      const isValid = await verifyProof(fullProof);
-      
-      return isValid;
-    } catch (error) {
-      console.error('Error verifying ZKP proof:', error);
+      const parsed: unknown = JSON.parse(proofData);
+      if (!parsed || typeof parsed !== "object") return false;
+
+      const proof = parsed as Partial<PrototypeProof>;
+      if (
+        proof.version !== "prototype-proof-v1" ||
+        typeof proof.commitment !== "string" ||
+        typeof proof.signal !== "string" ||
+        typeof proof.response !== "string" ||
+        !members.has(proof.commitment)
+      ) {
+        return false;
+      }
+
+      const secret = experimentSecrets.get(proof.commitment);
+      if (!secret) return false;
+
+      const expected = createHmac("sha256", secret).update(proof.signal).digest();
+      const received = Buffer.from(proof.response, "hex");
+
+      return received.length === expected.length && timingSafeEqual(received, expected);
+    } catch {
       return false;
     }
   }

@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Loader2, ExternalLink, CheckCircle, Clock, AlertTriangle, FileText } from "lucide-react";
 import { getQueryFn } from "@/lib/queryClient";
-import { Transaction, BarterOffer, Contract } from "@shared/schema";
+import { Transaction, BarterOffer, Commodity, Contract, PublicUser } from "@shared/schema";
 import ZkpVerificationModal from "@/components/modals/zkp-verification-modal";
 import SmartContractModal from "@/components/modals/smart-contract-modal";
 
@@ -42,14 +42,14 @@ export default function DealsPage() {
   });
   
   // Fetch user details for each user ID in the transactions/contracts
-  const { data: users } = useQuery({
+  const { data: users } = useQuery<PublicUser[]>({
     queryKey: ["/api/users"],
     queryFn: getQueryFn({ on401: "throw" }),
     enabled: !!user,
   });
   
   // Fetch commodities for reference
-  const { data: commodities } = useQuery({
+  const { data: commodities } = useQuery<Commodity[]>({
     queryKey: ["/api/commodities"],
     queryFn: getQueryFn({ on401: "throw" }),
     enabled: !!user,
@@ -334,7 +334,7 @@ export default function DealsPage() {
                                 onClick={() => handleViewContract(transaction.status === "completed" ? "completed" : "created")}
                               >
                                 <ExternalLink className="h-3.5 w-3.5 mr-1" />
-                                View on Blockchain
+                                View simulated trace
                               </Button>
                             </div>
                           </div>

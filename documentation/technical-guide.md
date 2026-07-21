@@ -1,6 +1,8 @@
 
 # Technical Implementation Guide
 
+> **Archived implementation notes.** Code samples below describe the former prototype design and may not match the revived repository. Current identity screens use a non-zero-knowledge local challenge-response fixture, settlement endpoints simulate state only, and unauthenticated WebSocket identity claims are disabled. See the root README and source for current behavior.
+
 This guide provides a deep dive into the technical implementation of key features in the BarterTrade platform.
 
 ## 1. Authentication Implementation
@@ -16,9 +18,13 @@ import { storage } from "./storage";
 
 // Setup authentication middleware
 export function setupAuth(app: Express) {
+  if (!process.env.SESSION_SECRET) {
+    throw new Error("SESSION_SECRET is required for persistent deployments");
+  }
+
   // Configure session middleware
   app.use(session({
-    secret: process.env.SESSION_SECRET || "barter-trade-secret-key",
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,

@@ -1,6 +1,8 @@
 
 # API Reference
 
+> **Archived prototype reference.** Route names are retained for compatibility, but identity, agreement, escrow, settlement, and market operations below are synthetic local state transitions—not live verification, custody, blockchain, or trading services. The WebSocket notification endpoint is intentionally disabled until session-authenticated upgrades exist. See the root README for current capabilities.
+
 This document provides detailed information about the BarterTrade API endpoints.
 
 ## Authentication

@@ -26,9 +26,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Wallet, ShieldCheck, ShieldAlert, Database, GitMerge, Code } from "lucide-react";
+import { ArrowRight, Code, FlaskConical, GitMerge, Loader2 } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
-import { SiEthereum, SiPostgresql, SiVite } from "react-icons/si";
+import { SiPostgresql, SiVite } from "react-icons/si";
 
 const loginSchema = z.object({
   username: z.string().min(3).max(20),
@@ -45,7 +45,7 @@ const registerSchema = insertUserSchema.extend({
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export default function AuthPage() {
-  const [location, navigate] = useLocation();
+  const [, navigate] = useLocation();
   const { user, loginMutation, registerMutation } = useAuth();
   const [activeTab, setActiveTab] = useState<string>("login");
   const { toast } = useToast();
@@ -99,7 +99,7 @@ export default function AuthPage() {
         // Show welcome message
         toast({
           title: "Registration Successful!",
-          description: "Welcome to BarterTrade. Complete your KYC verification to start trading.",
+          description: "Welcome to the authenticated prototype. Identity and settlement flows remain simulated.",
           duration: 5000,
         });
         
@@ -120,7 +120,7 @@ export default function AuthPage() {
               <Logo variant="large" showText={false} />
             </div>
             <h2 className="text-3xl font-bold mb-1">BarterTrade</h2>
-            <p className="text-neutral-500">Commodities Trading & Barter Platform</p>
+            <p className="text-neutral-500">Authenticated prototype workspace</p>
           </div>
 
           <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -179,48 +179,26 @@ export default function AuthPage() {
                         )}
                       </Button>
                       
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="w-full mt-2 flex items-center justify-center"
-                        onClick={() => {
-                          loginForm.setValue("username", "admin");
-                          loginForm.setValue("password", "admin123");
-                          setTimeout(() => loginForm.handleSubmit(onLoginSubmit)(), 100);
-                        }}
-                      >
-                        <ShieldCheck className="mr-2 h-4 w-4" />
-                        Admin Quick Login
-                      </Button>
                     </form>
                   </Form>
                 </CardContent>
                 <CardFooter className="flex flex-col space-y-4">
-                  {/* Wallet Connection Options */}
                   <div className="w-full">
                     <div className="relative">
                       <div className="absolute inset-0 flex items-center">
                         <span className="w-full border-t border-neutral-200" />
                       </div>
                       <div className="relative flex justify-center text-xs">
-                        <span className="bg-white px-2 text-neutral-500">Or connect with wallet</span>
+                        <span className="bg-white px-2 text-neutral-500">No account required</span>
                       </div>
                     </div>
-
-                    <div className="mt-4 grid grid-cols-2 gap-3">
-                      <Button variant="outline" type="button" className="flex items-center justify-center">
-                        <Wallet className="h-5 w-5 mr-2 text-orange-500" />
-                        MetaMask
-                      </Button>
-                      <Button variant="outline" type="button" className="flex items-center justify-center">
-                        <Wallet className="h-5 w-5 mr-2 text-green-600" />
-                        Yubikey
-                      </Button>
-                      <Button variant="outline" type="button" className="flex items-center justify-center col-span-2">
-                        <Wallet className="h-5 w-5 mr-2 text-black" />
-                        Ledger
-                      </Button>
-                    </div>
+                    <Button asChild variant="outline" className="mt-4 w-full">
+                      <a href="/lab">
+                        <FlaskConical className="h-4 w-4" />
+                        Open deterministic protocol lab
+                        <ArrowRight className="h-4 w-4" />
+                      </a>
+                    </Button>
                   </div>
 
                   <div className="text-sm text-neutral-500 mt-2">
@@ -360,31 +338,22 @@ export default function AuthPage() {
                   </Form>
                 </CardContent>
                 <CardFooter className="flex flex-col space-y-4">
-                  {/* Wallet Connection Options */}
                   <div className="w-full">
                     <div className="relative">
                       <div className="absolute inset-0 flex items-center">
                         <span className="w-full border-t border-neutral-200" />
                       </div>
                       <div className="relative flex justify-center text-xs">
-                        <span className="bg-white px-2 text-neutral-500">Or register with wallet</span>
+                        <span className="bg-white px-2 text-neutral-500">Prefer a no-login walkthrough?</span>
                       </div>
                     </div>
 
-                    <div className="mt-4 grid grid-cols-2 gap-3">
-                      <Button variant="outline" type="button" className="flex items-center justify-center">
-                        <Wallet className="h-5 w-5 mr-2 text-orange-500" />
-                        MetaMask
-                      </Button>
-                      <Button variant="outline" type="button" className="flex items-center justify-center">
-                        <Wallet className="h-5 w-5 mr-2 text-green-600" />
-                        Yubikey
-                      </Button>
-                      <Button variant="outline" type="button" className="flex items-center justify-center col-span-2">
-                        <Wallet className="h-5 w-5 mr-2 text-black" />
-                        Ledger
-                      </Button>
-                    </div>
+                    <Button asChild variant="outline" className="mt-4 w-full">
+                      <a href="/lab">
+                        Explore the protocol lab
+                        <ArrowRight className="h-4 w-4" />
+                      </a>
+                    </Button>
                   </div>
 
                   <div className="text-sm text-neutral-500 mt-2">
@@ -410,29 +379,31 @@ export default function AuthPage() {
             <div className="rounded-lg bg-white p-2 w-16 h-16 flex items-center justify-center shadow-sm">
               <Logo variant="large" showText={false} />
             </div>
-            <h2 className="text-3xl font-bold">AI-Powered Commodity Trading</h2>
+            <h2 className="text-3xl font-bold">Commodity exchange protocol study</h2>
             <p className="text-gray-600">
-              BarterTrade uses advanced zero-knowledge proofs and blockchain smart contracts to create a secure, private, and efficient marketplace for commodity trading.
+              This authenticated surface preserves the original marketplace prototype. Matching,
+              identity, contract, and settlement screens are experiments—not a live exchange or
+              financial service.
             </p>
             
             <div className="border-t border-gray-200 pt-6 mt-8">
-              <h3 className="font-medium mb-4">Platform Features</h3>
+              <h3 className="font-medium mb-4">Prototype status</h3>
               <ul className="space-y-3">
                 <li className="flex items-center">
                   <div className="h-6 w-6 rounded-full bg-primary/20 mr-3 flex items-center justify-center text-primary text-sm">✓</div>
-                  <span>Secure identity verification with ZKP</span>
+                  <span>Implemented: listings, offers, and session auth</span>
                 </li>
                 <li className="flex items-center">
                   <div className="h-6 w-6 rounded-full bg-primary/20 mr-3 flex items-center justify-center text-primary text-sm">✓</div>
-                  <span>Blockchain-backed smart contracts</span>
+                  <span>Simulated: identity and settlement workflows</span>
                 </li>
                 <li className="flex items-center">
                   <div className="h-6 w-6 rounded-full bg-primary/20 mr-3 flex items-center justify-center text-primary text-sm">✓</div>
-                  <span>AI-powered barter matching</span>
+                  <span>Implemented: transparent value-match arithmetic</span>
                 </li>
                 <li className="flex items-center">
                   <div className="h-6 w-6 rounded-full bg-primary/20 mr-3 flex items-center justify-center text-primary text-sm">✓</div>
-                  <span>Real-time market insights</span>
+                  <span>Roadmap: external market, inspection, and payment adapters</span>
                 </li>
               </ul>
             </div>
@@ -442,15 +413,11 @@ export default function AuthPage() {
               <div className="flex flex-wrap gap-4">
                 <div className="flex items-center space-x-1 text-sm text-gray-500">
                   <GitMerge className="h-4 w-4" />
-                  <span>Semaphore</span>
+                  <span>Local proof fixture</span>
                 </div>
                 <div className="flex items-center space-x-1 text-sm text-gray-500">
-                  <SiEthereum className="h-4 w-4" />
-                  <span>Ethers.js</span>
-                </div>
-                <div className="flex items-center space-x-1 text-sm text-gray-500">
-                  <Wallet className="h-4 w-4" />
-                  <span>WalletConnect</span>
+                  <FlaskConical className="h-4 w-4" />
+                  <span>Challenge-response experiment</span>
                 </div>
                 <div className="flex items-center space-x-1 text-sm text-gray-500">
                   <SiPostgresql className="h-4 w-4" />

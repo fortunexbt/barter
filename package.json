@@ -1,13 +1,21 @@
 {
-  "name": "rest-express",
-  "version": "1.0.0",
+  "name": "barter-protocol-lab",
+  "version": "2.0.0",
+  "description": "A deterministic, no-login commodity exchange protocol demonstrator.",
   "type": "module",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fortunexbt/barter.git"
+  },
+  "homepage": "https://github.com/fortunexbt/barter#readme",
   "scripts": {
     "dev": "tsx server/index.ts",
     "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
     "start": "NODE_ENV=production node dist/index.js",
     "check": "tsc",
+    "test": "tsx --test client/src/features/protocol-lab/demo-engine.test.ts",
+    "verify": "npm run check && npm test && npm run build",
     "db:push": "drizzle-kit push"
   },
   "dependencies": {
@@ -42,9 +50,6 @@
     "@radix-ui/react-toggle-group": "^1.1.0",
     "@radix-ui/react-tooltip": "^1.1.3",
     "@replit/vite-plugin-shadcn-theme-json": "^0.0.4",
-    "@semaphore-protocol/group": "^4.9.1",
-    "@semaphore-protocol/identity": "^4.9.1",
-    "@semaphore-protocol/proof": "^4.9.1",
     "@tanstack/react-query": "^5.60.5",
     "@types/pg": "^8.11.11",
     "class-variance-authority": "^0.7.0",
@@ -52,7 +57,7 @@
     "cmdk": "^1.0.0",
     "connect-pg-simple": "^10.0.0",
     "date-fns": "^3.6.0",
-    "drizzle-orm": "^0.39.1",
+    "drizzle-orm": "^0.45.2",
     "drizzle-zod": "^0.7.0",
     "embla-carousel-react": "^8.3.0",
     "express": "^4.21.2",

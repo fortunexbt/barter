@@ -46,7 +46,7 @@ export default function AdminPage() {
           </div>
           <div>
             <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-            <p className="text-gray-500">Manage users, KYC verifications, and platform activity</p>
+            <p className="text-gray-500">Inspect fixture users, identity states, and prototype activity</p>
           </div>
         </div>
         <Link to="/">
@@ -65,7 +65,7 @@ export default function AdminPage() {
           </TabsTrigger>
           <TabsTrigger value="kyc" className="flex items-center justify-center">
             <FileCheck className="h-4 w-4 mr-2" />
-            KYC Verifications
+            Identity Fixtures
           </TabsTrigger>
           <TabsTrigger value="commodities" className="flex items-center justify-center">
             <Package2 className="h-4 w-4 mr-2" />
@@ -160,8 +160,8 @@ function KycVerificationsTab({ active }: { active: boolean }) {
     <TabsContent value="kyc">
       <Card>
         <CardHeader>
-          <CardTitle>KYC Verifications</CardTitle>
-          <CardDescription>Manage user identity verifications</CardDescription>
+          <CardTitle>Identity Fixture States</CardTitle>
+          <CardDescription>Inspect synthetic prototype identity records</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -176,7 +176,7 @@ function KycVerificationsTab({ active }: { active: boolean }) {
                   <TableHead>User</TableHead>
                   <TableHead>Document Type</TableHead>
                   <TableHead>Document Number</TableHead>
-                  <TableHead>ZKP Verified</TableHead>
+                  <TableHead>Proof Demo</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Uploaded At</TableHead>
                 </TableRow>
@@ -190,9 +190,9 @@ function KycVerificationsTab({ active }: { active: boolean }) {
                     <TableCell>{doc.documentNumber}</TableCell>
                     <TableCell>
                       {doc.zkpVerified ? (
-                        <Badge variant="success">Verified</Badge>
+                        <Badge variant="success">Demo complete</Badge>
                       ) : (
-                        <Badge variant="secondary">Not Verified</Badge>
+                        <Badge variant="secondary">Demo pending</Badge>
                       )}
                     </TableCell>
                     <TableCell>
@@ -329,7 +329,7 @@ function KycStatusBadge({ status }: { status: string | null }) {
   
   switch (status.toLowerCase()) {
     case "verified":
-      return <Badge variant="success">Verified</Badge>;
+      return <Badge variant="success">Demo complete</Badge>;
     case "pending":
       return <Badge variant="warning">Pending</Badge>;
     case "rejected":
