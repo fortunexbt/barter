@@ -97,7 +97,11 @@ export default function ProtocolLabPage() {
       </a>
 
       <header className="protocol-masthead">
-        <a className="protocol-wordmark" href="/lab" aria-label="Barter Protocol Lab home">
+        <a
+          className="protocol-wordmark"
+          href={import.meta.env.BASE_URL}
+          aria-label="Barter Protocol Lab home"
+        >
           <span className="protocol-wordmark-mark">B/</span>
           <span>
             <strong>Barter</strong>
