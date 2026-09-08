@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { Switch, Route } from "wouter";
+import { Router, Switch, Route } from "wouter";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import ErrorBoundary from "@/components/ui/error-boundary";
@@ -24,15 +24,17 @@ export default function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <Switch>
-          <Route path="/lab" component={ProtocolLabPage} />
-          <Route path="/demo" component={ProtocolLabPage} />
-          <Route>
-            <Suspense fallback={<LegacyLoading />}>
-              <LegacyApp />
-            </Suspense>
-          </Route>
-        </Switch>
+        <Router base={import.meta.env.BASE_URL}>
+          <Switch>
+            <Route path="/lab" component={ProtocolLabPage} />
+            <Route path="/demo" component={ProtocolLabPage} />
+            <Route>
+              <Suspense fallback={<LegacyLoading />}>
+                <LegacyApp />
+              </Suspense>
+            </Route>
+          </Switch>
+        </Router>
       </QueryClientProvider>
     </ErrorBoundary>
   );
