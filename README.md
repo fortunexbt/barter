@@ -6,6 +6,8 @@ An interactive commodity-exchange protocol demonstrator: three synthetic trades,
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-111111)
 ![License](https://img.shields.io/badge/license-MIT-b3261e)
 
+[**Open the live protocol lab ↗**](https://fortunexbt.github.io/barter/)
+
 ![Barter Protocol Lab showing the deterministic paper-ledger workbench](./assets/barter-protocol-lab.jpg)
 
 The showcase route is **`/lab`**. Its visual language borrows from a 1970s commodity clearing desk: warm paper stock, drafting ink, customs-stamp green, red ledger rules, and monospaced manifests.
