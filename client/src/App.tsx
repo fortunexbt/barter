@@ -28,6 +28,7 @@ export default function App() {
           <Switch>
             <Route path="/lab" component={ProtocolLabPage} />
             <Route path="/demo" component={ProtocolLabPage} />
+            <Route path="/" component={ProtocolLabPage} />
             <Route>
               <Suspense fallback={<LegacyLoading />}>
                 <LegacyApp />
