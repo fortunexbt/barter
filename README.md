@@ -1,109 +1,69 @@
 # Barter Protocol Lab
 
-An interactive commodity-exchange protocol demonstrator: three synthetic trades, one deterministic state machine, and an immutable event tape you can replay without accounts, secrets, a database, or external services.
+Replay a commodity barter one journal entry at a time. Three synthetic swaps run
+through one state machine, and you can drag a punched event tape back and forth
+to watch the state get recomputed from the journal.
+
+**Live demo: [barter-sooty.vercel.app](https://barter-sooty.vercel.app)**
 
 [![CI](https://github.com/fortunexbt/barter/actions/workflows/ci.yml/badge.svg)](https://github.com/fortunexbt/barter/actions/workflows/ci.yml)
-![TypeScript](https://img.shields.io/badge/TypeScript-strict-111111)
-![License](https://img.shields.io/badge/license-MIT-b3261e)
 
-[**Open the live protocol lab ↗**](https://fortunexbt.github.io/barter/)
+![The lab mid-replay: state diagram, inspection stamp and the punched event tape](docs/screenshot.webp)
 
-![Barter Protocol Lab showing the deterministic paper-ledger workbench](./assets/barter-protocol-lab.jpg)
+## What it does
 
-The showcase route is **`/lab`**. Its visual language borrows from a 1970s commodity clearing desk: warm paper stock, drafting ink, customs-stamp green, red ledger rules, and monospaced manifests.
-
-## What you can replay
-
-| Folio | Scenario | State path | Outcome |
+| Folio | Trade | Path | Ends |
 | --- | --- | --- | --- |
-| PL-0174-A | Copper cathodes / green coffee | match → terms → inspection | simulated settlement |
-| PL-0288-B | Durum wheat / freight capacity | match → counter → revised terms | simulated settlement |
-| PL-0312-C | Cocoa beans / machine bearings | match → inspection hold | clean cancellation |
+| PL-0174-A | Copper cathodes / green coffee | matched, terms, inspection passed | settled |
+| PL-0288-B | Durum wheat / freight capacity | matched, countered, terms | settled |
+| PL-0312-C | Cocoa beans / machine bearings | matched, inspection hold | cancelled |
 
-Every timestamp, valuation, event, and journal fingerprint is fixed. Replaying the same scenario at the same step produces the same snapshot. The demo makes no network requests and moves no money, title, token, or commodity.
+- The state diagram shows all eight states and every transition the trades use.
+  The selected trade's path is drawn solid, and you can click a state on it to
+  jump there.
+- The event tape has one frame per journal entry. Drag it, or focus it and use
+  the arrow keys, Home and End. Each frame's holes spell the journal mark after
+  that entry in binary, so rewinding un-punches them.
+- The journal lists every entry with its actor, evidence and transition. The
+  URL keeps the trade and step (`?scenario=wheat-freight&step=2`), so a replay
+  position can be shared.
 
-## Run it
+## How it works
 
-Requirements: Node.js 20+ and npm.
+`client/src/features/protocol-lab/demo-engine.ts` holds the three fixture
+trades and `replayScenario(scenario, step)`. The function applies the first
+`step` journal entries to the initial state, throws if an entry's `from` state
+doesn't match the current state, clamps out-of-range steps, and hashes the
+folio, state and applied entries (FNV-1a) into an 8-digit journal mark. The UI
+never stores state. Every render calls the reducer again, which is why
+scrubbing backwards is free.
+
+It's a static Vite and React build with no server, no network calls and no
+keys.
+
+## Run locally
+
+Node 20.19 or newer.
 
 ```bash
 npm install
-npm run dev
+npm run dev        # http://localhost:4151
 ```
 
-Open [http://localhost:5000/lab](http://localhost:5000/lab). No `.env`, sign-in, Postgres instance, wallet, or API key is needed.
-
-To exercise the complete quality gate:
+## Tests
 
 ```bash
-npm run verify
+npm test           # replay invariants: determinism, clamping, invalid transitions
+npm run verify     # type check, tests, production build
 ```
 
-That command runs TypeScript checking, deterministic state-machine tests, and the production build.
+## Limits of the demo
 
-## Capability ledger
-
-The repository began as a broad marketplace prototype. This revival keeps that surface available for exploration while drawing a hard line between working software and product concepts.
-
-| Status | Included |
-| --- | --- |
-| Implemented | Public protocol lab, deterministic reducer, three replay fixtures, event journal, responsive UI, session authentication, in-memory development storage, optional Postgres adapter |
-| Simulated | Commodity reference values, counterparties, matching, inspection evidence, agreement records, escrow states, identity checks, settlement receipts |
-| Roadmap | Live market data, regulated identity provider, inspection network, custody or payment rails, legal title transfer, blockchain anchoring, production matching engine |
-
-The authenticated `/auth` workspace is explicitly marked **legacy prototype**. It is useful for exploring screens and data flows, but it is not a live marketplace and must not receive real identity documents, funds, wallet keys, or commercially sensitive data.
-
-## Architecture
-
-```text
-/lab UI ──> fixed scenario fixtures ──> pure replay reducer ──> snapshot + event tape
-
-legacy UI ──> Express REST API ──> in-memory adapter (default)
-                              └──> PostgreSQL adapter (optional)
-```
-
-The lab deliberately sits outside the authentication provider and storage layer. This keeps the showcase portable and makes its claims independently testable. The reducer rejects invalid transitions, clamps replay boundaries, and derives a stable journal mark from applied events.
-
-Key files:
-
-- `client/src/features/protocol-lab/demo-engine.ts` — scenarios and replay engine
-- `client/src/features/protocol-lab/demo-engine.test.ts` — deterministic contract tests
-- `client/src/pages/protocol-lab-page.tsx` — public interactive showcase
-- `server/storage.ts` — typed in-memory adapter and optional database selection
-- `shared/schema.ts` — shared domain model
-
-## Optional database mode
-
-Without `DATABASE_URL`, the server starts with deterministic in-memory fixtures. For persistent local development, copy `.env.example`, provide a PostgreSQL connection string, and run:
-
-```bash
-npm run db:push
-npm run dev
-```
-
-A persistent production deployment must set a strong `SESSION_SECRET`. See `.env.example` for the supported variables.
-
-## Security boundary
-
-- Registration always creates a standard trader account; clients cannot assign themselves admin or verified status.
-- Password hashes are excluded from authentication responses.
-- Session cookies are HTTP-only, same-site, and secure in production.
-- Identity screens accept only three named synthetic fixture IDs—there is no file picker or free-text document intake—and the API rejects every other value.
-- The legacy WebSocket endpoint fails closed until session-authenticated upgrades are implemented.
-- Production dependencies are audited in CI; `npm audit --omit=dev` reports zero known vulnerabilities at this revision.
-- The repository has not been audited for custody, compliance, or production commodity trading.
-
-## Scripts
-
-| Command | Purpose |
-| --- | --- |
-| `npm run dev` | Start Express and Vite on port 5000 |
-| `npm run check` | Run the TypeScript compiler |
-| `npm test` | Test deterministic replay invariants |
-| `npm run build` | Build browser and server bundles |
-| `npm run verify` | Run check, tests, and build |
-| `npm run db:push` | Push the optional Drizzle schema |
+Counterparties, reference values, inspection readings and certificates are
+fixed fixtures, not market data. There are no accounts, prices, payments,
+custody, title transfer or chain anchoring. It models the protocol and is not
+an exchange.
 
 ## License
 
-MIT © 2026 FortuneXBT. See [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE).
