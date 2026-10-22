@@ -2,7 +2,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   protocolScenarios,
+  protocolTransitions,
   replayScenario,
+  terminalStates,
   type ProtocolScenario,
 } from "./demo-engine";
 
@@ -51,5 +53,23 @@ test("invalid state transitions fail loudly", () => {
   assert.throws(
     () => replayScenario(invalidScenario, 1),
     /Invalid protocol transition/,
+  );
+});
+
+test("the transition graph covers every event and nothing leaves a terminal state", () => {
+  for (const scenario of protocolScenarios) {
+    for (const event of scenario.events) {
+      assert.ok(
+        protocolTransitions.some(
+          (transition) => transition.from === event.from && transition.to === event.to,
+        ),
+        `${event.id} is missing from the transition graph`,
+      );
+    }
+  }
+
+  assert.equal(protocolTransitions.length, 9);
+  assert.ok(
+    protocolTransitions.every((transition) => !terminalStates.includes(transition.from)),
   );
 });

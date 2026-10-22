@@ -274,6 +274,22 @@ const scenarios: readonly ProtocolScenario[] = [
 
 export const protocolScenarios = scenarios;
 
+export interface ProtocolTransition {
+  from: ProtocolState;
+  to: ProtocolState;
+}
+
+/** Every transition any scenario uses, in order of first appearance. */
+export const protocolTransitions: readonly ProtocolTransition[] = scenarios
+  .flatMap((scenario) => scenario.events)
+  .filter(
+    (event, index, events) =>
+      events.findIndex((other) => other.from === event.from && other.to === event.to) === index,
+  )
+  .map(({ from, to }) => ({ from, to }));
+
+export const terminalStates: readonly ProtocolState[] = ["settled", "cancelled"];
+
 export function getScenario(scenarioId: string): ProtocolScenario {
   return scenarios.find((scenario) => scenario.id === scenarioId) ?? scenarios[0];
 }
