@@ -131,7 +131,7 @@ const scenarios: readonly ProtocolScenario[] = [
         evidence: "CLOSE-0174 / simulated",
       },
     ],
-    outcome: "Balanced exchange · simulated close",
+    outcome: "Both lots passed inspection and closed with a simulated settlement.",
   },
   {
     id: "wheat-freight",
@@ -205,7 +205,7 @@ const scenarios: readonly ProtocolScenario[] = [
         evidence: "CLOSE-0288 / simulated",
       },
     ],
-    outcome: "Counter-offer accepted · simulated close",
+    outcome: "The revised quantity closed with a simulated settlement.",
   },
   {
     id: "cocoa-hold",
@@ -262,13 +262,13 @@ const scenarios: readonly ProtocolScenario[] = [
         at: "15:22 UTC",
         actor: "Protocol rule",
         action: "Exchange cancelled",
-        detail: "The deterministic cancellation boundary is applied; neither leg is represented as transferred.",
+        detail: "Rule Q-04 cancels the exchange. Neither leg is shown as transferred.",
         from: "inspection_hold",
         to: "cancelled",
         evidence: "CANCEL-0312 / rule Q-04",
       },
     ],
-    outcome: "Inspection boundary applied · no settlement",
+    outcome: "The quality hold ended in cancellation, so neither leg settled.",
   },
 ] as const;
 
