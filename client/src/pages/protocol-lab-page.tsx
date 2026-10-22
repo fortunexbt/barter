@@ -11,6 +11,7 @@ import {
   type ProtocolState,
   type ReplaySnapshot,
 } from "@/features/protocol-lab/demo-engine";
+import { priceSource, usdPerTonne } from "@/features/protocol-lab/reference-prices";
 
 const RUN_INTERVAL_MS = 900;
 
@@ -61,6 +62,12 @@ function stateName(state: ProtocolState) {
 function unitPrice(value: number) {
   return Number.isInteger(value) ? money.format(value) : cents.format(value);
 }
+
+const priceMonth = new Intl.DateTimeFormat("en-GB", {
+  month: "long",
+  year: "numeric",
+  timeZone: "UTC",
+}).format(new Date(`${priceSource.period}-01T00:00:00Z`));
 
 function signedMoney(value: number) {
   if (value === 0) return money.format(0);
@@ -131,8 +138,9 @@ export default function ProtocolLabPage() {
           Barter Protocol Lab
         </a>
         <p className="protocol-intro">
-          A commodity barter state machine, replayed from a fixed event journal. Every party,
-          price and document is synthetic.
+          A commodity barter state machine, replayed from a fixed event journal. Prices are
+          World Bank averages for {priceMonth}. Parties, documents and inspection readings are
+          invented.
         </p>
         <a
           className="protocol-source"
@@ -199,7 +207,6 @@ export default function ProtocolLabPage() {
             <h1>{scenario.title}</h1>
             <p className="protocol-route">
               <span className="protocol-mono">{scenario.folio}</span>
-              <span>{scenario.route}</span>
             </p>
             <p className="protocol-synopsis">{scenario.synopsis}</p>
           </div>
@@ -267,8 +274,14 @@ export default function ProtocolLabPage() {
           <span>
             Step {snapshot.appliedSteps} of {stepCount}
           </span>
+          <a href={priceSource.page} target="_blank" rel="noreferrer">
+            Prices from the World Bank Pink Sheet, {priceMonth} ({priceSource.licence})
+          </a>
           <span>
-            Journal hash <span className="protocol-mono">{snapshot.fingerprint}</span>
+            SHA-256 journal head{" "}
+            <span className="protocol-mono" title={snapshot.journalHash}>
+              {snapshot.journalHash.slice(0, 12)}
+            </span>
           </span>
         </footer>
       </section>
@@ -339,9 +352,7 @@ function LegRow({
     <div className="protocol-leg" data-amended={isAmended}>
       <p className="protocol-leg-side">{label}</p>
       <p className="protocol-leg-name">{leg.commodity}</p>
-      <p className="protocol-leg-grade">
-        {leg.grade}, {leg.origin}
-      </p>
+      <p className="protocol-leg-grade">{leg.grade}</p>
       <p className="protocol-leg-figures">
         <span>
           {isAmended && (
@@ -352,11 +363,13 @@ function LegRow({
             </>
           )}
           <span className="protocol-leg-quantity">{quantity.format(leg.quantity)}</span>{" "}
-          {leg.unit}
+          t
         </span>
         <strong>{money.format(referenceValue(leg))}</strong>
       </p>
-      <p className="protocol-leg-price">Unit price {unitPrice(leg.referenceValueUsd)}</p>
+      <p className="protocol-leg-price">
+        Reference price {unitPrice(usdPerTonne(leg.priceSeries))}/t
+      </p>
     </div>
   );
 }

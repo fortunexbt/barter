@@ -734,6 +734,18 @@ body:has(.protocol-lab) {
   font-size: 0.75rem;
 }
 
+.protocol-statusbar a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--lab-line);
+  text-underline-offset: 0.2em;
+}
+
+.protocol-statusbar a:hover {
+  color: var(--lab-ink);
+  text-decoration-color: currentColor;
+}
+
 /* Layout breakpoints */
 
 @media (max-width: 960px) {

@@ -17,7 +17,8 @@
     "check": "tsc",
     "test": "tsx --test client/src/features/protocol-lab/demo-engine.test.ts",
     "verify": "npm run check && npm test && npm run build",
-    "db:push": "drizzle-kit push"
+    "db:push": "drizzle-kit push",
+    "data:prices": "tsx scripts/extract-pink-sheet.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

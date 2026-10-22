@@ -1,0 +1,51 @@
+{
+  "source": {
+    "title": "World Bank Commodity Price Data (The Pink Sheet), monthly prices",
+    "publisher": "World Bank",
+    "page": "https://www.worldbank.org/en/research/commodity-markets",
+    "url": "https://thedocs.worldbank.org/en/doc/74e8be41ceb20fa0da750cda2f6b9e4e-0050012026/related/CMO-Historical-Data-Monthly.xlsx",
+    "sha256": "ea1c350827878ea3bbe30e3cda16a13fd3bd5b409b8458940dc94a36b5a33154",
+    "updated": "October 02, 2026",
+    "licence": "CC BY 4.0",
+    "licenceUrl": "https://datacatalog.worldbank.org/public-licenses#cc-by"
+  },
+  "period": "2026-09",
+  "series": {
+    "copper": {
+      "column": "Copper",
+      "unit": "$/mt",
+      "value": 14474,
+      "description": "Copper (LME), grade A, minimum 99.9935% purity, cathodes and wire bar shapes, settlement price"
+    },
+    "coffee-arabica": {
+      "column": "Coffee, Arabica",
+      "unit": "$/kg",
+      "value": 7.26,
+      "description": "Coffee, Arabica (ICO), International Coffee Organization indicator price, other mild Arabicas, average New York and Bremen/Hamburg markets, ex-dock"
+    },
+    "cocoa": {
+      "column": "Cocoa",
+      "unit": "$/kg",
+      "value": 5.92,
+      "description": "Cocoa (ICCO), International Cocoa Organization daily price, average of the first three positions on the terminal markets of New York and London, nearest three future trading months."
+    },
+    "wheat-us-hrw": {
+      "column": "Wheat, US HRW",
+      "unit": "$/mt",
+      "value": 347,
+      "description": "Wheat (U.S.), no. 2 hard red winter Gulf export price; June 2020 backwards, no. 1, hard red winter, ordinary protein, export price delivered at the US Gulf port for prompt or 30 days shipment"
+    },
+    "urea": {
+      "column": "Urea",
+      "unit": "$/mt",
+      "value": 407.5,
+      "description": "Urea, (Ukraine), prill spot f.o.b. Middle East, beginning March 2022; previously, f.o.b. Black Sea."
+    },
+    "rice-thai-5": {
+      "column": "Rice, Thai 5%",
+      "unit": "$/mt",
+      "value": 482,
+      "description": "Rice (Thailand), 5% broken, white rice (WR), milled, indicative price based on weekly surveys of export transactions, government standard, f.o.b. Bangkok"
+    }
+  }
+}
