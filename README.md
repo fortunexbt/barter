@@ -8,7 +8,7 @@ A commodity barter state machine with an explicit transition table, a SHA-256 ha
 
 [**Open the live protocol lab ↗**](https://fortunexbt.github.io/barter/)
 
-![Barter Protocol Lab stepping the copper and coffee exchange through its state path and event journal](./assets/barter-protocol-lab.jpg)
+![Barter Protocol Lab showing the wheat and urea counter-offer after the amended quantity is recorded](./assets/barter-protocol-lab.jpg)
 
 The lab route is **`/lab`**. Pick a scenario and step the journal forward or back. The derived state, leg quantities, value gap and journal hash all come from the same replay.
 
