@@ -8,9 +8,9 @@ An interactive commodity-exchange protocol demonstrator: three synthetic trades,
 
 [**Open the live protocol lab ↗**](https://fortunexbt.github.io/barter/)
 
-![Barter Protocol Lab showing the deterministic paper-ledger workbench](./assets/barter-protocol-lab.jpg)
+![Barter Protocol Lab stepping the copper and coffee exchange through its state path and event journal](./assets/barter-protocol-lab.jpg)
 
-The showcase route is **`/lab`**. Its visual language borrows from a 1970s commodity clearing desk: warm paper stock, drafting ink, customs-stamp green, red ledger rules, and monospaced manifests.
+The showcase route is **`/lab`**. Pick a scenario, step the journal forward or back, and the derived state, leg quantities, value gap and journal hash update from the same replay.
 
 ## What you can replay
 
@@ -101,6 +101,7 @@ A persistent production deployment must set a strong `SESSION_SECRET`. See `.env
 | `npm run check` | Run the TypeScript compiler |
 | `npm test` | Test deterministic replay invariants |
 | `npm run build` | Build browser and server bundles |
+| `npm run build:pages` | Build the static GitHub Pages site into `dist/pages` with the `/barter/` base path |
 | `npm run verify` | Run check, tests, and build |
 | `npm run db:push` | Push the optional Drizzle schema |
 

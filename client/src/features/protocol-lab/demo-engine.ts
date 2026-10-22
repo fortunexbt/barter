@@ -29,6 +29,15 @@ export interface ProtocolEvent {
   from: ProtocolState;
   to: ProtocolState;
   evidence: string;
+  amend?: LegAmendment;
+}
+
+export type LegSide = "offered" | "requested";
+
+/** A journal entry that changes the quantity of one leg from that step onward. */
+export interface LegAmendment {
+  leg: LegSide;
+  quantity: number;
 }
 
 export interface ProtocolScenario {
@@ -54,6 +63,8 @@ export interface ReplaySnapshot {
   nextEvent: ProtocolEvent | null;
   progress: number;
   isComplete: boolean;
+  offered: CommodityLeg;
+  requested: CommodityLeg;
   referenceDeltaUsd: number;
   fingerprint: string;
 }
@@ -131,7 +142,7 @@ const scenarios: readonly ProtocolScenario[] = [
         evidence: "CLOSE-0174 / simulated",
       },
     ],
-    outcome: "Balanced exchange · simulated close",
+    outcome: "Both lots passed inspection and closed with a simulated settlement.",
   },
   {
     id: "wheat-freight",
@@ -181,6 +192,7 @@ const scenarios: readonly ProtocolScenario[] = [
         from: "matched",
         to: "countered",
         evidence: "COUNTER-0288 / deterministic rule",
+        amend: { leg: "offered", quantity: 387.4 },
       },
       {
         id: "wheat-freight-03",
@@ -205,7 +217,7 @@ const scenarios: readonly ProtocolScenario[] = [
         evidence: "CLOSE-0288 / simulated",
       },
     ],
-    outcome: "Counter-offer accepted · simulated close",
+    outcome: "The revised quantity closed with a simulated settlement.",
   },
   {
     id: "cocoa-hold",
@@ -262,13 +274,13 @@ const scenarios: readonly ProtocolScenario[] = [
         at: "15:22 UTC",
         actor: "Protocol rule",
         action: "Exchange cancelled",
-        detail: "The deterministic cancellation boundary is applied; neither leg is represented as transferred.",
+        detail: "Rule Q-04 cancels the exchange. Neither leg is shown as transferred.",
         from: "inspection_hold",
         to: "cancelled",
         evidence: "CANCEL-0312 / rule Q-04",
       },
     ],
-    outcome: "Inspection boundary applied · no settlement",
+    outcome: "The quality hold ended in cancellation, so neither leg settled.",
   },
 ] as const;
 
@@ -278,7 +290,7 @@ export function getScenario(scenarioId: string): ProtocolScenario {
   return scenarios.find((scenario) => scenario.id === scenarioId) ?? scenarios[0];
 }
 
-function referenceValue(leg: CommodityLeg): number {
+export function referenceValue(leg: CommodityLeg): number {
   return Math.round(leg.quantity * leg.referenceValueUsd * 100) / 100;
 }
 
@@ -305,6 +317,10 @@ export function replayScenario(
   );
   const journal = scenario.events.slice(0, appliedSteps);
   let state = scenario.initialState;
+  const legs: Record<LegSide, CommodityLeg> = {
+    offered: scenario.offered,
+    requested: scenario.requested,
+  };
 
   for (const event of journal) {
     if (event.from !== state) {
@@ -313,13 +329,28 @@ export function replayScenario(
       );
     }
 
+    if (event.amend) {
+      const { leg, quantity } = event.amend;
+
+      if (!Number.isFinite(quantity) || quantity <= 0) {
+        throw new Error(`Invalid leg amendment in ${event.id}: quantity ${quantity}`);
+      }
+
+      legs[leg] = { ...legs[leg], quantity };
+    }
+
     state = event.to;
   }
 
+  // Amendments join the hash only when present, so journals without them keep their marks.
   const fingerprintSource = [
     scenario.folio,
     state,
-    ...journal.map((event) => `${event.id}:${event.from}>${event.to}`),
+    ...journal.map(
+      (event) =>
+        `${event.id}:${event.from}>${event.to}` +
+        (event.amend ? `:${event.amend.leg}=${event.amend.quantity}` : ""),
+    ),
   ].join("|");
 
   return {
@@ -330,9 +361,10 @@ export function replayScenario(
     nextEvent: scenario.events[appliedSteps] ?? null,
     progress: Math.round((appliedSteps / scenario.events.length) * 100),
     isComplete: appliedSteps === scenario.events.length,
+    offered: legs.offered,
+    requested: legs.requested,
     referenceDeltaUsd:
-      Math.round((referenceValue(scenario.offered) - referenceValue(scenario.requested)) * 100) /
-      100,
+      Math.round((referenceValue(legs.offered) - referenceValue(legs.requested)) * 100) / 100,
     fingerprint: fingerprint(fingerprintSource),
   };
 }
