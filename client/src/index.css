@@ -73,9 +73,7 @@ a {
 
 .lab {
   min-height: 100vh;
-  background:
-    repeating-linear-gradient(180deg, transparent 0 27px, var(--rule) 27px 28px),
-    var(--paper);
+  background: var(--paper);
   --tone: var(--carbon);
 }
 
@@ -290,8 +288,10 @@ a {
 
 /* State diagram */
 
+/* The machine is drawn on ledger ruling; labels carry a paper halo so rules and edges pass behind them. */
 .diagram {
-  min-height: 198px;
+  min-height: 220px;
+  background: repeating-linear-gradient(180deg, transparent 0 21px, var(--rule) 21px 22px);
 }
 
 .diagram svg {
@@ -358,6 +358,10 @@ a {
 
 .diagram-node text {
   fill: var(--ink-soft);
+  stroke: var(--paper-raised);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+  paint-order: stroke;
   font: 600 12.5px/1 var(--display);
   letter-spacing: 0.01em;
   text-anchor: middle;
@@ -896,6 +900,39 @@ a {
 }
 
 @media (max-width: 640px) {
+  /* Keep the two hero pieces, diagram and tape, together on a phone screen. */
+  .desk {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .board {
+    display: contents;
+  }
+
+  .tape-deck {
+    order: 1;
+    margin-top: 0;
+  }
+
+  .readout {
+    order: 2;
+  }
+
+  .ledger {
+    order: 3;
+    margin-top: 14px;
+  }
+
+  .scenarios {
+    margin-bottom: 0;
+  }
+
+  .intro p {
+    font-size: 1rem;
+  }
+
   .masthead-links {
     gap: 14px;
     font-size: 0.9rem;

@@ -9,7 +9,7 @@
     "type": "git",
     "url": "https://github.com/fortunexbt/barter.git"
   },
-  "homepage": "https://barter-fortunexbts-projects.vercel.app",
+  "homepage": "https://barter-sooty.vercel.app",
   "scripts": {
     "dev": "vite --port 4151",
     "build": "vite build",

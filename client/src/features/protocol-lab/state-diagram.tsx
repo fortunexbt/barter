@@ -24,7 +24,8 @@ const grid: Record<ProtocolState, readonly [number, number]> = {
 const states = Object.keys(grid) as ProtocolState[];
 const NODE_RADIUS = 8;
 const PAD_X = 40;
-const PAD_TOP = 22;
+// Room for the two-line labels that sit above the detour row.
+const PAD_TOP = 44;
 const ROW_HEIGHT = 66;
 const LABEL_SPACE = 44;
 // Keep in sync with .diagram min-height so the page does not shift on first measure.
@@ -202,7 +203,8 @@ export function StateDiagram({ scenario, snapshot, reducedMotion, onJump }: Stat
                 {terminalStates.includes(state) && (
                   <circle className="diagram-terminal" cx={x} cy={y} r={NODE_RADIUS + 4} />
                 )}
-                <text x={x} y={y + NODE_RADIUS + 17}>
+                {/* Detour-row labels sit above the node so the edges leaving it stay clear. */}
+                <text x={x} y={grid[state][1] === 0 ? y - NODE_RADIUS - (second ? 22 : 8) : y + NODE_RADIUS + 17}>
                   <tspan x={x}>{first}</tspan>
                   {second && (
                     <tspan x={x} dy="1.1em">
