@@ -434,6 +434,7 @@ a {
 
 .stamp {
   align-self: flex-start;
+  justify-self: start;
   padding: 4px 12px 3px;
   border: 3px solid var(--tone);
   border-radius: 4px;
@@ -901,7 +902,7 @@ a {
   }
 
   .wordmark span:last-child {
-    max-width: 9ch;
+    max-width: 16ch;
     line-height: 1.05;
   }
 
