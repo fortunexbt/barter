@@ -688,6 +688,7 @@ a {
 .ledger {
   display: grid;
   grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  align-items: start;
   gap: 14px;
   margin-top: 28px;
 }
@@ -823,8 +824,9 @@ a {
   font-size: 0.85rem;
 }
 
-.journal li[data-applied="false"] .journal-body {
-  opacity: 0.78;
+.journal li[data-applied="false"] .journal-head strong {
+  color: var(--ink-soft);
+  font-weight: 500;
 }
 
 @media (hover: hover) and (pointer: fine) {
