@@ -99,7 +99,7 @@ export default function ProtocolLabPage() {
     }, RUN_INTERVAL_MS);
 
     return () => window.clearTimeout(timer);
-  }, [isPlaying, stepCount, snapshot.isComplete]);
+  }, [isPlaying, step, stepCount, snapshot.isComplete]);
 
   const selectScenario = (id: string) => {
     setScenarioId(id);
