@@ -4,6 +4,7 @@ import {
   getScenario,
   protocolScenarios,
   protocolStateLabel,
+  referenceValue,
   replayScenario,
   type CommodityLeg,
   type ProtocolScenario,
@@ -222,8 +223,8 @@ export default function ProtocolLabPage() {
         <div className="protocol-body">
           <section className="protocol-legs" aria-labelledby="protocol-legs-title">
             <h2 id="protocol-legs-title">Exchange legs</h2>
-            <LegRow label="Offered" leg={scenario.offered} />
-            <LegRow label="Requested" leg={scenario.requested} />
+            <LegRow label="Offered" leg={snapshot.offered} listed={scenario.offered} />
+            <LegRow label="Requested" leg={snapshot.requested} listed={scenario.requested} />
             <div className="protocol-gap">
               <div>
                 <span>Value gap</span>
@@ -323,9 +324,19 @@ function StateTrack({
   );
 }
 
-function LegRow({ label, leg }: { label: string; leg: CommodityLeg }) {
+function LegRow({
+  label,
+  leg,
+  listed,
+}: {
+  label: string;
+  leg: CommodityLeg;
+  listed: CommodityLeg;
+}) {
+  const isAmended = leg.quantity !== listed.quantity;
+
   return (
-    <div className="protocol-leg">
+    <div className="protocol-leg" data-amended={isAmended}>
       <p className="protocol-leg-side">{label}</p>
       <p className="protocol-leg-name">{leg.commodity}</p>
       <p className="protocol-leg-grade">
@@ -333,10 +344,19 @@ function LegRow({ label, leg }: { label: string; leg: CommodityLeg }) {
       </p>
       <p className="protocol-leg-figures">
         <span>
-          {quantity.format(leg.quantity)} {leg.unit} at {unitPrice(leg.referenceValueUsd)}
+          {isAmended && (
+            <>
+              <span className="protocol-sr-only">Amended from </span>
+              <del>{quantity.format(listed.quantity)}</del>
+              <span className="protocol-sr-only"> to</span>{" "}
+            </>
+          )}
+          <span className="protocol-leg-quantity">{quantity.format(leg.quantity)}</span>{" "}
+          {leg.unit}
         </span>
-        <strong>{money.format(leg.quantity * leg.referenceValueUsd)}</strong>
+        <strong>{money.format(referenceValue(leg))}</strong>
       </p>
+      <p className="protocol-leg-price">Unit price {unitPrice(leg.referenceValueUsd)}</p>
     </div>
   );
 }

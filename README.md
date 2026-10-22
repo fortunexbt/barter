@@ -10,7 +10,7 @@ An interactive commodity-exchange protocol demonstrator: three synthetic trades,
 
 ![Barter Protocol Lab stepping the copper and coffee exchange through its state path and event journal](./assets/barter-protocol-lab.jpg)
 
-The showcase route is **`/lab`**. Pick a scenario, step the journal forward or back, and the derived state, state path and journal hash update from the same replay.
+The showcase route is **`/lab`**. Pick a scenario, step the journal forward or back, and the derived state, leg quantities, value gap and journal hash update from the same replay.
 
 ## What you can replay
 

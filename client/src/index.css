@@ -551,6 +551,30 @@ body:has(.protocol-lab) {
   font-weight: 600;
 }
 
+.protocol-leg-price {
+  color: var(--lab-ink-3);
+  font-size: 0.75rem;
+}
+
+.protocol-leg-figures del {
+  color: var(--lab-ink-3);
+}
+
+.protocol-leg[data-amended="true"] .protocol-leg-quantity {
+  color: var(--lab-ink);
+  font-weight: 600;
+}
+
+.protocol-leg[data-amended="true"] .protocol-leg-figures {
+  animation: protocol-amend-in 900ms ease-out;
+}
+
+@keyframes protocol-amend-in {
+  from {
+    background-color: color-mix(in srgb, var(--lab-active) 10%, transparent);
+  }
+}
+
 .protocol-gap {
   display: flex;
   align-items: baseline;
