@@ -53,7 +53,7 @@ const commodityFormSchema = z.object({
   priceUnit: z.string().min(1, "Price unit is required"),
   volume: z.number().min(0.01, "Volume must be greater than 0"),
   volumeUnit: z.string().min(1, "Volume unit is required"),
-  status: z.string().default("available"),
+  status: z.string(),
   icon: z.string().optional().nullable(),
   iconBg: z.string().optional().nullable(),
 });
