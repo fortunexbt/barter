@@ -10,7 +10,7 @@ A commodity barter state machine with an explicit transition table, a SHA-256 ha
 
 ![Barter Protocol Lab showing the wheat and urea counter-offer after the amended quantity is recorded](./assets/barter-protocol-lab.jpg)
 
-The lab route is **`/lab`**. Pick a scenario and step the journal forward or back. The derived state, leg quantities, value gap and journal hash all come from the same replay.
+The lab route is **`/lab`**. Pick a scenario and step the journal forward or back. The derived state, leg quantities, value gap and journal hash all come from the same replay. The two legs hang from a balance beam that leans 3.5° for every 1% of value gap, up to 8°, so a counter-offer that closes the gap brings it level.
 
 ## What you can replay
 
@@ -56,7 +56,7 @@ $ printf '%s\n%s' 94684eecc27612b0cee840ae503c3924480928abe8a68d8e49f09f4b47035f
 01e8f4e46d8928a44a7b32b7b68caa195e2891caa0ed051e12d96ec5cde58d28  -
 ```
 
-The page shows the first 12 characters of the head for the current step. The SHA-256 implementation is checked against the FIPS 180-4 vectors and `node:crypto`, and the final head of each journal is pinned in the tests.
+Each applied journal line shows the head it produced, and the foot of the journal shows the full head for the current step. The SHA-256 implementation is checked against the FIPS 180-4 vectors and `node:crypto`, and the final head of each journal is pinned in the tests.
 
 ## Data sources
 
