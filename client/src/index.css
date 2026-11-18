@@ -293,15 +293,15 @@ body:has(.lab) {
 
 .lab-heading {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) 17.5rem;
   gap: 1.5rem;
   align-items: start;
 }
 
 .lab-heading h1 {
-  font-size: clamp(1.5rem, 1.1rem + 1.3vw, 2.125rem);
+  font-size: clamp(1.5rem, 1.1rem + 1vw, 1.75rem);
   font-weight: 750;
-  font-stretch: 112%;
+  font-stretch: 104%;
   line-height: 1.05;
   letter-spacing: -0.02em;
   text-wrap: balance;
@@ -319,13 +319,13 @@ body:has(.lab) {
   display: grid;
   justify-items: end;
   gap: 0.5rem;
-  max-width: 15.5rem;
   padding-top: 0.25rem;
 }
 
 .lab-stamp {
   display: grid;
   justify-items: center;
+  max-width: 100%;
   padding: 0.35rem 0.875rem 0.4rem;
   border: 2.5px solid var(--tone);
   border-radius: 3px;
@@ -337,9 +337,9 @@ body:has(.lab) {
 }
 
 .lab-stamp-name {
-  font-size: 1.5rem;
+  font-size: 1.375rem;
   font-weight: 800;
-  font-stretch: 122%;
+  font-stretch: 108%;
   line-height: 1.1;
   white-space: nowrap;
 }
